@@ -1,0 +1,167 @@
+# Formato general
+format = """
+${custom.repo}\
+[|](fg:color_orange)\
+$directory\
+[|](fg:color_yellow)\
+$git_branch\
+$git_status\
+[|](fg:color_aqua)\
+${custom.sdd_auto}\
+${custom.sdd_interactive}\
+$nodejs\
+$python\
+$status\
+$line_break$character"""
+
+# Módulos alineados a la derecha
+right_format = """$cmd_duration$time"""
+
+palette = 'gruvbox_dark'
+
+[palettes.gruvbox_dark]
+color_fg0 = '#fbf1c7'
+color_bg1 = '#3c3836'
+color_bg3 = '#665c54'
+color_blue = '#458588'
+color_aqua = '#689d6a'
+color_green = '#98971a'
+color_orange = '#d65d0e'
+color_purple = '#b16286'
+color_red = '#cc241d'
+color_yellow = '#d79921'
+
+[os]
+disabled = true
+style = "bg:color_orange fg:color_fg0"
+
+[os.symbols]
+Macos = "macOS"
+Windows = "Windows"
+Ubuntu = "Ubuntu"
+Linux = "Linux"
+
+[username]
+show_always = false
+style_user = "bg:color_orange fg:color_fg0"
+style_root = "bg:color_orange fg:color_fg0"
+format = '[ $user ]($style)'
+
+[directory]
+style = "fg:color_fg0 bg:color_yellow"
+format = "[ $path ]($style)"
+truncation_length = 3
+truncation_symbol = "…/"
+
+[directory.substitutions]
+"dev" = "dev"
+"dev/work" = "work"
+"dev/personal" = "personal"
+"Documents" = "Documents"
+"Downloads" = "Downloads"
+"Pictures" = "Pictures"
+
+[git_branch]
+symbol = ""
+style = "bg:color_aqua"
+format = '[[ $branch ](fg:color_fg0 bg:color_aqua)]($style)'
+truncation_length = 24
+truncation_symbol = "…"
+
+[git_status]
+style = "bg:color_aqua"
+format = '[[($all_status$ahead_behind )](fg:color_fg0 bg:color_aqua)]($style)'
+ahead = '↑${count}'
+behind = '↓${count}'
+diverged = '⇅↑${ahead_count}↓${behind_count}'
+conflicted = '=${count}'
+deleted = ''
+modified = '!${count}'
+renamed = ''
+staged = '+${count}'
+stashed = ''
+untracked = '?${count}'
+
+[custom.repo]
+description = "Nombre corto del repo actual"
+when = "git rev-parse --is-inside-work-tree >/dev/null 2>&1"
+shell = ["bash", "--noprofile", "--norc"]
+command = "basename \"$(git rev-parse --show-toplevel 2>/dev/null)\" | cut -c1-24"
+style = "fg:color_fg0 bg:color_orange"
+format = '[ $output ]($style)'
+
+[custom.sdd_auto]
+description = "Estado SDD auto del proyecto"
+when = "git rev-parse --is-inside-work-tree >/dev/null 2>&1 && test -f .ai/sdd-session.json && (jq -r '.execution_mode // empty' .ai/sdd-session.json 2>/dev/null || python3 -c \"import json; print(json.load(open('.ai/sdd-session.json')).get('execution_mode',''))\" 2>/dev/null) | grep -qx 'auto'"
+shell = ["bash", "--noprofile", "--norc"]
+command = "printf 'sdd:auto'"
+style = "fg:color_fg0 bg:color_green"
+format = '[ $output ]($style)'
+
+[custom.sdd_interactive]
+description = "Estado SDD interactivo del proyecto"
+when = "git rev-parse --is-inside-work-tree >/dev/null 2>&1 && test -f .ai/sdd-session.json && (jq -r '.execution_mode // empty' .ai/sdd-session.json 2>/dev/null || python3 -c \"import json; print(json.load(open('.ai/sdd-session.json')).get('execution_mode',''))\" 2>/dev/null) | grep -qx 'interactive'"
+shell = ["bash", "--noprofile", "--norc"]
+command = "printf 'sdd:interactive'"
+style = "fg:color_fg0 bg:color_purple"
+format = '[ $output ]($style)'
+
+[nodejs]
+symbol = ""
+style = "bg:color_blue"
+format = '[[ node($version) ](fg:color_fg0 bg:color_blue)]($style)'
+detect_files = ["package.json", ".node-version", ".nvmrc"]
+detect_folders = ["node_modules"]
+
+[python]
+symbol = ""
+style = "bg:color_blue"
+format = '[[ py($version) ](fg:color_fg0 bg:color_blue)]($style)'
+detect_files = ["pyproject.toml", "requirements.txt", "requirements-dev.txt", ".python-version", "uv.lock", "Pipfile"]
+detect_folders = [".venv", "venv"]
+
+[docker_context]
+disabled = true
+
+[status]
+disabled = false
+style = "fg:color_red"
+symbol = 'x'
+format = '[ $symbol$status ]($style)'
+
+[cmd_duration]
+min_time = 500
+style = "bg:color_bg1"
+format = '[[  $duration ](fg:color_yellow bg:color_bg1)]($style)'
+
+[time]
+disabled = false
+time_format = "%R"
+style = "bg:color_bg1"
+format = '[[  $time ](fg:color_fg0 bg:color_bg1)]($style)'
+
+[battery]
+full_symbol = '󰁹'
+charging_symbol = '󰂄'
+discharging_symbol = '󰂃'
+format = '[$symbol$percentage ]($style)'
+
+[[battery.display]]
+threshold = 20
+style = "bold red"
+
+[[battery.display]]
+threshold = 50
+style = "bold yellow"
+
+[line_break]
+disabled = false
+
+[character]
+disabled = false
+success_symbol = '[󰼀](fg:color_fg0) '
+error_symbol = '[󰼀](fg:color_red) '
+vimcmd_symbol = '[󰼀](fg:color_fg0) '
+vimcmd_replace_one_symbol = '[󰼀](fg:color_purple) '
+vimcmd_replace_symbol = '[󰼀](fg:color_purple) '
+vimcmd_visual_symbol = '[󰼀](fg:color_yellow) '

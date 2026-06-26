@@ -1,0 +1,18 @@
+gui:
+  # Paneles: más espacio para el diff, menos para la barra lateral
+  sidePanelWidth: 0.25
+
+  # Log de comandos: oculto (reduce ruido en la parte inferior)
+  showCommandLog: false
+
+  # Línea de ayuda inferior (keybindings): oculta
+  showBottomLine: false
+
+  # Bordes redondeados — más limpio visualmente
+  border: "rounded"
+
+  # Nerd Fonts v3 (FiraCode Nerd Font instalada)
+  nerdFontsVersion: "3"
+
+  # No expandir el panel lateral al enfocarlo
+  expandFocusedSidePanel: false

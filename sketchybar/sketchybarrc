@@ -1,0 +1,527 @@
+#!/bin/bash
+
+CONFIG_DIR="${CONFIG_DIR:-$HOME/.config/sketchybar}"
+PLUGIN_DIR="$CONFIG_DIR/plugins"
+WATCHER_PATTERN="$PLUGIN_DIR/cmux_workspace_watcher.sh"
+
+if ! pgrep -f "$WATCHER_PATTERN" >/dev/null 2>&1; then
+    "$PLUGIN_DIR/cmux_workspace_watcher.sh" >/dev/null 2>&1 &
+fi
+
+# SketchyBar es una barra exclusiva de macOS; este layout no intenta ser cross-platform.
+# Barra sobria para macOS con notch: centro vacío, información accionable a los lados.
+FONT="FiraCode Nerd Font Mono Beard"
+PROFILE_FILE="${XDG_CACHE_HOME:-$HOME/.cache}/cortex/sketchybar-profile"
+PROFILE="auto"
+if [ -f "$PROFILE_FILE" ]; then
+    PROFILE=$(tr -d '[:space:]' < "$PROFILE_FILE")
+fi
+
+DISPLAY_COUNT=$(sketchybar --query displays 2>/dev/null | jq 'length' 2>/dev/null || printf '1')
+case "$PROFILE" in
+    portable)
+        DISPLAY_COUNT=1
+        ;;
+    office)
+        # El profile office usa los monitores detectados; no inventa displays ausentes.
+        ;;
+esac
+MAC_DISPLAY=1
+VIEWSONIC_DISPLAY=1
+LG_DISPLAY=1
+FOUR_K_DISPLAY=1
+MAC_LIGHT_DRAWING=on
+VIEWSONIC_DRAWING=off
+LG_DRAWING=off
+FOUR_K_DRAWING=off
+if [ "$DISPLAY_COUNT" -ge 2 ]; then
+    FOUR_K_DISPLAY="$DISPLAY_COUNT"
+    FOUR_K_DRAWING=on
+fi
+if [ "$DISPLAY_COUNT" -ge 3 ]; then
+    VIEWSONIC_DISPLAY=2
+    VIEWSONIC_DRAWING=on
+fi
+if [ "$DISPLAY_COUNT" -ge 4 ]; then
+    LG_DISPLAY=3
+    LG_DRAWING=on
+    FOUR_K_DISPLAY=4
+fi
+BG=0xcc0b1118
+PILL=0xdd101820
+PILL_SOFT=0xaa18222c
+TEXT=0xfff8fafc
+MUTED=0xff94a3b8
+INNIT_GREEN=0xff3fb950
+INNIT_BLUE=0xff38bdf8
+WARN=0xfff59e0b
+DANGER=0xffef4444
+
+sketchybar --remove '/.*/'
+sketchybar --add event workspace_change
+
+sketchybar --bar \
+    position=top \
+    height=36 \
+    color="$BG" \
+    blur_radius=20 \
+    padding_left=10 \
+    padding_right=10 \
+    margin=0 \
+    y_offset=0 \
+    corner_radius=0 \
+    display=main \
+    sticky=on \
+    topmost=window
+
+
+sketchybar --default \
+    updates=when_shown \
+    icon.font="$FONT:Bold:13.0" \
+    label.font="$FONT:Regular:12.0" \
+    icon.color="$TEXT" \
+    label.color="$TEXT" \
+    icon.padding_left=8 \
+    icon.padding_right=5 \
+    label.padding_left=0 \
+    label.padding_right=8 \
+    padding_left=3 \
+    padding_right=3 \
+    background.color="$PILL" \
+    background.corner_radius=8 \
+    background.height=26
+
+sketchybar --add item brand left \
+    --set brand \
+        display="$MAC_DISPLAY" \
+        icon="󰼀" \
+        icon.font="$FONT:Regular:18.0" \
+        icon.color="$INNIT_GREEN" \
+        label.drawing=off \
+        background.color="$PILL" \
+        click_script="open '$HOME/dev'"
+
+sketchybar --add item brand.lg left \
+    --set brand.lg \
+        display="$LG_DISPLAY" \
+        drawing="$LG_DRAWING" \
+        icon="󰼀" \
+        icon.font="$FONT:Regular:18.0" \
+        icon.color="$INNIT_GREEN" \
+        label.drawing=off \
+        background.color="$PILL" \
+        click_script="open '$HOME/dev'"
+
+sketchybar --add item brand.vertical left \
+    --set brand.vertical \
+        display="$VIEWSONIC_DISPLAY" \
+        drawing="$VIEWSONIC_DRAWING" \
+        icon="󰼀" \
+        icon.font="$FONT:Regular:18.0" \
+        icon.color="$INNIT_GREEN" \
+        label.drawing=off \
+        background.color="$PILL" \
+        click_script="open '$HOME/dev'"
+
+sketchybar --add item brand.4k left \
+    --set brand.4k \
+        display="$FOUR_K_DISPLAY" \
+        drawing="$FOUR_K_DRAWING" \
+        icon="󰼀" \
+        icon.font="$FONT:Regular:18.0" \
+        icon.color="$INNIT_GREEN" \
+        label.drawing=off \
+        background.color="$PILL" \
+        click_script="open '$HOME/dev'"
+
+for sid in 1 2 3 4 5 6 7 8 9 10; do
+    sketchybar --add space "space.$sid" left \
+        --set "space.$sid" \
+            associated_space="$sid" \
+            icon="$sid" \
+            label.drawing=off \
+            icon.font="$FONT:Bold:12.0" \
+            icon.color="$MUTED" \
+            background.color="$PILL_SOFT" \
+            background.height=24 \
+            background.corner_radius=7 \
+            icon.padding_left=8 \
+            icon.padding_right=8 \
+            padding_left=1 \
+            padding_right=1 \
+            script="$PLUGIN_DIR/space.sh" \
+            click_script="command -v yabai >/dev/null 2>&1 && yabai -m space --focus $sid" \
+        --subscribe "space.$sid" space_change
+done
+
+sketchybar --add item front_app left \
+    --set front_app \
+        display="$MAC_DISPLAY" \
+        icon="󰣆" \
+        icon.color="$INNIT_BLUE" \
+        label.color="$MUTED" \
+        label.max_chars=28 \
+        background.color=0x00000000 \
+        script="$PLUGIN_DIR/front_app.sh" \
+    --subscribe front_app front_app_switched
+
+sketchybar --add item front_app.lg left \
+    --set front_app.lg \
+        display="$LG_DISPLAY" \
+        drawing="$LG_DRAWING" \
+        icon="󰣆" \
+        icon.color="$INNIT_BLUE" \
+        label.color="$MUTED" \
+        label.max_chars=24 \
+        background.color=0x00000000 \
+        script="$PLUGIN_DIR/front_app.sh" \
+    --subscribe front_app.lg front_app_switched
+
+sketchybar --add item front_app.vertical left \
+    --set front_app.vertical \
+        display="$VIEWSONIC_DISPLAY" \
+        drawing="$VIEWSONIC_DRAWING" \
+        icon="󰣆" \
+        icon.color="$INNIT_BLUE" \
+        label.color="$MUTED" \
+        label.max_chars=18 \
+        background.color=0x00000000 \
+        script="$PLUGIN_DIR/front_app.sh" \
+    --subscribe front_app.vertical front_app_switched
+
+sketchybar --add item front_app.4k left \
+    --set front_app.4k \
+        display="$FOUR_K_DISPLAY" \
+        drawing="$FOUR_K_DRAWING" \
+        icon="󰣆" \
+        icon.color="$INNIT_BLUE" \
+        label.color="$MUTED" \
+        label.max_chars=24 \
+        background.color=0x00000000 \
+        script="$PLUGIN_DIR/front_app.sh" \
+    --subscribe front_app.4k front_app_switched
+
+sketchybar --add item git_status left \
+    --set git_status \
+        display="$FOUR_K_DISPLAY" \
+        icon.color="$INNIT_GREEN" \
+        label.color="$TEXT" \
+        update_freq=30 \
+        script="$PLUGIN_DIR/git_status.sh" \
+    --subscribe git_status workspace_change system_woke
+
+sketchybar --add item work_item left \
+    --set work_item \
+        display="$FOUR_K_DISPLAY" \
+        icon.color="$INNIT_BLUE" \
+        label.color="$TEXT" \
+        update_freq=30 \
+        script="$PLUGIN_DIR/work_item.sh" \
+    --subscribe work_item workspace_change system_woke
+
+sketchybar --add item git_status.lg left \
+    --set git_status.lg \
+        display="$LG_DISPLAY" \
+        drawing="$LG_DRAWING" \
+        icon.color="$INNIT_GREEN" \
+        label.color="$TEXT" \
+        update_freq=30 \
+        script="$PLUGIN_DIR/git_status.sh" \
+    --subscribe git_status.lg workspace_change system_woke
+
+sketchybar --add item work_item.lg left \
+    --set work_item.lg \
+        display="$LG_DISPLAY" \
+        drawing="$LG_DRAWING" \
+        icon.color="$INNIT_BLUE" \
+        label.color="$TEXT" \
+        update_freq=30 \
+        script="$PLUGIN_DIR/work_item.sh" \
+    --subscribe work_item.lg workspace_change system_woke
+
+sketchybar --add item git_status.vertical left \
+    --set git_status.vertical \
+        display="$VIEWSONIC_DISPLAY" \
+        drawing="$VIEWSONIC_DRAWING" \
+        icon.color="$INNIT_GREEN" \
+        label.color="$TEXT" \
+        update_freq=30 \
+        script="$PLUGIN_DIR/git_status.sh" \
+    --subscribe git_status.vertical workspace_change system_woke
+
+sketchybar --add item work_item.vertical left \
+    --set work_item.vertical \
+        display="$VIEWSONIC_DISPLAY" \
+        drawing="$VIEWSONIC_DRAWING" \
+        icon.color="$INNIT_BLUE" \
+        label.color="$TEXT" \
+        update_freq=30 \
+        script="$PLUGIN_DIR/work_item.sh" \
+    --subscribe work_item.vertical workspace_change system_woke
+
+sketchybar --add item sdd_status.lg left \
+    --set sdd_status.lg \
+        display="$LG_DISPLAY" \
+        drawing="$LG_DRAWING" \
+        icon.color="$INNIT_GREEN" \
+        label.color="$TEXT" \
+        update_freq=120 \
+        script="$PLUGIN_DIR/sdd_status.sh" \
+    --subscribe sdd_status.lg workspace_change system_woke
+
+sketchybar --add item sdd_status.vertical left \
+    --set sdd_status.vertical \
+        display="$VIEWSONIC_DISPLAY" \
+        drawing="$VIEWSONIC_DRAWING" \
+        icon.color="$INNIT_GREEN" \
+        label.color="$TEXT" \
+        update_freq=120 \
+        script="$PLUGIN_DIR/sdd_status.sh" \
+    --subscribe sdd_status.vertical workspace_change system_woke
+
+sketchybar --add item brains_health.lg left \
+    --set brains_health.lg \
+        display="$LG_DISPLAY" \
+        drawing="$LG_DRAWING" \
+        icon.color="$INNIT_GREEN" \
+        label.color="$TEXT" \
+        update_freq=60 \
+        script="$PLUGIN_DIR/brains_health.sh"
+
+sketchybar --add item brains_health.vertical left \
+    --set brains_health.vertical \
+        display="$VIEWSONIC_DISPLAY" \
+        drawing="$VIEWSONIC_DRAWING" \
+        icon.color="$INNIT_GREEN" \
+        label.color="$TEXT" \
+        update_freq=60 \
+        script="$PLUGIN_DIR/brains_health.sh"
+
+sketchybar --add item checkpoint_timer.lg left \
+    --set checkpoint_timer.lg \
+        display="$LG_DISPLAY" \
+        drawing="$LG_DRAWING" \
+        icon.color="$INNIT_GREEN" \
+        label.color="$TEXT" \
+        update_freq=60 \
+        script="$PLUGIN_DIR/checkpoint_timer.sh" \
+    --subscribe checkpoint_timer.lg workspace_change system_woke
+
+sketchybar --add item checkpoint_timer.vertical left \
+    --set checkpoint_timer.vertical \
+        display="$VIEWSONIC_DISPLAY" \
+        drawing="$VIEWSONIC_DRAWING" \
+        icon.color="$INNIT_GREEN" \
+        label.color="$TEXT" \
+        update_freq=60 \
+        script="$PLUGIN_DIR/checkpoint_timer.sh" \
+    --subscribe checkpoint_timer.vertical workspace_change system_woke
+
+sketchybar --add item sdd_status left \
+    --set sdd_status \
+        display="$FOUR_K_DISPLAY" \
+        icon.color="$INNIT_GREEN" \
+        label.color="$TEXT" \
+        update_freq=120 \
+        script="$PLUGIN_DIR/sdd_status.sh" \
+    --subscribe sdd_status workspace_change system_woke
+
+sketchybar --add item brains_health left \
+    --set brains_health \
+        display="$FOUR_K_DISPLAY" \
+        icon.color="$INNIT_GREEN" \
+        label.color="$TEXT" \
+        update_freq=60 \
+        script="$PLUGIN_DIR/brains_health.sh"
+
+sketchybar --add item checkpoint_timer left \
+    --set checkpoint_timer \
+        display="$FOUR_K_DISPLAY" \
+        icon.color="$INNIT_GREEN" \
+        label.color="$TEXT" \
+        update_freq=60 \
+        script="$PLUGIN_DIR/checkpoint_timer.sh" \
+    --subscribe checkpoint_timer workspace_change system_woke
+
+sketchybar --add item clock.lg right \
+    --set clock.lg \
+        display="$LG_DISPLAY" \
+        drawing="$LG_DRAWING" \
+        icon="󰃭" \
+        icon.y_offset=1 \
+        icon.color="$INNIT_GREEN" \
+        label.color="$TEXT" \
+        update_freq=10 \
+        script="$PLUGIN_DIR/date_es.sh" \
+        click_script="open -a Calendar"
+
+sketchybar --add item clock.vertical right \
+    --set clock.vertical \
+        display="$VIEWSONIC_DISPLAY" \
+        drawing="$VIEWSONIC_DRAWING" \
+        icon="󰃭" \
+        icon.y_offset=1 \
+        icon.color="$INNIT_GREEN" \
+        label.color="$TEXT" \
+        update_freq=10 \
+        script="$PLUGIN_DIR/date_es.sh" \
+        click_script="open -a Calendar"
+
+sketchybar --add item clock.4k right \
+    --set clock.4k \
+        display="$FOUR_K_DISPLAY" \
+        drawing="$FOUR_K_DRAWING" \
+        icon="󰃭" \
+        icon.y_offset=1 \
+        icon.color="$INNIT_GREEN" \
+        label.color="$TEXT" \
+        update_freq=10 \
+        script="$PLUGIN_DIR/date_es.sh" \
+        click_script="open -a Calendar"
+
+sketchybar --add item cpu.lg right \
+    --set cpu.lg \
+        display="$LG_DISPLAY" \
+        drawing="$LG_DRAWING" \
+        icon="CPU" \
+        icon.color="$INNIT_BLUE" \
+        label.color="$TEXT" \
+        update_freq=5 \
+        script="$PLUGIN_DIR/cpu.sh"
+
+sketchybar --add item cpu.vertical right \
+    --set cpu.vertical \
+        display="$VIEWSONIC_DISPLAY" \
+        drawing="$VIEWSONIC_DRAWING" \
+        icon="CPU" \
+        icon.color="$INNIT_BLUE" \
+        label.color="$TEXT" \
+        update_freq=5 \
+        script="$PLUGIN_DIR/cpu.sh"
+
+# Item cpu para el monitor 4K externo (solo visible cuando hay ≥2 displays)
+sketchybar --add item cpu.4k right \
+    --set cpu.4k \
+        display="$FOUR_K_DISPLAY" \
+        drawing="$FOUR_K_DRAWING" \
+        icon="CPU" \
+        icon.color="$INNIT_BLUE" \
+        label.color="$TEXT" \
+        update_freq=5 \
+        script="$PLUGIN_DIR/cpu.sh"
+
+sketchybar --add item memory.lg right \
+    --set memory.lg \
+        display="$LG_DISPLAY" \
+        drawing="$LG_DRAWING" \
+        icon="RAM" \
+        icon.color="$INNIT_BLUE" \
+        label.color="$TEXT" \
+        update_freq=10 \
+        script="$PLUGIN_DIR/memory.sh"
+
+sketchybar --add item memory.vertical right \
+    --set memory.vertical \
+        display="$VIEWSONIC_DISPLAY" \
+        drawing="$VIEWSONIC_DRAWING" \
+        icon="RAM" \
+        icon.color="$INNIT_BLUE" \
+        label.color="$TEXT" \
+        update_freq=10 \
+        script="$PLUGIN_DIR/memory.sh"
+
+# Item memory para el monitor 4K externo (solo visible cuando hay ≥2 displays)
+sketchybar --add item memory.4k right \
+    --set memory.4k \
+        display="$FOUR_K_DISPLAY" \
+        drawing="$FOUR_K_DRAWING" \
+        icon="RAM" \
+        icon.color="$INNIT_BLUE" \
+        label.color="$TEXT" \
+        update_freq=10 \
+        script="$PLUGIN_DIR/memory.sh"
+
+sketchybar --add item workspace_context left \
+    --set workspace_context \
+        drawing=off \
+        updates=on \
+        update_freq=30 \
+        script="$PLUGIN_DIR/workspace_context.sh"
+
+sketchybar --add item battery right \
+    --set battery \
+        display="$MAC_DISPLAY" \
+        drawing="$MAC_LIGHT_DRAWING" \
+        icon.color="$MUTED" \
+        icon.y_offset=1 \
+        label.color="$TEXT" \
+        update_freq=30 \
+        script="$PLUGIN_DIR/battery.sh" \
+        click_script="open 'x-apple.systempreferences:com.apple.Battery-Settings.extension'" \
+    --subscribe battery system_woke power_source_change
+
+sketchybar --add item clock right \
+    --set clock \
+        display="$MAC_DISPLAY" \
+        drawing="$MAC_LIGHT_DRAWING" \
+        icon="󰃭" \
+        icon.y_offset=1 \
+        icon.color="$INNIT_GREEN" \
+        label.color="$TEXT" \
+        update_freq=10 \
+        script="$PLUGIN_DIR/date_es.sh" \
+        click_script="open -a Calendar"
+
+sketchybar --add item network right \
+    --set network \
+        display="$MAC_DISPLAY" \
+        drawing="$MAC_LIGHT_DRAWING" \
+        icon.color="$MUTED" \
+        icon.y_offset=1 \
+        label.color="$TEXT" \
+        update_freq=30 \
+        script="$PLUGIN_DIR/network.sh"
+
+sketchybar --add item volume right \
+    --set volume \
+        display="$MAC_DISPLAY" \
+        drawing="$MAC_LIGHT_DRAWING" \
+        icon.color="$MUTED" \
+        icon.y_offset=1 \
+        label.color="$TEXT" \
+        update_freq=5 \
+        script="$PLUGIN_DIR/volume.sh" \
+        click_script="$PLUGIN_DIR/volume_click.sh" \
+    --subscribe volume volume_change
+
+# Item base de memory: display retina (MAC_DISPLAY), visible en configuración mono-display
+# Posicionado después de volume para quedar a su izquierda en la barra (items right: último --add = más a la izquierda)
+sketchybar --add item memory right \
+    --set memory \
+        display="$MAC_DISPLAY" \
+        drawing="$MAC_LIGHT_DRAWING" \
+        icon="RAM" \
+        icon.color="$INNIT_BLUE" \
+        label.color="$TEXT" \
+        update_freq=10 \
+        script="$PLUGIN_DIR/memory.sh"
+
+# Item base de cpu: display retina (MAC_DISPLAY), visible en configuración mono-display
+# Posicionado último para quedar en el extremo izquierdo del grupo right (cpu, memory, volume, network, clock, battery)
+sketchybar --add item cpu right \
+    --set cpu \
+        display="$MAC_DISPLAY" \
+        drawing="$MAC_LIGHT_DRAWING" \
+        icon="CPU" \
+        icon.color="$INNIT_BLUE" \
+        label.color="$TEXT" \
+        update_freq=5 \
+        script="$PLUGIN_DIR/cpu.sh"
+
+sketchybar --update
+"$PLUGIN_DIR/cmux_workspace_watcher.sh" >/dev/null 2>&1 &
+NAME=front_app "$PLUGIN_DIR/front_app.sh"
+NAME=front_app.lg "$PLUGIN_DIR/front_app.sh"
+NAME=front_app.vertical "$PLUGIN_DIR/front_app.sh"
+NAME=front_app.4k "$PLUGIN_DIR/front_app.sh"
+NAME=workspace_context "$PLUGIN_DIR/workspace_context.sh"

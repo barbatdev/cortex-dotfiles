@@ -1,0 +1,10 @@
+# Configuración local (paths, tokens, datos personales)
+local/env.zsh
+
+# macOS
+.DS_Store
+**/.DS_Store
+
+# Backups
+*.bak
+*.backup

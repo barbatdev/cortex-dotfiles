@@ -1,0 +1,29 @@
+#!/bin/bash
+
+# Config gradual: no usa scripting addition ni requiere desactivar SIP.
+yabai -m config layout bsp
+yabai -m config window_placement second_child
+yabai -m config split_ratio 0.50
+yabai -m config auto_balance off
+
+yabai -m config top_padding 0
+yabai -m config bottom_padding 0
+yabai -m config left_padding 0
+yabai -m config right_padding 0
+yabai -m config window_gap 0
+
+# Sin padding global: las ventanas usan todo el monitor disponible.
+
+yabai -m config mouse_follows_focus off
+yabai -m config focus_follows_mouse off
+yabai -m config mouse_modifier alt
+yabai -m config mouse_action1 move
+yabai -m config mouse_action2 resize
+
+# Apps que suelen funcionar mejor flotantes.
+yabai -m rule --add app="^System Settings$" manage=off
+yabai -m rule --add app="^Calculator$" manage=off
+yabai -m rule --add app="^Activity Monitor$" manage=off
+yabai -m rule --add app="^Finder$" title="^(Copy|Move|Info|Preferences)" manage=off
+
+sketchybar --trigger space_change 2>/dev/null || true
