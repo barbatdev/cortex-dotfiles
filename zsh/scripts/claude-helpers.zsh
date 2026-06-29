@@ -26,6 +26,108 @@ _workspace_name_for_path() {
     fi
 }
 
+_zellij_preferred() {
+    command -v zellij >/dev/null 2>&1 || return 1
+    [[ -n "$ZELLIJ" || "${CORTEX_MULTIPLEXER:-}" == "zellij" ]]
+}
+
+_zellij_session_exists() {
+    local session="$1"
+    zellij list-sessions 2>/dev/null | awk '{print $1}' | grep -Fxq "$session"
+}
+
+_zellij_kdl_escape() {
+    local value="$1"
+    value="${value//\\/\\\\}"
+    value="${value//\"/\\\"}"
+    printf '%s' "$value"
+}
+
+_zellij_layout_for_command() {
+    local resolved="$1"
+    local command_line="$2"
+    local layout_file
+    layout_file=$(mktemp "${TMPDIR:-/tmp}/cortex-zellij-layout.XXXXXX.kdl")
+
+    local cwd_escaped command_escaped shell_name
+    cwd_escaped="$(_zellij_kdl_escape "$resolved")"
+    command_escaped="$(_zellij_kdl_escape "cd ${(q)resolved} && $command_line; exec ${SHELL:-zsh}")"
+    shell_name="$(_zellij_kdl_escape "${SHELL:-zsh}")"
+
+    cat > "$layout_file" <<EOF
+layout {
+    pane cwd="$cwd_escaped" {
+        command "$shell_name"
+        args "-lc" "$command_escaped"
+    }
+}
+EOF
+
+    printf '%s' "$layout_file"
+}
+
+_zellij_open_agent() {
+    local resolved="$1"
+    local command_line="$2"
+    local session
+    session="$(_workspace_name_for_path "$resolved")"
+
+    if [[ -n "$ZELLIJ" ]]; then
+        if [[ "${ZELLIJ_SESSION_NAME:-}" == "$session" && "$resolved" == "$PWD" ]]; then
+            eval "$command_line"
+            return
+        fi
+
+        if _zellij_session_exists "$session"; then
+            zellij action switch-session -c "$resolved" "$session"
+            return
+        fi
+
+        local layout_file
+        layout_file="$(_zellij_layout_for_command "$resolved" "$command_line")"
+        zellij action switch-session -c "$resolved" --layout "$layout_file" "$session"
+        return
+    fi
+
+    if _zellij_session_exists "$session"; then
+        zellij attach "$session"
+        return
+    fi
+
+    local layout_file
+    layout_file="$(_zellij_layout_for_command "$resolved" "$command_line")"
+    zellij --session "$session" --layout "$layout_file"
+}
+
+zj() {
+    local target="${1:-.}"
+    local resolved
+    resolved=$(cd "$target" 2>/dev/null && pwd)
+
+    if [[ -z "$resolved" ]]; then
+        echo "❌ Directorio no encontrado: $target"
+        return 1
+    fi
+
+    if ! command -v zellij >/dev/null 2>&1; then
+        echo "❌ zellij no está instalado"
+        return 1
+    fi
+
+    local session
+    session="$(_workspace_name_for_path "$resolved")"
+
+    if [[ -n "$ZELLIJ" ]]; then
+        zellij action switch-session -c "$resolved" "$session"
+    else
+        cd "$resolved" && zellij attach "$session" --create
+    fi
+}
+
+zsessions() {
+    zellij list-sessions
+}
+
 _cmux_rename_workspace() {
     local workspace_id="$1"
     local workspace_name="$2"
@@ -54,7 +156,9 @@ cc() {
         return 1
     fi
 
-    if [[ -n "$CMUX_WORKSPACE_ID" ]]; then
+    if _zellij_preferred; then
+        _zellij_open_agent "$resolved" "claude --enable-auto-mode --dangerously-skip-permissions"
+    elif [[ -n "$CMUX_WORKSPACE_ID" ]]; then
         # Estamos dentro de cmux
         local workspace_name
         workspace_name="$(_workspace_name_for_path "$resolved")"
@@ -117,7 +221,9 @@ oc() {
 
     local oc_cmd="opencode ${OPENCODE_DEFAULT_FLAGS:-}"
 
-    if [[ -n "$CMUX_WORKSPACE_ID" ]]; then
+    if _zellij_preferred; then
+        _zellij_open_agent "$resolved" "$oc_cmd"
+    elif [[ -n "$CMUX_WORKSPACE_ID" ]]; then
         local workspace_name
         workspace_name="$(_workspace_name_for_path "$resolved")"
 
@@ -173,7 +279,9 @@ ccb() {
 
     local cc_cmd="claude --dangerously-skip-permissions"
 
-    if [[ -n "$CMUX_WORKSPACE_ID" ]]; then
+    if _zellij_preferred; then
+        _zellij_open_agent "$resolved" "$cc_cmd"
+    elif [[ -n "$CMUX_WORKSPACE_ID" ]]; then
         local workspace_name
         workspace_name="$(_workspace_name_for_path "$resolved")"
 
@@ -229,7 +337,9 @@ ocb() {
 
     local oc_cmd="opencode ${OPENCODE_DEFAULT_FLAGS:-}"
 
-    if [[ -n "$CMUX_WORKSPACE_ID" ]]; then
+    if _zellij_preferred; then
+        _zellij_open_agent "$resolved" "$oc_cmd"
+    elif [[ -n "$CMUX_WORKSPACE_ID" ]]; then
         local workspace_name
         workspace_name="$(_workspace_name_for_path "$resolved")"
 

@@ -81,6 +81,8 @@ dotfiles/
 | `cortex`, `dotfiles` | Navegación rápida al repo `cortex` y sus dotfiles |
 | `cc [path]` | Abrir Claude Code |
 | `oc [path]` | Abrir OpenCode |
+| `zj [path]` | Entrar/crear sesión Zellij por repo/path |
+| `zsessions` | Listar sesiones Zellij |
 | `ccclip <files>` | Copiar código al clipboard |
 | `tcc`, `tdev`, `ta`, `tn`, `tl`, `tk` | Helpers tmux (`tcc` abre Claude Code en tmux) |
 | `wtadd`, `wtlist`, `wtremove` | Helpers de git worktrees |
@@ -98,8 +100,31 @@ Editá `local/env.zsh` (gitignored) para configurar:
 - `SCREENSHOTS_DIR` — directorio de screenshots
 - `WORKSPACE_DIR` — directorio raíz de tus proyectos
 - `OPENCODE_DEFAULT_FLAGS` — flags por defecto para `oc`
+- `CORTEX_MULTIPLEXER=zellij` — usa Zellij para `cc`/`oc` fuera de cmux/tmux, recomendado en `agent-dev-01`
 - `INNIT_DIR` y overrides `INNIT_*_DIR` — navegación rápida de subdirectorios
 - Aliases y paths personales
+
+## Zellij en agent-dev-01
+
+En una workstation remota persistente, el modelo recomendado es una sesión Zellij por repo:
+
+```bash
+zj ~/dev/personal/infra
+zj ~/dev/personal/cortex
+```
+
+`cc [path]`, `ccb [path]`, `oc [path]` y `ocb [path]` usan Zellij cuando estás dentro de una sesión Zellij o cuando definís:
+
+```bash
+export CORTEX_MULTIPLEXER="zellij"
+```
+
+Comportamiento:
+
+- Si estás en la sesión del repo actual, ejecuta el agente en el pane actual.
+- Si pedís otro path y la sesión ya existe, cambia a esa sesión.
+- Si pedís otro path y la sesión no existe, la crea con el agente arrancado en ese directorio.
+- En macOS/cmux sin `CORTEX_MULTIPLEXER=zellij`, `cc`/`oc` conservan el comportamiento actual con cmux/tmux.
 
 ## SketchyBar
 
