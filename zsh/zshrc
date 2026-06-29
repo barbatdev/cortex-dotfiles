@@ -245,7 +245,8 @@ fi
 
 #region Welcome
 _welcome() {
-    local ms=$(( int(($EPOCHREALTIME - _PROFILE_START) * 1000) ))
+    local ms
+    ms=$(awk -v start="${_PROFILE_START:-0}" -v now="${EPOCHREALTIME:-0}" 'BEGIN { printf "%d", (now - start) * 1000 }' 2>/dev/null || printf "0")
 
     echo ""
     echo "  ╔══════════════════════════════════════╗"
