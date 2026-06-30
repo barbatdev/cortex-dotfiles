@@ -1,0 +1,36 @@
+#!/bin/bash
+
+set -euo pipefail
+
+direction="${1:-}"
+
+if [[ "$direction" != "next" && "$direction" != "prev" ]]; then
+  exit 2
+fi
+
+current_display="$(yabai -m query --windows --window | jq -r '.display')"
+
+case "$direction:$current_display" in
+  next:1) target_display=2 ;;
+  next:2) target_display=3 ;;
+  next:3) target_display=4 ;;
+  next:4) target_display=1 ;;
+  prev:1) target_display=4 ;;
+  prev:2) target_display=1 ;;
+  prev:3) target_display=2 ;;
+  prev:4) target_display=3 ;;
+  *) exit 1 ;;
+esac
+
+target_space="$(yabai -m query --spaces | jq -r --argjson display "$target_display" '
+  map(select(.display == $display and ."is-native-fullscreen" == false))
+  | (map(select(."is-visible" == true))[0] // map(select(.type == "bsp"))[0] // .[0])
+  | .index // empty
+')"
+
+if [[ -z "$target_space" ]]; then
+  yabai -m window --display "$target_display" --focus
+  exit 0
+fi
+
+yabai -m window --space "$target_space" --focus

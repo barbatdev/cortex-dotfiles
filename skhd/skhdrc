@@ -1,16 +1,20 @@
 # Leader = option + command.
 
 # Focus ventanas
-alt + cmd - left  : yabai -m window --focus west || yabai -m window --focus prev || true
-alt + cmd - down  : yabai -m window --focus south || yabai -m window --focus next || true
-alt + cmd - up    : yabai -m window --focus north || yabai -m window --focus prev || true
-alt + cmd - right : yabai -m window --focus east || yabai -m window --focus next || true
+alt + cmd - left  : ~/.config/yabai/focus-window-display west || true
+alt + cmd - down  : ~/.config/yabai/focus-window-display south || true
+alt + cmd - up    : ~/.config/yabai/focus-window-display north || true
+alt + cmd - right : ~/.config/yabai/focus-window-display east || true
+ctrl + alt - h : ~/.config/yabai/focus-window-display west || true
+ctrl + alt - j : ~/.config/yabai/focus-window-display south || true
+ctrl + alt - k : ~/.config/yabai/focus-window-display north || true
+ctrl + alt - l : ~/.config/yabai/focus-window-display east || true
 
 # Mover ventanas dentro del layout
-alt + cmd + shift - left  : yabai -m window --warp west || yabai -m window --swap west || true
-alt + cmd + shift - down  : yabai -m window --warp south || yabai -m window --swap south || true
-alt + cmd + shift - up    : yabai -m window --warp north || yabai -m window --swap north || true
-alt + cmd + shift - right : yabai -m window --warp east || yabai -m window --swap east || true
+alt + cmd + shift - left  : ~/.config/yabai/swap-window-cycle prev || true
+alt + cmd + shift - down  : ~/.config/yabai/swap-window-cycle next || true
+alt + cmd + shift - up    : ~/.config/yabai/swap-window-cycle prev || true
+alt + cmd + shift - right : ~/.config/yabai/swap-window-cycle next || true
 
 # Spaces
 alt + cmd - 1 : yabai -m space --focus 1 || true
@@ -33,6 +37,14 @@ alt + cmd + shift - 6 : yabai -m window --space 6 && yabai -m space --focus 6 ||
 alt + cmd + shift - 7 : yabai -m window --space 7 && yabai -m space --focus 7 || true
 alt + cmd + shift - 8 : yabai -m window --space 8 && yabai -m space --focus 8 || true
 alt + cmd + shift - 9 : yabai -m window --space 9 && yabai -m space --focus 9 || true
+
+# Mover ventana al display y seguirla
+alt + cmd + ctrl - left  : ~/.config/yabai/move-window-display prev || true
+alt + cmd + ctrl - right : ~/.config/yabai/move-window-display next || true
+
+# Cambiar foco entre ventanas del display actual
+alt + cmd + ctrl - up   : ~/.config/yabai/focus-window-cycle prev || true
+alt + cmd + ctrl - down : ~/.config/yabai/focus-window-cycle next || true
 
 # Layout
 alt + cmd - f : yabai -m window --toggle float || true

@@ -1,0 +1,29 @@
+#!/bin/bash
+
+set -euo pipefail
+
+direction="${1:-}"
+
+case "$direction" in
+  next|prev) ;;
+  *) exit 2 ;;
+esac
+
+current_window="$(yabai -m query --windows --window)"
+current_id="$(jq -r '.id' <<<"$current_window")"
+current_display="$(jq -r '.display' <<<"$current_window")"
+
+target_id="$(yabai -m query --windows | jq -r --argjson display "$current_display" --argjson current "$current_id" --arg direction "$direction" '
+  map(select(.display == $display and ."is-visible" == true and ."is-minimized" == false and ."is-hidden" == false))
+  | sort_by(.frame.x, .frame.y)
+  | . as $windows
+  | ($windows | map(.id) | index($current)) as $idx
+  | if length < 2 or $idx == null then empty
+    elif $direction == "prev" then $windows[(($idx - 1 + length) % length)].id
+    else $windows[(($idx + 1) % length)].id
+    end
+')"
+
+if [[ -n "$target_id" ]]; then
+  yabai -m window --focus "$target_id"
+fi
