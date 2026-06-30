@@ -1,13 +1,13 @@
 #!/bin/bash
 
-# Dark Vibrant colors (ANSI 256)
-PRIMARY='\033[38;5;75m'       # azul claro
-ACCENT='\033[38;5;227m'       # amarillo
-SECONDARY='\033[38;5;111m'    # azul gris
-MUTED='\033[38;5;242m'        # gris
-SUCCESS='\033[38;5;83m'       # verde (#50fa7b)
-ERROR='\033[38;5;203m'        # rojo (#ff5555)
-PURPLE='\033[38;5;135m'       # púrpura
+# InnIT Tech Slate colors (truecolor ANSI)
+PRIMARY='\033[38;2;0;84;255m'       # InnIT blue (#0054ff)
+ACCENT='\033[38;2;210;153;34m'      # warning (#D29922)
+SECONDARY='\033[38;2;88;166;255m'   # info blue (#58A6FF)
+MUTED='\033[38;2;139;148;158m'      # secondary text (#8B949E)
+SUCCESS='\033[38;2;63;185;80m'      # engineering green (#3FB950)
+ERROR='\033[38;2;248;81;73m'        # error (#F85149)
+PURPLE='\033[38;2;139;92;246m'      # syntax purple (#8B5CF6)
 BOLD='\033[1m'
 STRIKE='\033[9m'
 NC='\033[0m'
@@ -349,33 +349,33 @@ if [ -n "$CMUX_BIN" ]; then
   if [ "$MODEL_SHORT" != "$PREV_MODEL" ]; then
     echo "$MODEL_SHORT" > "$MODEL_CACHE"
     # env -u descarta el socket heredado del caller para evitar "Connection refused"
-    env -u CMUX_SOCKET_PATH -u CMUX_SOCKET "$CMUX_BIN" set-status claude_model "$MODEL_SHORT" --icon "cpu" --color "#a6e3a1" > /dev/null 2>&1
+    env -u CMUX_SOCKET_PATH -u CMUX_SOCKET "$CMUX_BIN" set-status claude_model "$MODEL_SHORT" --icon "cpu" --color "#3FB950" > /dev/null 2>&1
   fi
 
   if [ -n "$SDD_MODE" ]; then
     if [ "$SDD_MODE" = "auto" ]; then
-      env -u CMUX_SOCKET_PATH -u CMUX_SOCKET "$CMUX_BIN" set-status sdd_mode "$SDD_MODE" --icon "arrow.right.circle" --color "#a6e3a1" > /dev/null 2>&1
+      env -u CMUX_SOCKET_PATH -u CMUX_SOCKET "$CMUX_BIN" set-status sdd_mode "$SDD_MODE" --icon "arrow.right.circle" --color "#3FB950" > /dev/null 2>&1
     else
-      env -u CMUX_SOCKET_PATH -u CMUX_SOCKET "$CMUX_BIN" set-status sdd_mode "$SDD_MODE" --icon "pause.circle" --color "#f9e2af" > /dev/null 2>&1
+      env -u CMUX_SOCKET_PATH -u CMUX_SOCKET "$CMUX_BIN" set-status sdd_mode "$SDD_MODE" --icon "pause.circle" --color "#D29922" > /dev/null 2>&1
     fi
   else
     clear_sidebar_status sdd_mode
   fi
 
   if [ -n "$SDD_SPEC" ]; then
-    env -u CMUX_SOCKET_PATH -u CMUX_SOCKET "$CMUX_BIN" set-status sdd_spec "$SDD_SPEC" --icon "doc.text" --color "#89b4fa" > /dev/null 2>&1
+    env -u CMUX_SOCKET_PATH -u CMUX_SOCKET "$CMUX_BIN" set-status sdd_spec "$SDD_SPEC" --icon "doc.text" --color "#0054ff" > /dev/null 2>&1
   else
     clear_sidebar_status sdd_spec
   fi
 
   if [ -n "$SDD_TASKS" ]; then
-    env -u CMUX_SOCKET_PATH -u CMUX_SOCKET "$CMUX_BIN" set-status sdd_tasks "$SDD_TASKS" --icon "checklist" --color "#94e2d5" > /dev/null 2>&1
+    env -u CMUX_SOCKET_PATH -u CMUX_SOCKET "$CMUX_BIN" set-status sdd_tasks "$SDD_TASKS" --icon "checklist" --color "#58A6FF" > /dev/null 2>&1
   else
     clear_sidebar_status sdd_tasks
   fi
 
   if [ -n "$BRAINS_DISPLAY" ]; then
-    env -u CMUX_SOCKET_PATH -u CMUX_SOCKET "$CMUX_BIN" set-status brains "$(printf '%s' "$BRAINS_DISPLAY" | sed -E 's/\x1b\[[0-9;]*m//g')" --icon "brain.head.profile" --color "#89dceb" > /dev/null 2>&1
+    env -u CMUX_SOCKET_PATH -u CMUX_SOCKET "$CMUX_BIN" set-status brains "$(printf '%s' "$BRAINS_DISPLAY" | sed -E 's/\x1b\[[0-9;]*m//g')" --icon "brain.head.profile" --color "#58A6FF" > /dev/null 2>&1
   else
     clear_sidebar_status brains
   fi

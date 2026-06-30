@@ -114,7 +114,14 @@ Editá `local/env.zsh` (gitignored) para configurar:
 - Aliases y paths personales
 
 Configs versionadas:
-- `opencode/tui.json` — TUI OpenCode con `scroll_acceleration` y plugin de statusline
+- `opencode/tui.json` — TUI OpenCode con theme InnIT, `scroll_acceleration` y plugin de statusline
+- `opencode/themes/innit-tech-slate.json` — theme custom OpenCode
+- `claude/statusline.sh` — statusline Claude Code con paleta InnIT Tech Slate
+- `claude/themes/innit-tech-slate.json` — theme custom Claude Code; seleccionar con `/theme` como `InnIT Tech Slate`
+
+Notas de theming AI CLI:
+- Claude Code carga themes custom desde `~/.claude/themes/`; `install.sh` symlinkea ese directorio.
+- OpenCode carga themes custom desde `~/.config/opencode/themes/`; `tui.json` selecciona `innit-tech-slate`.
 
 ## Herdr remoto
 

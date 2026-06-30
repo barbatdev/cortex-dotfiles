@@ -1,5 +1,6 @@
 {
   "$schema": "https://opencode.ai/tui.json",
+  "theme": "innit-tech-slate",
   "scroll_acceleration": {
     "enabled": true
   },
