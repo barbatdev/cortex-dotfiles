@@ -324,7 +324,7 @@ help-profile() {
     echo "  ${C}innit-webs       ${R}cd ~/dev/innit/webs"
     echo "  ${C}innit-pcsoft     ${R}cd ~/dev/innit/pcsoft"
     echo "  ${C}cortex           ${R}cd ~/cortex"
-    echo "  ${C}dotfiles         ${R}cd ~/dev/personal/dotfiles"
+    echo "  ${C}dotfiles         ${R}cd ~/dev/personal/cortex-dotfiles"
     echo "  ${C}.., ..., ....     ${R}Subir 1, 2 o 3 niveles"
 
     echo "\n${T}Claude Code${R}"

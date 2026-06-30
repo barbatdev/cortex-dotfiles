@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Repositorio
 
-Dotfiles para macOS: configuración de Ghostty + Zsh + Starship. El instalador crea symlinks desde el directorio del repo hacia las ubicaciones estándar del sistema.
+Dotfiles para macOS/Linux: configuración de Ghostty, Zsh, Starship, Herdr, OpenCode y Claude Code. El instalador crea symlinks desde el directorio del repo hacia las ubicaciones estándar del sistema.
 
 ## Instalación y testing
 
@@ -34,9 +34,11 @@ dotfiles/
 │       ├── screenshots.zsh      # ss, last, ssd, imgclip
 │       ├── ssh-helpers.zsh      # ssh/mosh con contexto visible
 │       └── herdr-helpers.zsh    # hhere, hremote, hname, whereami
-├── starship/starship.toml    # Prompt Gruvbox Dark → symlink a ~/.config/starship.toml
+├── starship/starship.toml    # Prompt InnIT/Cortex → symlink a ~/.config/starship.toml
 ├── ghostty/config            # Terminal → symlink a ~/.config/ghostty/config
 ├── herdr/config.toml         # Multiplexor → symlink a ~/.config/herdr/config.toml
+├── opencode/                 # TUI + themes Cortex → symlink a ~/.config/opencode
+├── claude/                   # Statusline + themes Cortex → symlink a ~/.claude
 ├── local/
 │   └── env.zsh.example       # Template para local/env.zsh (gitignored)
 └── install.sh                # Instalador
@@ -59,7 +61,7 @@ Los helpers en `git-helpers.zsh` configuran la identidad local del repo Y actual
 - Los scripts `.zsh` usan `#region`/`#endregion` para agrupar secciones lógicas.
 - Cada función pública en los scripts debe tener un comentario explicando su uso.
 - Variables de entorno con defaults se definen como `${VAR:-default}` para permitir override desde `local/env.zsh`.
-- `install.sh` usa `set -e` y hace backup de configs existentes antes de crear symlinks — mantener este comportamiento al agregar nuevas configs.
+- `install.sh` usa `set -e` y mueve configs reales existentes a `*.bak_TIMESTAMP` antes de crear symlinks — mantener este comportamiento al agregar nuevas configs.
 
 ## Agregar una nueva configuración
 

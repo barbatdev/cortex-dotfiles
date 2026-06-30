@@ -78,7 +78,8 @@ dotfiles/
 |---------|-------------|
 | `gs`, `ga`, `gc`, `gp`, `gl` | Git shortcuts |
 | `dev`, `barbat`, `cowork`, `personal`, `tools`, `worktrees` | Navegación rápida en `~/dev` |
-| `work`, `work-apis`, `work-mobile`, `work-webs`, `work-pcsoft` | Navegación rápida de trabajo |
+| `work` | Navegación rápida de trabajo genérica |
+| `innit`, `innit-apis`, `innit-mobile`, `innit-webs`, `innit-pcsoft` | Navegación rápida de trabajo InnIT |
 | `cortex`, `dotfiles` | Navegación rápida al repo `cortex` y sus dotfiles |
 | `cc [path]` | Abrir Claude Code |
 | `oc [path]` | Abrir OpenCode |
@@ -114,7 +115,7 @@ Editá `local/env.zsh` (gitignored) para configurar:
 - Aliases y paths personales
 
 Configs versionadas:
-- `opencode/tui.json` — TUI OpenCode con theme `cortex-green`, `scroll_acceleration` y plugin de statusline
+- `opencode/tui.json` — TUI OpenCode con theme `cortex-green`, `scroll_acceleration` y referencia al plugin de statusline global
 - `opencode/themes/cortex-green.json` — theme custom OpenCode verde/azul
 - `opencode/themes/cortex.json` — theme custom OpenCode naranja/navy basado en Barbat.dev
 - `claude/statusline.sh` — statusline Claude Code con paleta Cortex Green accesible
@@ -124,6 +125,7 @@ Configs versionadas:
 Notas de theming AI CLI:
 - Claude Code carga themes custom desde `~/.claude/themes/`; `install.sh` symlinkea ese directorio. Sus themes cambian acentos/adornos y backgrounds de mensajes cuando aplica, pero no reemplazan el fondo global del terminal.
 - OpenCode carga themes custom desde `~/.config/opencode/themes/`; `tui.json` selecciona `cortex-green` por defecto y deja `cortex` disponible en `/theme`.
+- El plugin OpenCode `plugins/statusline/statusline.tsx` vive en la config global de OpenCode, no en este repo de dotfiles.
 
 ## Herdr remoto
 

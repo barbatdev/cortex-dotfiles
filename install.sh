@@ -127,7 +127,7 @@ backup_if_exists() {
     local src="$1"
     if [[ -e "$src" && ! -L "$src" ]]; then
         local backup="${src}.bak_${TIMESTAMP}"
-        cp "$src" "$backup"
+        mv "$src" "$backup"
         echo "  → Backup: $backup"
     fi
 }
@@ -177,6 +177,11 @@ create_symlink() {
     local src="$1"
     local dst="$2"
     mkdir -p "$(dirname "$dst")"
+    if [[ -e "$dst" && ! -L "$dst" ]]; then
+        local backup="${dst}.bak_${TIMESTAMP}"
+        mv "$dst" "$backup"
+        echo "  → Backup: $backup"
+    fi
     # -n evita que ln dereferencie un symlink-a-directorio existente y cree
     # un link adentro (caso ghostty/shaders → loop shaders/shaders)
     ln -sfn "$src" "$dst"

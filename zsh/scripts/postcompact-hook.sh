@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env bash
 # Hook PostCompact: instruye recargar reglas y contexto después de compactación.
 
 _detect_project() {

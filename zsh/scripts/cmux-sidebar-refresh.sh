@@ -104,7 +104,7 @@ fi
 
 MCPS=""
 BRAINS=""
-if [ -f "$HOME/.config/opencode/opencode.json" ]; then
+if [ -f "$HOME/.config/opencode/opencode.json" ] && command -v jq >/dev/null 2>&1; then
   MCPS=$(jq -r '.mcp // {} | to_entries[] | select(.value.enabled == true) | .key' "$HOME/.config/opencode/opencode.json" 2>/dev/null | tr '\n' ',' | sed 's/,$//')
   BRAINS=$(jq -r '.mcp // {} | to_entries[] | select(.value.enabled == true and (.key == "work-brain" or .key == "life-brain" or .key == "second-brain")) | .key' "$HOME/.config/opencode/opencode.json" 2>/dev/null \
     | sed 's/work-brain/work/; s/life-brain/life/; s/second-brain/notes/' \
