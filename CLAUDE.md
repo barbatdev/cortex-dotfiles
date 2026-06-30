@@ -32,10 +32,11 @@ dotfiles/
 │       ├── git-helpers.zsh      # git-workdev, git-personaldev, git-whoami, clone-*
 │       ├── pcsoft-helpers.zsh   # is-pcsoft-forbidden, is-pcsoft-editable
 │       ├── screenshots.zsh      # ss, last, ssd, imgclip
-│       └── tmux-helpers.zsh     # ta, tn, tk, tl, tdev
+│       ├── ssh-helpers.zsh      # ssh/mosh con contexto visible
+│       └── herdr-helpers.zsh    # hhere, hremote, hname, whereami
 ├── starship/starship.toml    # Prompt Gruvbox Dark → symlink a ~/.config/starship.toml
 ├── ghostty/config            # Terminal → symlink a ~/.config/ghostty/config
-├── tmux/tmux.conf            # Multiplexor → symlink a ~/.tmux.conf
+├── herdr/config.toml         # Multiplexor → symlink a ~/.config/herdr/config.toml
 ├── local/
 │   └── env.zsh.example       # Template para local/env.zsh (gitignored)
 └── install.sh                # Instalador

@@ -1,7 +1,7 @@
 # Formato general
 format = """
 ${custom.ssh_context}\
-${custom.zellij_context}\
+${custom.herdr_context}\
 ${custom.repo}\
 [|](fg:color_orange)\
 $directory\
@@ -100,11 +100,11 @@ command = "printf 'ssh:%s' \"${CORTEX_SSH_TARGET:-$(hostname -s 2>/dev/null || h
 style = "fg:color_fg0 bg:color_red"
 format = '[ $output ]($style)[|](fg:color_red)'
 
-[custom.zellij_context]
-description = "Sesión Zellij visible en el prompt"
-when = "test -n \"$ZELLIJ\""
+[custom.herdr_context]
+description = "Herdr como multiplexor activo"
+when = "test \"${CORTEX_MULTIPLEXER:-}\" = herdr"
 shell = ["bash", "--noprofile", "--norc"]
-command = "printf 'zj:%s' \"${ZELLIJ_SESSION_NAME:-?}\" | cut -c1-28"
+command = "printf 'herdr'"
 style = "fg:color_fg0 bg:color_purple"
 format = '[ $output ]($style)[|](fg:color_purple)'
 

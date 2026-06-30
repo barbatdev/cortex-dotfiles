@@ -8,8 +8,6 @@ Mejoras identificadas en dotfiles externos de referencia.
 
 - [x] **Glyph custom RefactorIA para Nerd Font** — `FiraCode Nerd Font Mono Beard` versionado en `fonts/FiraCodeNerdFontMonoBeard-Reg.ttf`, instalado en `~/Library/Fonts/FiraCodeNerdFontMonoBeard-Reg.ttf`, codepoint `U+F0F00`, script regenerable en `fonts/patch_beard.py`, Ghostty y Starship configurados.
 - [x] **Statusline custom para Claude Code** — script que muestra barra visual de uso del contexto (verde/amarillo/rojo), modelo activo, rama git y porcentaje exacto.
-- [x] **Sesión flotante Alt+G en tmux** — popup flotante sobre cualquier layout.
-- [x] **tmux-resurrect** — guarda y restaura sesiones tmux al reiniciar. `Prefix+Ctrl+S` / `Prefix+Ctrl+R`.
 
 ## Media prioridad
 
@@ -23,7 +21,6 @@ Mejoras identificadas en dotfiles externos de referencia.
 ## Baja prioridad
 
 - [x] **Shaders de cursor en Ghostty** — 4 shaders disponibles en `ghostty/shaders/`. Activo: cursor_smear_gentleman. Para cambiar: editar `custom-shader` en ghostty/config.
-- [x] **`tmux-which-key`** — muestra keybindings al presionar el prefix.
 - [x] **`window-padding-balance = true` en Ghostty** — padding balanceado en splits.
 
 ---
@@ -44,6 +41,6 @@ Mejoras identificadas en dotfiles externos de referencia.
 
 ## Worktrees — integración natural con Claude
 
-- [x] **Worktree helpers zsh + cmux** — `wtadd`/`wtlist`/`wtremove` en `worktree-helpers.zsh`. Mecánica pura: crear directorio hermano, detectar repos PCSoft via `is-pcsoft-forbidden`, abrir workspace cmux automáticamente. Los comandos son la infraestructura, no el punto de entrada al usuario.
+- [x] **Worktree helpers zsh + Herdr** — `wtadd`/`wtlist`/`wtremove` en `worktree-helpers.zsh`. Mecánica pura: crear directorio hermano, detectar repos PCSoft via `is-pcsoft-forbidden`, abrir agente en el flujo Herdr. Los comandos son la infraestructura, no el punto de entrada al usuario.
 
-- [x] **Regla de evaluación proactiva en claude-config** — Claude evalúa si worktrees convienen y los sugiere/implementa sin que el usuario lo pida. Triggers: "hay un bug urgente y estoy en medio de algo", feature branch larga + hotfix simultáneo, "no quiero perder contexto pero necesito cambiar de rama". Si el repo es PCSoft → nunca sugerir. Si es no-PCSoft y hay conflicto de contexto → proponer `wtadd` + nuevo workspace cmux directamente.
+- [x] **Regla de evaluación proactiva en claude-config** — Claude evalúa si worktrees convienen y los sugiere/implementa sin que el usuario lo pida. Triggers: "hay un bug urgente y estoy en medio de algo", feature branch larga + hotfix simultáneo, "no quiero perder contexto pero necesito cambiar de rama". Si el repo es PCSoft → nunca sugerir. Si es no-PCSoft y hay conflicto de contexto → proponer `wtadd` + nuevo workspace Herdr directamente.

@@ -56,7 +56,7 @@ export VISUAL="$EDITOR"
 # Workspace principal de desarrollo
 export WORKSPACE_DIR="${WORKSPACE_DIR:-$HOME/dev}"
 export CLAUDE_CODE_EFFORT_LEVEL=high
-export CORTEX_MULTIPLEXER="${CORTEX_MULTIPLEXER:-zellij}"
+export CORTEX_MULTIPLEXER="${CORTEX_MULTIPLEXER:-herdr}"
 
 # Proyectos de la organización
 export WORK_PROJECTS_DIR="${WORK_PROJECTS_DIR:-$HOME/dev/work}"
@@ -221,7 +221,7 @@ if [[ -d "$_SCRIPTS_DIR" ]]; then
     [[ -f "$_SCRIPTS_DIR/claude-helpers.zsh" ]] && source "$_SCRIPTS_DIR/claude-helpers.zsh"
     [[ -f "$_SCRIPTS_DIR/git-helpers.zsh" ]]    && source "$_SCRIPTS_DIR/git-helpers.zsh"
     [[ -f "$_SCRIPTS_DIR/ssh-helpers.zsh" ]]    && source "$_SCRIPTS_DIR/ssh-helpers.zsh"
-    [[ -f "$_SCRIPTS_DIR/tmux-helpers.zsh" ]]       && source "$_SCRIPTS_DIR/tmux-helpers.zsh"
+    [[ -f "$_SCRIPTS_DIR/herdr-helpers.zsh" ]]  && source "$_SCRIPTS_DIR/herdr-helpers.zsh"
     [[ -f "$_SCRIPTS_DIR/worktree-helpers.zsh" ]] && source "$_SCRIPTS_DIR/worktree-helpers.zsh"
 fi
 #endregion
@@ -237,6 +237,37 @@ _LOCAL_ENV="$_DOTFILES_DIR/local/env.zsh"
 if command -v atuin &>/dev/null; then
     eval "$(atuin init zsh)"
 fi
+#endregion
+
+#region Terminal Title
+_cortex_terminal_title() {
+    [[ -t 1 ]] || return 0
+
+    local host context repo dir title
+    host="${HOST%%.*}"
+    host="${host:-$(hostname -s 2>/dev/null || hostname)}"
+
+    if [[ -n "$SSH_CONNECTION" || -n "$SSH_CLIENT" || -n "$SSH_TTY" ]]; then
+        context="ssh:$host"
+    else
+        context="$host"
+    fi
+
+    repo=$(git rev-parse --show-toplevel 2>/dev/null)
+    if [[ -n "$repo" ]]; then
+        dir="$(basename "$repo")"
+    else
+        dir="${PWD/#$HOME/~}"
+    fi
+
+    title="herdr | $context | $dir"
+
+    print -Pn "\e]0;${title}\a"
+}
+
+autoload -Uz add-zsh-hook
+add-zsh-hook precmd _cortex_terminal_title
+add-zsh-hook chpwd _cortex_terminal_title
 #endregion
 
 #region Starship
@@ -297,39 +328,22 @@ help-profile() {
     echo "  ${C}.., ..., ....     ${R}Subir 1, 2 o 3 niveles"
 
     echo "\n${T}Claude Code${R}"
-    echo "  ${C}cc [path]         ${R}Abrir Claude Code en directorio"
-    echo "  ${C}oc [path]         ${R}Abrir OpenCode en directorio"
-    echo "  ${C}zj [path]         ${R}Entrar/crear sesión Zellij por repo/path"
-    echo "  ${C}zsessions         ${R}Listar sesiones Zellij"
+    echo "  ${C}cc [path]         ${R}Abrir Claude Code en directorio actual/pasado"
+    echo "  ${C}oc [path]         ${R}Abrir OpenCode en directorio actual/pasado"
     echo "  ${C}ccx <ctx> [p]     ${R}Claude Code con contexto inicial"
     echo "  ${C}ccd [sub]         ${R}Navegar al Claude workspace"
     echo "  ${C}ccclip <files>    ${R}Copiar código al clipboard"
 
-    echo "\n${T}Zellij — sesiones${R}"
-    echo "  ${C}zj [path]         ${R}Entrar/crear sesión Zellij por repo/path"
-    echo "  ${C}zsessions         ${R}Listar sesiones Zellij"
-    echo "  ${C}tcc               ${R}Abrir Claude Code en sesión Zellij del repo"
-
     echo "\n${T}SSH / ubicación${R}"
-    echo "  ${C}moshx <h> [path] ${R}Mosh a host; con path entra al Zellij remoto del repo"
-    echo "  ${C}moshx-doctor <h> ${R}Verificar mosh-server, zellij, git y sh en el host"
-    echo "  ${C}sshx <host>       ${R}SSH en sesión Zellij ssh-<host>"
+    echo "  ${C}hhere [path]     ${R}Entrar/crear sesión Herdr por host+repo+branch"
+    echo "  ${C}hremote <h> [s]  ${R}Attach Herdr remoto a host con sesión opcional"
+    echo "  ${C}hname [label]    ${R}Nombrar pane Herdr actual"
+    echo "  ${C}hs, hl           ${R}Status Herdr y workspaces"
+    echo "  ${C}moshx <h> [path] ${R}Mosh/SSH resiliente al host; Herdr es el multiplexor"
+    echo "  ${C}moshx-doctor <h> ${R}Verificar mosh-server, herdr, git y sh en el host"
+    echo "  ${C}sshx <host>       ${R}SSH directo con contexto visible"
     echo "  ${C}sshc <host>       ${R}SSH directo con host visible en prompt"
     echo "  ${C}whereami          ${R}Mostrar host, cwd, repo, sesión y SSH"
-
-    echo "\n${T}Tmux — sesiones${R}"
-    echo "  ${C}tcc               ${R}Abrir Claude Code + lazygit (layout automático)"
-    echo "  ${C}tdev              ${R}Sesión con nombre del directorio actual"
-    echo "  ${C}ta [nombre]       ${R}Attach a sesión (o crearla)"
-    echo "  ${C}tn <nombre>       ${R}Nueva sesión con nombre"
-    echo "  ${C}tl                ${R}Listar sesiones activas"
-    echo "  ${C}tk <nombre>       ${R}Matar sesión"
-
-    echo "\n${T}Zellij — keybindings${R}"
-    echo "  ${C}Ctrl+P            ${R}Modo pane"
-    echo "  ${C}Ctrl+T            ${R}Modo tab"
-    echo "  ${C}Ctrl+S            ${R}Modo resize"
-    echo "  ${C}Ctrl+G            ${R}Bloquear/desbloquear keybindings"
     echo ""
 }
 

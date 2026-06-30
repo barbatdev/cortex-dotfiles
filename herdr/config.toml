@@ -1,0 +1,25 @@
+[ui.toast]
+delivery = "terminal"
+
+[ui]
+sidebar_width = 32
+sidebar_min_width = 24
+sidebar_max_width = 42
+agent_panel_sort = "priority"
+show_agent_labels_on_pane_borders = true
+prompt_new_tab_name = true
+pane_borders = true
+pane_gaps = true
+
+[terminal]
+new_cwd = "follow"
+
+[session]
+resume_agents_on_restore = true
+
+[remote]
+manage_ssh_config = true
+
+[theme]
+name = "gruvbox"
+auto_switch = false

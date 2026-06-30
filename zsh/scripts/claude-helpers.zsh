@@ -1,14 +1,5 @@
 #region Claude Code Helpers
-# Funciones de integración con Claude Code CLI
-
-_cmux_sidebar_refresh() {
-    local target="${1:-$PWD}"
-    local dotfiles_dir="${_DOTFILES_DIR:-$HOME/dev/personal/cortex-dotfiles}"
-    local script="$dotfiles_dir/zsh/scripts/cmux-sidebar-refresh.sh"
-    if [[ -x "$script" ]]; then
-        "$script" "$target" >/dev/null 2>&1 || true
-    fi
-}
+# Funciones de integración con Claude Code/OpenCode. Herdr maneja sesiones, panes y persistencia.
 
 _workspace_name_for_path() {
     local target="${1:-$PWD}"
@@ -16,8 +7,7 @@ _workspace_name_for_path() {
     git_root=$(git -C "$target" rev-parse --show-toplevel 2>/dev/null || true)
 
     if [[ -n "$git_root" ]]; then
-        local repo_name
-        local parent_name
+        local repo_name parent_name
         repo_name=$(basename "$git_root" | tr '.' '-')
         parent_name=$(basename "$(dirname "$git_root")" | tr '.' '-')
         printf '%s-%s' "$parent_name" "$repo_name"
@@ -26,461 +16,43 @@ _workspace_name_for_path() {
     fi
 }
 
-_zellij_context_label() {
-    local host
-    host="${HOST%%.*}"
-    host="${host:-$(hostname -s 2>/dev/null)}"
-
-    if [[ -n "$SSH_CONNECTION" || -n "$SSH_CLIENT" || -n "$SSH_TTY" ]]; then
-        printf 'ssh:%s' "$host"
-    else
-        printf 'local:%s' "$host"
-    fi
-}
-
-_zellij_session_name_for_path() {
-    printf '%s:%s' "$(_zellij_context_label)" "$(_workspace_name_for_path "${1:-$PWD}")"
-}
-
-_zellij_default_layout() {
-    local layout_file="${_DOTFILES_DIR:-$HOME/dev/personal/cortex-dotfiles}/zellij/layouts/innit.kdl"
-    [[ -f "$layout_file" ]] && printf '%s' "$layout_file"
-}
-
-_zellij_preferred() {
-    [[ -n "$ZELLIJ" || "${CORTEX_MULTIPLEXER:-}" == "zellij" ]]
-}
-
-_zellij_available() {
-    command -v zellij >/dev/null 2>&1
-}
-
-_zellij_session_exists() {
-    local session="$1"
-    zellij list-sessions --short --no-formatting 2>/dev/null | grep -Fxq "$session"
-}
-
-_zellij_session_exited() {
-    local session="$1"
-    zellij list-sessions --no-formatting 2>/dev/null | grep -Eq "^${session}[[:space:]].*EXITED"
-}
-
-_zellij_recreate_if_exited() {
-    local session="$1"
-    if _zellij_session_exited "$session"; then
-        zellij delete-session "$session" >/dev/null 2>&1 || true
-    fi
-}
-
-_zellij_kdl_escape() {
-    local value="$1"
-    value="${value//\\/\\\\}"
-    value="${value//\"/\\\"}"
-    printf '%s' "$value"
-}
-
-_zellij_agent_session_name() {
-    local resolved="$1"
-    local agent="$2"
-    local base
-    base="$(_workspace_name_for_path "$resolved")"
-
-    if [[ -n "$agent" ]]; then
-        printf '%s-%s' "$base" "$agent"
-    else
-        printf '%s' "$base"
-    fi
-}
-
-_zellij_layout_for_command() {
-    local resolved="$1"
-    local command_line="$2"
-    local title="${3:-$(basename "$resolved")}"
-    local layout_file
-    layout_file=$(mktemp "${TMPDIR:-/tmp}/cortex-zellij-layout.XXXXXX.kdl")
-
-    local cwd_escaped command_escaped shell_name title_escaped
-    cwd_escaped="$(_zellij_kdl_escape "$resolved")"
-    command_escaped="$(_zellij_kdl_escape "cd ${(q)resolved} && $command_line; exec ${SHELL:-zsh}")"
-    shell_name="$(_zellij_kdl_escape "${SHELL:-zsh}")"
-    title_escaped="$(_zellij_kdl_escape "$title")"
-
-    cat > "$layout_file" <<EOF
-layout {
-    default_tab_template {
-        pane size=1 borderless=true {
-            plugin location="zellij:tab-bar"
-        }
-        children
-        pane size=2 borderless=true {
-            plugin location="zellij:status-bar"
-        }
-    }
-
-    tab name="$title_escaped" focus=true {
-        pane cwd="$cwd_escaped" {
-            command "$shell_name"
-            args "-lc" "$command_escaped"
-        }
-    }
-}
-EOF
-
-    printf '%s' "$layout_file"
-}
-
-_zellij_open_agent() {
-    local resolved="$1"
-    local command_line="$2"
-    local agent="${3:-}"
-    local session
-    if [[ -n "$agent" ]]; then
-        session="$(_zellij_session_name_for_path "$resolved")-$agent"
-    else
-        session="$(_zellij_session_name_for_path "$resolved")"
-    fi
-    _zellij_recreate_if_exited "$session"
-
-    if [[ -n "$ZELLIJ" ]]; then
-        if [[ "${ZELLIJ_SESSION_NAME:-}" == "$session" && "$resolved" == "$PWD" ]]; then
-            eval "$command_line"
-            return
-        fi
-
-        if _zellij_session_exists "$session"; then
-            zellij action switch-session -c "$resolved" "$session"
-            return
-        fi
-
-        local layout_file
-        layout_file="$(_zellij_layout_for_command "$resolved" "$command_line" "$session")"
-        zellij action switch-session -c "$resolved" --layout "$layout_file" "$session"
-        return
-    fi
-
-    if _zellij_session_exists "$session"; then
-        zellij attach "$session"
-        return
-    fi
-
-    local layout_file
-    layout_file="$(_zellij_layout_for_command "$resolved" "$command_line" "$session")"
-    zellij --session "$session" --layout "$layout_file"
-}
-
-zj() {
+_resolve_dir_or_fail() {
     local target="${1:-.}"
     local resolved
-    resolved=$(cd "$target" 2>/dev/null && pwd)
-
-    if [[ -z "$resolved" ]]; then
-        echo "❌ Directorio no encontrado: $target"
+    resolved=$(cd -q "$target" >/dev/null 2>&1 && pwd) || {
+        echo "Directorio no encontrado: $target"
         return 1
-    fi
-
-    if ! command -v zellij >/dev/null 2>&1; then
-        echo "❌ zellij no está instalado"
-        return 1
-    fi
-
-    local session
-    session="$(_zellij_session_name_for_path "$resolved")"
-
-    if [[ -n "$ZELLIJ" ]]; then
-        if _zellij_session_exists "$session"; then
-            zellij action switch-session -c "$resolved" "$session"
-        else
-            local layout_file
-            layout_file="$(_zellij_default_layout)"
-            if [[ -n "$layout_file" ]]; then
-                zellij action switch-session -c "$resolved" --layout "$layout_file" "$session"
-            else
-                zellij action switch-session -c "$resolved" "$session"
-            fi
-        fi
-    else
-        local layout_file
-        layout_file="$(_zellij_default_layout)"
-        if _zellij_session_exists "$session"; then
-            zellij attach "$session"
-        elif [[ -n "$layout_file" ]]; then
-            cd "$resolved" && zellij --session "$session" --layout "$layout_file"
-        else
-            cd "$resolved" && zellij attach --create "$session"
-        fi
-    fi
+    }
+    printf '%s' "$resolved"
 }
 
-zsessions() {
-    zellij list-sessions --no-formatting
-}
-
-zwhere() {
-    if [[ -z "$ZELLIJ" ]]; then
-        echo "No estás dentro de Zellij"
-        return 1
-    fi
-
-    echo "Zellij: ${ZELLIJ_SESSION_NAME:-unknown}"
-    echo "Path:    $PWD"
-    if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
-        echo "Repo:    $(git rev-parse --show-toplevel)"
-        echo "Branch:  $(git branch --show-current 2>/dev/null || printf detached)"
-    fi
-}
-
-zn() {
-    local target="${1:-.}"
-    local agent="${2:-}"
-    local resolved
-    resolved=$(cd "$target" 2>/dev/null && pwd)
-
-    if [[ -z "$resolved" ]]; then
-        echo "❌ Directorio no encontrado: $target"
-        return 1
-    fi
-
-    if [[ -z "$ZELLIJ" ]]; then
-        echo "❌ zn solo funciona dentro de Zellij"
-        return 1
-    fi
-
-    zellij action rename-session "$(_zellij_agent_session_name "$resolved" "$agent")"
-}
-
-_cmux_rename_workspace() {
-    local workspace_id="$1"
-    local workspace_name="$2"
-
-    if [[ -z "$workspace_id" || -z "$workspace_name" ]]; then
-        return 0
-    fi
-
-    if command -v cmux >/dev/null 2>&1; then
-        # env -u descarta el socket heredado del proceso padre (cc/oc/ccb/ocb operan sobre la
-        # intención explícita del usuario — el workspace destino que indicó al lanzar el comando —,
-        # no sobre el focused actual; por eso solo aplicamos env -u sin --no-caller)
-        env -u CMUX_SOCKET_PATH -u CMUX_SOCKET cmux rename-workspace --workspace "$workspace_id" "$workspace_name" >/dev/null 2>&1 || true
-    fi
-}
-
-# Abrir Claude Code en Zellij o en el directorio actual.
+# Abrir Claude Code en el directorio actual/pasado.
 cc() {
-    local target="${1:-.}"
     local resolved
-    resolved=$(cd "$target" 2>/dev/null && pwd)
-
-    if [[ -z "$resolved" ]]; then
-        echo "❌ Directorio no encontrado: $target"
-        return 1
-    fi
-
-    if _zellij_preferred && _zellij_available; then
-        _zellij_open_agent "$resolved" "claude --enable-auto-mode --dangerously-skip-permissions" "claude"
-    elif _zellij_preferred; then
-        echo "⚠️  zellij no está instalado; ejecutando Claude Code directo"
-        cd "$resolved" && claude --enable-auto-mode --dangerously-skip-permissions
-    elif [[ -n "$CMUX_WORKSPACE_ID" ]]; then
-        # Estamos dentro de cmux
-        local workspace_name
-        workspace_name="$(_workspace_name_for_path "$resolved")"
-
-        # Si el directorio objetivo es el actual, lanzar claude aquí mismo
-        if [[ "$resolved" == "$PWD" ]]; then
-            _cmux_rename_workspace "$CMUX_WORKSPACE_ID" "$workspace_name"
-            _cmux_sidebar_refresh "$resolved"
-            claude --enable-auto-mode --dangerously-skip-permissions
-            return
-        fi
-
-        # Directorio diferente: verificar si ya existe un workspace para no duplicar
-        # env -u descarta el socket heredado: cc opera sobre el dir/workspace destino que el
-        # usuario indicó explícitamente (no sobre el focused), por eso solo env -u, sin --no-caller
-        local existing_id
-        existing_id=$(env -u CMUX_SOCKET_PATH -u CMUX_SOCKET cmux list-workspaces 2>/dev/null | jq -r --arg name "$workspace_name" '.[] | select(.title == $name) | .id' 2>/dev/null | head -1)
-
-        if [[ -n "$existing_id" ]]; then
-            # El workspace ya existe: enfocarlo sin crear uno nuevo
-            _cmux_rename_workspace "$existing_id" "$workspace_name"
-            env -u CMUX_SOCKET_PATH -u CMUX_SOCKET cmux select-workspace --workspace "$existing_id"
-            _cmux_sidebar_refresh "$resolved"
-        else
-            # No existe: crear workspace nuevo con claude corriendo
-            if ! env -u CMUX_SOCKET_PATH -u CMUX_SOCKET cmux new-workspace --name "$workspace_name" --cwd "$resolved" --command "claude --enable-auto-mode --dangerously-skip-permissions"; then
-                echo "⚠️  cmux new-workspace falló, ejecutando claude en el directorio actual"
-                _cmux_sidebar_refresh "$resolved"
-                cd "$resolved" && claude --enable-auto-mode --dangerously-skip-permissions
-            fi
-        fi
-    elif [[ -n "$TMUX" ]]; then
-        _cmux_sidebar_refresh "$resolved"
-        cd "$resolved" && claude --enable-auto-mode --dangerously-skip-permissions
-    else
-        cd "$resolved" && claude --enable-auto-mode --dangerously-skip-permissions
-    fi
+    resolved=$(_resolve_dir_or_fail "${1:-.}") || return 1
+    cd "$resolved" && claude --enable-auto-mode --dangerously-skip-permissions
 }
 
-# Abrir OpenCode en Zellij/cmux o en el directorio actual.
-# Mantiene el mismo patrón de uso que cc() pero usando opencode
+# Abrir OpenCode en el directorio actual/pasado.
 oc() {
-    local target="${1:-.}"
     local resolved
-    resolved=$(cd "$target" 2>/dev/null && pwd)
-
-    if [[ -z "$resolved" ]]; then
-        echo "❌ Directorio no encontrado: $target"
-        return 1
-    fi
-
-    local oc_cmd="opencode ${OPENCODE_DEFAULT_FLAGS:-}"
-
-    if _zellij_preferred && _zellij_available; then
-        _zellij_open_agent "$resolved" "$oc_cmd" "opencode"
-    elif _zellij_preferred; then
-        echo "⚠️  zellij no está instalado; ejecutando OpenCode directo"
-        cd "$resolved" && eval "$oc_cmd"
-    elif [[ -n "$CMUX_WORKSPACE_ID" ]]; then
-        local workspace_name
-        workspace_name="$(_workspace_name_for_path "$resolved")"
-
-        if [[ "$resolved" == "$PWD" ]]; then
-            _cmux_rename_workspace "$CMUX_WORKSPACE_ID" "$workspace_name"
-            _cmux_sidebar_refresh "$resolved"
-            eval "$oc_cmd"
-            return
-        fi
-
-        # env -u descarta el socket heredado: oc opera sobre el dir/workspace destino que el
-        # usuario indicó explícitamente (no sobre el focused), por eso solo env -u, sin --no-caller
-        local existing_id
-        existing_id=$(env -u CMUX_SOCKET_PATH -u CMUX_SOCKET cmux list-workspaces 2>/dev/null | jq -r --arg name "$workspace_name" '.[] | select(.title == $name) | .id' 2>/dev/null | head -1)
-
-        if [[ -n "$existing_id" ]]; then
-            _cmux_rename_workspace "$existing_id" "$workspace_name"
-            env -u CMUX_SOCKET_PATH -u CMUX_SOCKET cmux select-workspace --workspace "$existing_id"
-            _cmux_sidebar_refresh "$resolved"
-        else
-            if ! env -u CMUX_SOCKET_PATH -u CMUX_SOCKET cmux new-workspace --name "$workspace_name" --cwd "$resolved" --command "$oc_cmd"; then
-                echo "⚠️  cmux new-workspace falló, ejecutando OpenCode en el directorio actual"
-                _cmux_sidebar_refresh "$resolved"
-                cd "$resolved" && eval "$oc_cmd"
-            fi
-        fi
-    elif [[ -n "$TMUX" ]]; then
-        _cmux_sidebar_refresh "$resolved"
-        cd "$resolved" && eval "$oc_cmd"
-    else
-        cd "$resolved" && eval "$oc_cmd"
-    fi
+    resolved=$(_resolve_dir_or_fail "${1:-.}") || return 1
+    cd "$resolved" && opencode ${OPENCODE_DEFAULT_FLAGS:-}
 }
 
-# Abrir Claude Code con bypass de permisos explícito
+# Abrir Claude Code con bypass de permisos explícito.
 ccb() {
-    local target="${1:-.}"
     local resolved
-    resolved=$(cd "$target" 2>/dev/null && pwd)
-
-    if [[ -z "$resolved" ]]; then
-        echo "❌ Directorio no encontrado: $target"
-        return 1
-    fi
-
-    local cc_cmd="claude --dangerously-skip-permissions"
-
-    if _zellij_preferred && _zellij_available; then
-        _zellij_open_agent "$resolved" "$cc_cmd" "claude"
-    elif _zellij_preferred; then
-        echo "⚠️  zellij no está instalado; ejecutando Claude Code directo"
-        cd "$resolved" && eval "$cc_cmd"
-    elif [[ -n "$CMUX_WORKSPACE_ID" ]]; then
-        local workspace_name
-        workspace_name="$(_workspace_name_for_path "$resolved")"
-
-        if [[ "$resolved" == "$PWD" ]]; then
-            _cmux_rename_workspace "$CMUX_WORKSPACE_ID" "$workspace_name"
-            _cmux_sidebar_refresh "$resolved"
-            eval "$cc_cmd"
-            return
-        fi
-
-        # env -u descarta el socket heredado: ccb opera sobre el dir/workspace destino que el
-        # usuario indicó explícitamente (no sobre el focused), por eso solo env -u, sin --no-caller
-        local existing_id
-        existing_id=$(env -u CMUX_SOCKET_PATH -u CMUX_SOCKET cmux list-workspaces 2>/dev/null | jq -r --arg name "$workspace_name" '.[] | select(.title == $name) | .id' 2>/dev/null | head -1)
-
-        if [[ -n "$existing_id" ]]; then
-            _cmux_rename_workspace "$existing_id" "$workspace_name"
-            env -u CMUX_SOCKET_PATH -u CMUX_SOCKET cmux select-workspace --workspace "$existing_id"
-            _cmux_sidebar_refresh "$resolved"
-        else
-            if ! env -u CMUX_SOCKET_PATH -u CMUX_SOCKET cmux new-workspace --name "$workspace_name" --cwd "$resolved" --command "$cc_cmd"; then
-                echo "⚠️  cmux new-workspace falló, ejecutando Claude Code en el directorio actual"
-                _cmux_sidebar_refresh "$resolved"
-                cd "$resolved" && eval "$cc_cmd"
-            fi
-        fi
-    elif [[ -n "$TMUX" ]]; then
-        _cmux_sidebar_refresh "$resolved"
-        cd "$resolved" && eval "$cc_cmd"
-    else
-        cd "$resolved" && eval "$cc_cmd"
-    fi
+    resolved=$(_resolve_dir_or_fail "${1:-.}") || return 1
+    cd "$resolved" && claude --dangerously-skip-permissions
 }
 
-# Abrir OpenCode con bypass de permisos explícito
+# Abrir OpenCode con flags por defecto.
 ocb() {
-    local target="${1:-.}"
-    local resolved
-    resolved=$(cd "$target" 2>/dev/null && pwd)
-
-    if [[ -z "$resolved" ]]; then
-        echo "❌ Directorio no encontrado: $target"
-        return 1
-    fi
-
-    local oc_cmd="opencode ${OPENCODE_DEFAULT_FLAGS:-}"
-
-    if _zellij_preferred && _zellij_available; then
-        _zellij_open_agent "$resolved" "$oc_cmd" "opencode"
-    elif _zellij_preferred; then
-        echo "⚠️  zellij no está instalado; ejecutando OpenCode directo"
-        cd "$resolved" && eval "$oc_cmd"
-    elif [[ -n "$CMUX_WORKSPACE_ID" ]]; then
-        local workspace_name
-        workspace_name="$(_workspace_name_for_path "$resolved")"
-
-        if [[ "$resolved" == "$PWD" ]]; then
-            _cmux_rename_workspace "$CMUX_WORKSPACE_ID" "$workspace_name"
-            _cmux_sidebar_refresh "$resolved"
-            eval "$oc_cmd"
-            return
-        fi
-
-        # env -u descarta el socket heredado: ocb opera sobre el dir/workspace destino que el
-        # usuario indicó explícitamente (no sobre el focused), por eso solo env -u, sin --no-caller
-        local existing_id
-        existing_id=$(env -u CMUX_SOCKET_PATH -u CMUX_SOCKET cmux list-workspaces 2>/dev/null | jq -r --arg name "$workspace_name" '.[] | select(.title == $name) | .id' 2>/dev/null | head -1)
-
-        if [[ -n "$existing_id" ]]; then
-            _cmux_rename_workspace "$existing_id" "$workspace_name"
-            env -u CMUX_SOCKET_PATH -u CMUX_SOCKET cmux select-workspace --workspace "$existing_id"
-            _cmux_sidebar_refresh "$resolved"
-        else
-            if ! env -u CMUX_SOCKET_PATH -u CMUX_SOCKET cmux new-workspace --name "$workspace_name" --cwd "$resolved" --command "$oc_cmd"; then
-                echo "⚠️  cmux new-workspace falló, ejecutando OpenCode en el directorio actual"
-                _cmux_sidebar_refresh "$resolved"
-                cd "$resolved" && eval "$oc_cmd"
-            fi
-        fi
-    elif [[ -n "$TMUX" ]]; then
-        _cmux_sidebar_refresh "$resolved"
-        cd "$resolved" && eval "$oc_cmd"
-    else
-        cd "$resolved" && eval "$oc_cmd"
-    fi
+    oc "${1:-.}"
 }
 
-# Abrir Claude Code con contexto inicial en tmux
+# Abrir Claude Code con contexto inicial.
 ccx() {
     local context="$1"
     local target="${2:-.}"
@@ -491,55 +63,16 @@ ccx() {
     fi
 
     local resolved
-    resolved=$(cd "$target" 2>/dev/null && pwd)
-
-    if [[ -z "$resolved" ]]; then
-        echo "❌ Directorio no encontrado: $target"
-        return 1
-    fi
-
-    if _zellij_preferred && _zellij_available; then
-        local ctxfile="$HOME/.claude/ccx-ctx-$$.txt"
-        echo "$context" > "$ctxfile"
-        chmod 600 "$ctxfile"
-        _zellij_open_agent "$resolved" "sh -c 'claude < $ctxfile; rm -f $ctxfile'"
-    elif _zellij_preferred; then
-        echo "⚠️  zellij no está instalado; ejecutando Claude Code directo"
-        cd "$resolved" && echo "$context" | claude
-    elif [[ -n "$CMUX_WORKSPACE_ID" ]]; then
-        # Estamos dentro de cmux: escribir contexto a tempfile y abrir workspace propio
-        local workspace_name
-        workspace_name="$(_workspace_name_for_path "$resolved")"
-
-        # Archivo de contexto en ~/.claude/ para garantizar accesibilidad desde el workspace nuevo
-        local ctxfile="$HOME/.claude/ccx-ctx-$$.txt"
-        echo "$context" > "$ctxfile"
-        chmod 600 "$ctxfile"
-
-        # Crear workspace nuevo — el cleanup va dentro del comando para que
-        # el archivo siga existiendo cuando cmux lo lea en el workspace nuevo
-        # env -u descarta el socket heredado: ccx opera sobre el workspace destino explícito
-        if env -u CMUX_SOCKET_PATH -u CMUX_SOCKET cmux new-workspace --name "$workspace_name" --cwd "$resolved" --command "sh -c 'claude < $ctxfile; rm -f $ctxfile'"; then
-            : # limpieza la hace el comando en el workspace nuevo
-        else
-            # cmux falló: limpiar archivo y ejecutar claude directo con el contexto
-            rm -f "$ctxfile"
-            echo "⚠️  cmux new-workspace falló, ejecutando claude en el directorio actual"
-            cd "$resolved" && echo "$context" | claude
-        fi
-    elif [[ -n "$TMUX" ]]; then
-        cd "$resolved" && echo "$context" | claude
-    else
-        cd "$resolved" && echo "$context" | claude
-    fi
+    resolved=$(_resolve_dir_or_fail "$target") || return 1
+    cd "$resolved" && echo "$context" | claude
 }
 
-# Navegar al Claude workspace
+# Navegar al workspace principal.
 ccd() {
     local subpath="${1:-}"
     local workspace="${WORKSPACE_DIR:-$HOME/dev}"
-
     local target
+
     if [[ -n "$subpath" ]]; then
         target="$workspace/$subpath"
     else
@@ -548,14 +81,14 @@ ccd() {
 
     if [[ -d "$target" ]]; then
         cd "$target"
-        echo "📂 Navegando a: $target"
+        echo "Navegando a: $target"
     else
-        echo "❌ Directorio no encontrado: $target"
+        echo "Directorio no encontrado: $target"
         return 1
     fi
 }
 
-# Copiar contexto de código al clipboard para Claude
+# Copiar contexto de código al clipboard para Claude.
 ccclip() {
     if [[ $# -eq 0 ]]; then
         echo "Uso: ccclip <archivo1> [archivo2 ...] [-n|--line-numbers]"
@@ -573,32 +106,44 @@ ccclip() {
     done
 
     local context=""
+    local file ext n line
 
     for file in "${files[@]}"; do
         if [[ ! -f "$file" ]]; then
-            echo "⚠️  Archivo no encontrado: $file"
+            echo "Archivo no encontrado: $file"
             continue
         fi
 
-        local ext="${file##*.}"
+        ext="${file##*.}"
         context+="\`\`\`$ext\n"
         context+="// File: $file\n"
 
         if $with_numbers; then
-            local n=1
+            n=1
             while IFS= read -r line; do
                 context+=$(printf "%4d: %s\n" "$n" "$line")
                 (( n++ ))
             done < "$file"
         else
-            context+="$(cat "$file")\n"
+            context+="$(<"$file")\n"
         fi
 
         context+="\`\`\`\n\n"
     done
 
-    echo -e "$context" | pbcopy
-    echo "✓ Contexto copiado al clipboard (${#files[@]} archivo$([ ${#files[@]} -ne 1 ] && echo 's'))"
+    if command -v pbcopy >/dev/null 2>&1; then
+        print -r -- "$context" | pbcopy
+    elif command -v wl-copy >/dev/null 2>&1; then
+        print -r -- "$context" | wl-copy
+    elif command -v xclip >/dev/null 2>&1; then
+        print -r -- "$context" | xclip -selection clipboard
+    else
+        print -r -- "$context"
+        echo "Clipboard no disponible; imprimí el contexto en stdout"
+        return 1
+    fi
+
+    echo "Contexto copiado al clipboard (${#files[@]} archivo$([ ${#files[@]} -ne 1 ] && echo 's'))"
 }
 
 #endregion

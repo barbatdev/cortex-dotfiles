@@ -7,14 +7,14 @@ Configuración local extraida de `cortex`: terminal, shell, prompt, helpers de A
 - **Terminal**: [Ghostty](https://ghostty.org/)
 - **Shell**: Zsh nativo de macOS
 - **Prompt**: [Starship](https://starship.rs/) — tema Gruvbox Dark
-- **Multiplexor**: [Zellij](https://zellij.dev/) + helpers de sesión; tmux queda como compat/legacy
+- **Multiplexor**: [Herdr](https://herdr.dev/) para sesiones locales/remotas persistentes
 - **Barra macOS**: [SketchyBar](https://github.com/FelixKratz/SketchyBar) con tema Gruvbox
 - **Window manager macOS**: [yabai](https://github.com/koekeishiya/yabai) + [skhd](https://github.com/koekeishiya/skhd) opcional y gradual
 - **Keyboard remaps macOS**: [Karabiner-Elements](https://karabiner-elements.pqrs.org/) con profile `cortex`
 - **Editor terminal**: [micro](https://micro-editor.github.io/)
 - **Editor principal**: Neovim basado en LazyVim/Gentleman.Dots con overlay RefactorIA
 - **Ls**: [eza](https://github.com/eza-community/eza)
-- **AI CLI UX**: Claude Code statusline, OpenCode helpers y sesiones Zellij por repo
+- **AI CLI UX**: Claude Code statusline, OpenCode helpers y sesiones Herdr por repo
 - **Supply-chain guardrails**: defaults globales para `uv`, `npm`, `pnpm` y `bun`
 - **Fuente**: FiraCode Nerd Font + variante custom RefactorIA
 
@@ -29,7 +29,7 @@ bash install.sh
 ```
 
 El instalador macOS:
-1. Instala dependencias via Homebrew (starship, tmux, zellij, mosh, lazygit, micro, eza, sketchybar, yabai, skhd, Karabiner-Elements, FiraCode Nerd Font)
+1. Instala dependencias via Homebrew (starship, herdr, mosh, lazygit, micro, eza, sketchybar, yabai, skhd, Karabiner-Elements, FiraCode Nerd Font)
 2. Hace backup de configs existentes con timestamp
 3. Crea symlinks de los dotfiles y guardrails globales (`.npmrc`, `pnpm/rc`, `.bunfig.toml`, `uv.toml`)
 4. Intenta seleccionar el profile `cortex` de Karabiner si `karabiner_cli` está disponible
@@ -43,7 +43,7 @@ dotfiles/
 ├── claude/                   # Claude Code statusline
 ├── ghostty/                  # Config Ghostty y shaders
 ├── fonts/                    # Fuente RefactorIA y script de regeneración
-├── zellij/                   # Theme/layout Zellij InnIT
+├── herdr/                    # Config Herdr
 ├── npm/                      # Global npm defaults (~/.npmrc)
 ├── pnpm/                     # Global pnpm defaults (~/Library/Preferences/pnpm/rc)
 ├── bun/                      # Global bun defaults (~/.bunfig.toml)
@@ -53,12 +53,11 @@ dotfiles/
 │   └── scripts/
 │       ├── claude-helpers.zsh   # Integración Claude Code
 │       ├── git-helpers.zsh      # Identidades Git y clone helpers
-│       ├── ssh-helpers.zsh      # SSH/Mosh con contexto visible y sesiones Zellij remotas por repo
-│       ├── tmux-helpers.zsh     # Compat aliases t* sobre Zellij
+│       ├── ssh-helpers.zsh      # SSH/Mosh con contexto visible
+│       ├── herdr-helpers.zsh    # Helpers Herdr para sesiones y orientación
 │       ├── worktree-helpers.zsh # Helpers git worktree
 │       ├── screenshots.zsh      # Manejo de screenshots macOS
 │       └── pcsoft-helpers.zsh   # Protección archivos PCSoft
-├── tmux/                     # Config tmux legacy, no enlazada por default
 ├── lazygit/                  # Config lazygit
 ├── karabiner/                # Config Karabiner-Elements (~/.config/karabiner/karabiner.json)
 ├── micro/                    # Settings y themes de micro
@@ -83,15 +82,15 @@ dotfiles/
 | `cortex`, `dotfiles` | Navegación rápida al repo `cortex` y sus dotfiles |
 | `cc [path]` | Abrir Claude Code |
 | `oc [path]` | Abrir OpenCode |
-| `zj [path]` | Entrar/crear sesión Zellij por repo/path |
-| `zsessions` | Listar sesiones Zellij |
-| `moshx <host> [remote-path]` | Mosh al host; con path entra al Zellij remoto del repo |
-| `moshx-doctor <host>` | Verifica `mosh-server`, `zellij`, `git` y `sh` en el host remoto |
-| `sshx <host>` | SSH en sesión Zellij `ssh-<host>` |
+| `hhere [path]` | Entrar/crear sesión Herdr por host+repo+branch |
+| `hremote <host> [session]` | Attach remoto con `herdr --remote` |
+| `hname [label]` | Nombrar el pane Herdr actual |
+| `moshx <host> [remote-path]` | Mosh al host; con path entra a ese directorio remoto |
+| `moshx-doctor <host>` | Verifica `mosh-server`, `herdr`, `git` y `sh` en el host remoto |
+| `sshx <host>` | SSH directo con contexto visible |
 | `sshc <host>` | SSH directo con host visible en prompt |
 | `whereami` | Mostrar host, cwd, repo, sesión y SSH |
 | `ccclip <files>` | Copiar código al clipboard |
-| `tcc`, `tdev`, `ta`, `tn`, `tl`, `tk` | Helpers Zellij compatibles con la memoria muscular tmux |
 | `wtadd`, `wtlist`, `wtremove` | Helpers de git worktrees |
 | `ss [n]` | Listar últimos screenshots |
 | `last [-c\|-o]` | Último screenshot |
@@ -107,55 +106,33 @@ Editá `local/env.zsh` (gitignored) para configurar:
 - `SCREENSHOTS_DIR` — directorio de screenshots
 - `WORKSPACE_DIR` — directorio raíz de tus proyectos
 - `OPENCODE_DEFAULT_FLAGS` — flags por defecto para `oc`
-- `CORTEX_MULTIPLEXER=zellij` — usa Zellij para `cc`/`oc`; es el default del profile
+- `CORTEX_MULTIPLEXER=herdr` — marca Herdr como multiplexor operativo para prompt/helpers
 - `INNIT_DIR` y overrides `INNIT_*_DIR` — navegación rápida de subdirectorios
 - Aliases y paths personales
 
-## Zellij
+## Herdr remoto
 
-El modelo recomendado es una sesión Zellij por repo:
-
-```bash
-zj ~/dev/personal/infra
-zj ~/dev/personal/cortex
-```
-
-`cc [path]`, `ccb [path]`, `oc [path]` y `ocb [path]` usan Zellij por default:
+Para SSH/remoto, el modelo recomendado es Herdr. Usá un workspace por repo, tabs por objetivo y panes por agente/proceso:
 
 ```bash
-export CORTEX_MULTIPLEXER="zellij"
+hremote agent-dev-01 main
+hhere ~/dev/personal/cortex
 ```
 
-Comportamiento:
-
-- Si estás en la sesión del repo actual, ejecuta el agente en el pane actual.
-- Si pedís otro path y la sesión ya existe, cambia a esa sesión.
-- Si pedís otro path y la sesión no existe, la crea con el agente arrancado en ese directorio.
-- Las sesiones se nombran con contexto visible: `local:<host>:<repo>` o `ssh:<host>:<repo>`.
-- El layout `innit` muestra tab bar arriba y status bar abajo usando el theme `innit`.
-- Si necesitás evitar Zellij puntualmente, seteá `CORTEX_MULTIPLEXER` vacío en esa shell y ejecutá el agente directo.
-
-La config versionada de Zellij prioriza orientación:
-
-- Barra superior con tabs y barra inferior de estado siempre visibles.
-- Pane frames activados para ver límites y foco.
-- Prompt Starship marca `zj:<session>` cuando estás dentro de Zellij.
-- `whereami` y `zwhere` muestran ubicación completa sin depender de la UI.
-
-Para workstation remota persistente, la unidad principal es una sesión Zellij por repo en el host remoto. Mosh es sólo el transporte resiliente:
-
-```bash
-moshx agent-dev-01 ~/dev/personal/cortex
-moshx agent-dev-01 ~/dev/personal/infra
-```
-
-Cada comando entra por Mosh y hace attach/create de una sesión Zellij remota nombrada por el repo. Para hosts sin Mosh o troubleshooting, `sshx agent-dev-01` queda como fallback SSH clásico.
-
-Si falla, diagnosticá primero:
+Si necesitás diagnosticar dependencias:
 
 ```bash
 moshx-doctor agent-dev-01
 ```
+
+Comportamiento:
+
+- `hhere [path]` nombra la sesión por host + repo + branch.
+- `hremote <host> [session]` usa el bridge remoto de Herdr.
+- `hname [label]` evita panes anónimos en el sidepanel.
+- `cc [path]`, `ccb [path]`, `oc [path]` y `ocb [path]` ejecutan el agente en el pane actual; Herdr provee persistencia.
+- Prompt Starship marca `herdr` cuando `CORTEX_MULTIPLEXER=herdr`.
+- `whereami` muestra ubicación completa sin depender de la UI.
 
 ## SketchyBar
 
@@ -166,9 +143,9 @@ Layout activo:
 | Pantalla | Uso | Layout |
 |------|-----|--------|
 | Mac Retina (`display=1`) | apps generales: Discord, WhatsApp, Mail, Postman, Zen Browser | app activa + network, volumen, calendario, hora, batería |
-| ViewSonic vertical (`display=2`) | auxiliar/random, Ghostty/Zellij y Claude de formato vertical | brand + panel/spaces + app activa + git + issue/PR + SDD + brains + timer; derecha: RAM + CPU + hora |
-| LG Ultrawide (`display=3`) | mixto: Ghostty/Zellij, Claude, ChatGPT, Obsidian | brand + panel/spaces + app activa + git + issue/PR + SDD + brains + timer; derecha: RAM + CPU + hora |
-| 4K derecho (`display=4`) | Ghostty/Zellij exclusivo | brand + panel/spaces + app activa + git + issue/PR + SDD + brains + timer; derecha: RAM + CPU + hora |
+| ViewSonic vertical (`display=2`) | auxiliar/random, Ghostty/Herdr y Claude de formato vertical | brand + panel/spaces + app activa + git + issue/PR + SDD + brains + timer; derecha: RAM + CPU + hora |
+| LG Ultrawide (`display=3`) | mixto: Ghostty/Herdr, Claude, ChatGPT, Obsidian | brand + panel/spaces + app activa + git + issue/PR + SDD + brains + timer; derecha: RAM + CPU + hora |
+| 4K derecho (`display=4`) | Ghostty/Herdr exclusivo | brand + panel/spaces + app activa + git + issue/PR + SDD + brains + timer; derecha: RAM + CPU + hora |
 
 El centro queda libre para evitar el notch y reducir ruido visual.
 
