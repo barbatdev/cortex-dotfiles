@@ -56,6 +56,7 @@ export VISUAL="$EDITOR"
 # Workspace principal de desarrollo
 export WORKSPACE_DIR="${WORKSPACE_DIR:-$HOME/dev}"
 export CLAUDE_CODE_EFFORT_LEVEL=high
+export CORTEX_MULTIPLEXER="${CORTEX_MULTIPLEXER:-zellij}"
 
 # Proyectos de la organización
 export WORK_PROJECTS_DIR="${WORK_PROJECTS_DIR:-$HOME/dev/work}"
@@ -245,7 +246,8 @@ fi
 
 #region Welcome
 _welcome() {
-    local ms=$(( int(($EPOCHREALTIME - _PROFILE_START) * 1000) ))
+    local ms
+    ms=$(awk -v start="${_PROFILE_START:-0}" -v now="${EPOCHREALTIME:-0}" 'BEGIN { printf "%d", (now - start) * 1000 }' 2>/dev/null || printf "0")
 
     echo ""
     echo "  ╔══════════════════════════════════════╗"
@@ -300,23 +302,21 @@ help-profile() {
     echo "  ${C}ccd [sub]         ${R}Navegar al Claude workspace"
     echo "  ${C}ccclip <files>    ${R}Copiar código al clipboard"
 
-    echo "\n${T}Tmux — sesiones${R}"
-    echo "  ${C}tcc               ${R}Abrir Claude Code + lazygit (layout automático)"
+    echo "\n${T}Zellij — sesiones${R}"
+    echo "  ${C}zj [path]         ${R}Entrar/crear sesión Zellij por repo/path"
+    echo "  ${C}zsessions         ${R}Listar sesiones Zellij"
+    echo "  ${C}tcc               ${R}Abrir Claude Code en sesión Zellij del repo"
     echo "  ${C}tdev              ${R}Sesión con nombre del directorio actual"
     echo "  ${C}ta [nombre]       ${R}Attach a sesión (o crearla)"
     echo "  ${C}tn <nombre>       ${R}Nueva sesión con nombre"
     echo "  ${C}tl                ${R}Listar sesiones activas"
     echo "  ${C}tk <nombre>       ${R}Matar sesión"
 
-    echo "\n${T}Tmux — keybindings${R}"
-    echo "  ${C}Ctrl+A R          ${R}Recargar config"
-    echo "  ${C}Ctrl+A Space      ${R}Ver todos los keybindings (which-key)"
-    echo "  ${C}Ctrl+A |          ${R}Split vertical"
-    echo "  ${C}Ctrl+A -          ${R}Split horizontal"
-    echo "  ${C}Ctrl+A hjkl       ${R}Navegar entre paneles"
-    echo "  ${C}Ctrl+A Ctrl+S     ${R}Guardar sesiones (resurrect)"
-    echo "  ${C}Ctrl+A Ctrl+R     ${R}Restaurar sesiones (resurrect)"
-    echo "  ${C}Option+G          ${R}Popup flotante (scratch)"
+    echo "\n${T}Zellij — keybindings${R}"
+    echo "  ${C}Ctrl+P            ${R}Modo pane"
+    echo "  ${C}Ctrl+T            ${R}Modo tab"
+    echo "  ${C}Ctrl+S            ${R}Modo resize"
+    echo "  ${C}Ctrl+G            ${R}Bloquear/desbloquear keybindings"
     echo ""
 }
 

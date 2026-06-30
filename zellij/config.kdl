@@ -1,0 +1,35 @@
+theme "innit"
+
+themes {
+    innit {
+        fg 248 250 252
+        bg 11 17 24
+        black 0 0 0
+        red 239 68 68
+        green 63 185 80
+        yellow 245 158 11
+        blue 56 189 248
+        magenta 160 32 240
+        cyan 58 150 221
+        white 248 250 252
+        orange 245 158 11
+
+        ribbon_selected {
+            base 248 250 252
+            background 63 185 80
+            emphasis_0 11 17 24
+            emphasis_1 56 189 248
+            emphasis_2 245 158 11
+            emphasis_3 239 68 68
+        }
+
+        ribbon_unselected {
+            base 148 163 184
+            background 16 24 32
+            emphasis_0 63 185 80
+            emphasis_1 56 189 248
+            emphasis_2 245 158 11
+            emphasis_3 239 68 68
+        }
+    }
+}

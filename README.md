@@ -4,17 +4,17 @@ Configuración local extraida de `cortex`: terminal, shell, prompt, helpers de A
 
 ## Stack
 
-- **Terminal**: [Ghostty](https://ghostty.org/) y Alacritty
+- **Terminal**: [Ghostty](https://ghostty.org/)
 - **Shell**: Zsh nativo de macOS
 - **Prompt**: [Starship](https://starship.rs/) — tema Gruvbox Dark
-- **Multiplexor**: tmux + helpers de sesión
+- **Multiplexor**: [Zellij](https://zellij.dev/) + helpers de sesión
 - **Barra macOS**: [SketchyBar](https://github.com/FelixKratz/SketchyBar) con tema Gruvbox
 - **Window manager macOS**: [yabai](https://github.com/koekeishiya/yabai) + [skhd](https://github.com/koekeishiya/skhd) opcional y gradual
 - **Keyboard remaps macOS**: [Karabiner-Elements](https://karabiner-elements.pqrs.org/) con profile `cortex`
 - **Editor terminal**: [micro](https://micro-editor.github.io/)
 - **Editor principal**: Neovim basado en LazyVim/Gentleman.Dots con overlay RefactorIA
 - **Ls**: [eza](https://github.com/eza-community/eza)
-- **AI CLI UX**: Claude Code statusline, OpenCode helpers y cmux hooks opcionales
+- **AI CLI UX**: Claude Code statusline, OpenCode helpers y sesiones Zellij por repo
 - **Supply-chain guardrails**: defaults globales para `uv`, `npm`, `pnpm` y `bun`
 - **Fuente**: FiraCode Nerd Font + variante custom RefactorIA
 
@@ -29,7 +29,7 @@ bash install.sh
 ```
 
 El instalador macOS:
-1. Instala dependencias via Homebrew (starship, tmux, lazygit, micro, eza, sketchybar, yabai, skhd, Karabiner-Elements, FiraCode Nerd Font)
+1. Instala dependencias via Homebrew (starship, zellij, lazygit, micro, eza, sketchybar, yabai, skhd, Karabiner-Elements, FiraCode Nerd Font)
 2. Hace backup de configs existentes con timestamp
 3. Crea symlinks de los dotfiles y guardrails globales (`.npmrc`, `pnpm/rc`, `.bunfig.toml`, `uv.toml`)
 4. Intenta seleccionar el profile `cortex` de Karabiner si `karabiner_cli` está disponible
@@ -41,8 +41,9 @@ El instalador macOS:
 ```
 dotfiles/
 ├── claude/                   # Claude Code statusline
-├── ghostty/                  # Config Ghostty, cmux Ghostty config, muxy legado y shaders
+├── ghostty/                  # Config Ghostty y shaders
 ├── fonts/                    # Fuente RefactorIA y script de regeneración
+├── zellij/                   # Theme/layout Zellij InnIT
 ├── npm/                      # Global npm defaults (~/.npmrc)
 ├── pnpm/                     # Global pnpm defaults (~/Library/Preferences/pnpm/rc)
 ├── bun/                      # Global bun defaults (~/.bunfig.toml)
@@ -52,11 +53,11 @@ dotfiles/
 │   └── scripts/
 │       ├── claude-helpers.zsh   # Integración Claude Code
 │       ├── git-helpers.zsh      # Identidades Git y clone helpers
-│       ├── tmux-helpers.zsh     # Helpers tmux
+│       ├── tmux-helpers.zsh     # Compat aliases t* sobre Zellij
 │       ├── worktree-helpers.zsh # Helpers git worktree
 │       ├── screenshots.zsh      # Manejo de screenshots macOS
 │       └── pcsoft-helpers.zsh   # Protección archivos PCSoft
-├── tmux/                     # Config tmux
+├── tmux/                     # Config tmux legacy, no enlazada por default
 ├── lazygit/                  # Config lazygit
 ├── karabiner/                # Config Karabiner-Elements (~/.config/karabiner/karabiner.json)
 ├── micro/                    # Settings y themes de micro
@@ -81,8 +82,10 @@ dotfiles/
 | `cortex`, `dotfiles` | Navegación rápida al repo `cortex` y sus dotfiles |
 | `cc [path]` | Abrir Claude Code |
 | `oc [path]` | Abrir OpenCode |
+| `zj [path]` | Entrar/crear sesión Zellij por repo/path |
+| `zsessions` | Listar sesiones Zellij |
 | `ccclip <files>` | Copiar código al clipboard |
-| `tcc`, `tdev`, `ta`, `tn`, `tl`, `tk` | Helpers tmux (`tcc` abre Claude Code en tmux) |
+| `tcc`, `tdev`, `ta`, `tn`, `tl`, `tk` | Helpers Zellij compatibles con la memoria muscular tmux |
 | `wtadd`, `wtlist`, `wtremove` | Helpers de git worktrees |
 | `ss [n]` | Listar últimos screenshots |
 | `last [-c\|-o]` | Último screenshot |
@@ -98,8 +101,33 @@ Editá `local/env.zsh` (gitignored) para configurar:
 - `SCREENSHOTS_DIR` — directorio de screenshots
 - `WORKSPACE_DIR` — directorio raíz de tus proyectos
 - `OPENCODE_DEFAULT_FLAGS` — flags por defecto para `oc`
+- `CORTEX_MULTIPLEXER=zellij` — usa Zellij para `cc`/`oc`; es el default del profile
 - `INNIT_DIR` y overrides `INNIT_*_DIR` — navegación rápida de subdirectorios
 - Aliases y paths personales
+
+## Zellij
+
+El modelo recomendado es una sesión Zellij por repo:
+
+```bash
+zj ~/dev/personal/infra
+zj ~/dev/personal/cortex
+```
+
+`cc [path]`, `ccb [path]`, `oc [path]` y `ocb [path]` usan Zellij por default:
+
+```bash
+export CORTEX_MULTIPLEXER="zellij"
+```
+
+Comportamiento:
+
+- Si estás en la sesión del repo actual, ejecuta el agente en el pane actual.
+- Si pedís otro path y la sesión ya existe, cambia a esa sesión.
+- Si pedís otro path y la sesión no existe, la crea con el agente arrancado en ese directorio.
+- Las sesiones se nombran con contexto visible: `local:<host>:<repo>` o `ssh:<host>:<repo>`.
+- El layout `innit` muestra tab bar arriba y status bar abajo usando el theme `innit`.
+- Si necesitás evitar Zellij puntualmente, seteá `CORTEX_MULTIPLEXER` vacío en esa shell y ejecutá el agente directo.
 
 ## SketchyBar
 
@@ -110,9 +138,9 @@ Layout activo:
 | Pantalla | Uso | Layout |
 |------|-----|--------|
 | Mac Retina (`display=1`) | apps generales: Discord, WhatsApp, Mail, Postman, Zen Browser | app activa + network, volumen, calendario, hora, batería |
-| ViewSonic vertical (`display=2`) | auxiliar/random, cmux y Claude de formato vertical | brand + panel/spaces + app activa + git + issue/PR + SDD + brains + timer; derecha: RAM + CPU + hora |
-| LG Ultrawide (`display=3`) | mixto: cmux, Claude, ChatGPT, Obsidian | brand + panel/spaces + app activa + git + issue/PR + SDD + brains + timer; derecha: RAM + CPU + hora |
-| 4K derecho (`display=4`) | cmux exclusivo | brand + panel/spaces + app activa + git + issue/PR + SDD + brains + timer; derecha: RAM + CPU + hora |
+| ViewSonic vertical (`display=2`) | auxiliar/random, Ghostty/Zellij y Claude de formato vertical | brand + panel/spaces + app activa + git + issue/PR + SDD + brains + timer; derecha: RAM + CPU + hora |
+| LG Ultrawide (`display=3`) | mixto: Ghostty/Zellij, Claude, ChatGPT, Obsidian | brand + panel/spaces + app activa + git + issue/PR + SDD + brains + timer; derecha: RAM + CPU + hora |
+| 4K derecho (`display=4`) | Ghostty/Zellij exclusivo | brand + panel/spaces + app activa + git + issue/PR + SDD + brains + timer; derecha: RAM + CPU + hora |
 
 El centro queda libre para evitar el notch y reducir ruido visual.
 
@@ -126,7 +154,7 @@ Interacciones:
 | Batería | abre Battery Settings |
 | Fecha/hora | abre Calendar |
 
-La barra asume Mac con notch y varios monitores: el centro queda libre y los items operativos se mantienen en los laterales. Los items de contexto (`git`, issue/PR, SDD y timer) se actualizan con un agregador liviano que lee `${XDG_CACHE_HOME:-~/.cache}/cortex/active-workspace`. Un watcher de eventos `workspace.selected` de cmux actualiza ese archivo y refresca los items al cambiar de workspace. `SKETCHYBAR_WORKSPACE` permite forzar un repo específico.
+La barra asume Mac con notch y varios monitores: el centro queda libre y los items operativos se mantienen en los laterales. Los items de contexto (`git`, issue/PR, SDD y timer) se actualizan con un agregador liviano que lee `${XDG_CACHE_HOME:-~/.cache}/cortex/active-workspace`. `SKETCHYBAR_WORKSPACE` permite forzar un repo específico.
 
 El layout cambia automáticamente al recargar SketchyBar: con un solo display, el Retina mantiene los indicadores de estado útiles; con varios displays, el Retina queda liviano y el layout completo se mueve al externo disponible.
 
@@ -251,7 +279,7 @@ El prompt usa una variante local de FiraCode Nerd Font Mono con el glyph de la b
 | Codepoint | `U+F0F00` |
 | Glyph test | `python3 -c 'print("\U000F0F00")'` |
 
-La config de Starship usa este glyph PUA directamente. Si la terminal no tiene seleccionada `FiraCode Nerd Font Mono Beard`, el prompt puede mostrar un cuadrado/tofu en lugar de la barba. En macOS, `install.sh` instala la fuente y deja configurados Ghostty y cmux con esa family.
+La config de Starship usa este glyph PUA directamente. Si la terminal no tiene seleccionada `FiraCode Nerd Font Mono Beard`, el prompt puede mostrar un cuadrado/tofu en lugar de la barba. En macOS, `install.sh` instala la fuente y deja configurado Ghostty con esa family.
 
 Para regenerar la fuente:
 

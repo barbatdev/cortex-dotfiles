@@ -1,5 +1,6 @@
-# Fuente
+# Fuente primaria: FiraCode Beard custom. Fallback: Nerd Font oficial para glyphs.
 font-family = FiraCode Nerd Font Mono Beard
+font-family = FiraCode Nerd Font
 font-size = 14
 
 # Paleta Dark Vibrant (portada desde Windows Terminal)

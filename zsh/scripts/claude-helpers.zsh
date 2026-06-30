@@ -26,6 +26,160 @@ _workspace_name_for_path() {
     fi
 }
 
+_zellij_context_label() {
+    local host
+    host="${HOST%%.*}"
+    host="${host:-$(hostname -s 2>/dev/null)}"
+
+    if [[ -n "$SSH_CONNECTION" || -n "$SSH_CLIENT" || -n "$SSH_TTY" ]]; then
+        printf 'ssh:%s' "$host"
+    else
+        printf 'local:%s' "$host"
+    fi
+}
+
+_zellij_session_name_for_path() {
+    printf '%s:%s' "$(_zellij_context_label)" "$(_workspace_name_for_path "${1:-$PWD}")"
+}
+
+_zellij_default_layout() {
+    local layout_file="${_DOTFILES_DIR:-$HOME/dev/personal/cortex-dotfiles}/zellij/layouts/innit.kdl"
+    [[ -f "$layout_file" ]] && printf '%s' "$layout_file"
+}
+
+_zellij_preferred() {
+    [[ -n "$ZELLIJ" || "${CORTEX_MULTIPLEXER:-}" == "zellij" ]]
+}
+
+_zellij_available() {
+    command -v zellij >/dev/null 2>&1
+}
+
+_zellij_session_exists() {
+    local session="$1"
+    zellij list-sessions 2>/dev/null | awk '{print $1}' | grep -Fxq "$session"
+}
+
+_zellij_kdl_escape() {
+    local value="$1"
+    value="${value//\\/\\\\}"
+    value="${value//\"/\\\"}"
+    printf '%s' "$value"
+}
+
+_zellij_layout_for_command() {
+    local resolved="$1"
+    local command_line="$2"
+    local layout_file
+    layout_file=$(mktemp "${TMPDIR:-/tmp}/cortex-zellij-layout.XXXXXX.kdl")
+
+    local cwd_escaped command_escaped shell_name
+    cwd_escaped="$(_zellij_kdl_escape "$resolved")"
+    command_escaped="$(_zellij_kdl_escape "cd ${(q)resolved} && $command_line; exec ${SHELL:-zsh}")"
+    shell_name="$(_zellij_kdl_escape "${SHELL:-zsh}")"
+
+    cat > "$layout_file" <<EOF
+layout {
+    default_tab_template {
+        pane size=1 borderless=true {
+            plugin location="zellij:tab-bar"
+        }
+        children
+        pane size=2 borderless=true {
+            plugin location="zellij:status-bar"
+        }
+    }
+
+    pane cwd="$cwd_escaped" {
+        command "$shell_name"
+        args "-lc" "$command_escaped"
+    }
+}
+EOF
+
+    printf '%s' "$layout_file"
+}
+
+_zellij_open_agent() {
+    local resolved="$1"
+    local command_line="$2"
+    local session
+    session="$(_zellij_session_name_for_path "$resolved")"
+
+    if [[ -n "$ZELLIJ" ]]; then
+        if [[ "${ZELLIJ_SESSION_NAME:-}" == "$session" && "$resolved" == "$PWD" ]]; then
+            eval "$command_line"
+            return
+        fi
+
+        if _zellij_session_exists "$session"; then
+            zellij action switch-session -c "$resolved" "$session"
+            return
+        fi
+
+        local layout_file
+        layout_file="$(_zellij_layout_for_command "$resolved" "$command_line")"
+        zellij action switch-session -c "$resolved" --layout "$layout_file" "$session"
+        return
+    fi
+
+    if _zellij_session_exists "$session"; then
+        zellij attach "$session"
+        return
+    fi
+
+    local layout_file
+    layout_file="$(_zellij_layout_for_command "$resolved" "$command_line")"
+    zellij --session "$session" --layout "$layout_file"
+}
+
+zj() {
+    local target="${1:-.}"
+    local resolved
+    resolved=$(cd "$target" 2>/dev/null && pwd)
+
+    if [[ -z "$resolved" ]]; then
+        echo "❌ Directorio no encontrado: $target"
+        return 1
+    fi
+
+    if ! command -v zellij >/dev/null 2>&1; then
+        echo "❌ zellij no está instalado"
+        return 1
+    fi
+
+    local session
+    session="$(_zellij_session_name_for_path "$resolved")"
+
+    if [[ -n "$ZELLIJ" ]]; then
+        if _zellij_session_exists "$session"; then
+            zellij action switch-session -c "$resolved" "$session"
+        else
+            local layout_file
+            layout_file="$(_zellij_default_layout)"
+            if [[ -n "$layout_file" ]]; then
+                zellij action switch-session -c "$resolved" --layout "$layout_file" "$session"
+            else
+                zellij action switch-session -c "$resolved" "$session"
+            fi
+        fi
+    else
+        local layout_file
+        layout_file="$(_zellij_default_layout)"
+        if _zellij_session_exists "$session"; then
+            zellij attach "$session"
+        elif [[ -n "$layout_file" ]]; then
+            cd "$resolved" && zellij --session "$session" --layout "$layout_file"
+        else
+            cd "$resolved" && zellij attach "$session" --create
+        fi
+    fi
+}
+
+zsessions() {
+    zellij list-sessions
+}
+
 _cmux_rename_workspace() {
     local workspace_id="$1"
     local workspace_name="$2"
@@ -42,8 +196,7 @@ _cmux_rename_workspace() {
     fi
 }
 
-# Abrir Claude Code en tmux
-# Si no está en tmux, crea una sesión nueva
+# Abrir Claude Code en Zellij o en el directorio actual.
 cc() {
     local target="${1:-.}"
     local resolved
@@ -54,7 +207,12 @@ cc() {
         return 1
     fi
 
-    if [[ -n "$CMUX_WORKSPACE_ID" ]]; then
+    if _zellij_preferred && _zellij_available; then
+        _zellij_open_agent "$resolved" "claude --enable-auto-mode --dangerously-skip-permissions"
+    elif _zellij_preferred; then
+        echo "⚠️  zellij no está instalado; ejecutando Claude Code directo"
+        cd "$resolved" && claude --enable-auto-mode --dangerously-skip-permissions
+    elif [[ -n "$CMUX_WORKSPACE_ID" ]]; then
         # Estamos dentro de cmux
         local workspace_name
         workspace_name="$(_workspace_name_for_path "$resolved")"
@@ -90,20 +248,11 @@ cc() {
         _cmux_sidebar_refresh "$resolved"
         cd "$resolved" && claude --enable-auto-mode --dangerously-skip-permissions
     else
-        # No estamos en tmux: crear sesión
-        local session
-        session="$(_workspace_name_for_path "$resolved")"
-        if tmux has-session -t "$session" 2>/dev/null; then
-            tmux attach -t "$session"
-        else
-            tmux new-session -d -s "$session"
-            tmux send-keys -t "$session" "cd '$resolved' && claude --enable-auto-mode --dangerously-skip-permissions" Enter
-            tmux attach -t "$session"
-        fi
+        cd "$resolved" && claude --enable-auto-mode --dangerously-skip-permissions
     fi
 }
 
-# Abrir OpenCode en tmux/cmux
+# Abrir OpenCode en Zellij/cmux o en el directorio actual.
 # Mantiene el mismo patrón de uso que cc() pero usando opencode
 oc() {
     local target="${1:-.}"
@@ -117,7 +266,12 @@ oc() {
 
     local oc_cmd="opencode ${OPENCODE_DEFAULT_FLAGS:-}"
 
-    if [[ -n "$CMUX_WORKSPACE_ID" ]]; then
+    if _zellij_preferred && _zellij_available; then
+        _zellij_open_agent "$resolved" "$oc_cmd"
+    elif _zellij_preferred; then
+        echo "⚠️  zellij no está instalado; ejecutando OpenCode directo"
+        cd "$resolved" && eval "$oc_cmd"
+    elif [[ -n "$CMUX_WORKSPACE_ID" ]]; then
         local workspace_name
         workspace_name="$(_workspace_name_for_path "$resolved")"
 
@@ -148,15 +302,7 @@ oc() {
         _cmux_sidebar_refresh "$resolved"
         cd "$resolved" && eval "$oc_cmd"
     else
-        local session
-        session="$(_workspace_name_for_path "$resolved")"
-        if tmux has-session -t "$session" 2>/dev/null; then
-            tmux attach -t "$session"
-        else
-            tmux new-session -d -s "$session"
-            tmux send-keys -t "$session" "cd '$resolved' && $oc_cmd" Enter
-            tmux attach -t "$session"
-        fi
+        cd "$resolved" && eval "$oc_cmd"
     fi
 }
 
@@ -173,7 +319,12 @@ ccb() {
 
     local cc_cmd="claude --dangerously-skip-permissions"
 
-    if [[ -n "$CMUX_WORKSPACE_ID" ]]; then
+    if _zellij_preferred && _zellij_available; then
+        _zellij_open_agent "$resolved" "$cc_cmd"
+    elif _zellij_preferred; then
+        echo "⚠️  zellij no está instalado; ejecutando Claude Code directo"
+        cd "$resolved" && eval "$cc_cmd"
+    elif [[ -n "$CMUX_WORKSPACE_ID" ]]; then
         local workspace_name
         workspace_name="$(_workspace_name_for_path "$resolved")"
 
@@ -204,15 +355,7 @@ ccb() {
         _cmux_sidebar_refresh "$resolved"
         cd "$resolved" && eval "$cc_cmd"
     else
-        local session
-        session="$(_workspace_name_for_path "$resolved")"
-        if tmux has-session -t "$session" 2>/dev/null; then
-            tmux attach -t "$session"
-        else
-            tmux new-session -d -s "$session"
-            tmux send-keys -t "$session" "cd '$resolved' && $cc_cmd" Enter
-            tmux attach -t "$session"
-        fi
+        cd "$resolved" && eval "$cc_cmd"
     fi
 }
 
@@ -229,7 +372,12 @@ ocb() {
 
     local oc_cmd="opencode ${OPENCODE_DEFAULT_FLAGS:-}"
 
-    if [[ -n "$CMUX_WORKSPACE_ID" ]]; then
+    if _zellij_preferred && _zellij_available; then
+        _zellij_open_agent "$resolved" "$oc_cmd"
+    elif _zellij_preferred; then
+        echo "⚠️  zellij no está instalado; ejecutando OpenCode directo"
+        cd "$resolved" && eval "$oc_cmd"
+    elif [[ -n "$CMUX_WORKSPACE_ID" ]]; then
         local workspace_name
         workspace_name="$(_workspace_name_for_path "$resolved")"
 
@@ -260,15 +408,7 @@ ocb() {
         _cmux_sidebar_refresh "$resolved"
         cd "$resolved" && eval "$oc_cmd"
     else
-        local session
-        session="$(_workspace_name_for_path "$resolved")"
-        if tmux has-session -t "$session" 2>/dev/null; then
-            tmux attach -t "$session"
-        else
-            tmux new-session -d -s "$session"
-            tmux send-keys -t "$session" "cd '$resolved' && $oc_cmd" Enter
-            tmux attach -t "$session"
-        fi
+        cd "$resolved" && eval "$oc_cmd"
     fi
 }
 
@@ -290,7 +430,15 @@ ccx() {
         return 1
     fi
 
-    if [[ -n "$CMUX_WORKSPACE_ID" ]]; then
+    if _zellij_preferred && _zellij_available; then
+        local ctxfile="$HOME/.claude/ccx-ctx-$$.txt"
+        echo "$context" > "$ctxfile"
+        chmod 600 "$ctxfile"
+        _zellij_open_agent "$resolved" "sh -c 'claude < $ctxfile; rm -f $ctxfile'"
+    elif _zellij_preferred; then
+        echo "⚠️  zellij no está instalado; ejecutando Claude Code directo"
+        cd "$resolved" && echo "$context" | claude
+    elif [[ -n "$CMUX_WORKSPACE_ID" ]]; then
         # Estamos dentro de cmux: escribir contexto a tempfile y abrir workspace propio
         local workspace_name
         workspace_name="$(_workspace_name_for_path "$resolved")"
@@ -314,15 +462,7 @@ ccx() {
     elif [[ -n "$TMUX" ]]; then
         cd "$resolved" && echo "$context" | claude
     else
-        local session
-        session="$(_workspace_name_for_path "$resolved")"
-        if tmux has-session -t "$session" 2>/dev/null; then
-            tmux attach -t "$session"
-        else
-            tmux new-session -d -s "$session"
-            tmux send-keys -t "$session" "cd '$resolved' && echo ${(q)context} | claude" Enter
-            tmux attach -t "$session"
-        fi
+        cd "$resolved" && echo "$context" | claude
     fi
 }
 

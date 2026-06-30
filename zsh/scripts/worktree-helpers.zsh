@@ -1,5 +1,5 @@
 #region Worktree Helpers
-# Funciones para gestión de git worktrees con integración cmux.
+# Funciones para gestión de git worktrees con integración Zellij.
 # Detecta repos PCSoft automáticamente y bloquea la creación de worktrees en ellos.
 
 # Verifica si el repo actual contiene archivos PCSoft (Categoría B — prohibido worktree)
@@ -32,7 +32,7 @@ _wt_path_for() {
     printf '%s/%s/%s' "$(_wt_base_dir)" "$repo_name" "$name"
 }
 
-# Crea un worktree en ~/dev/worktrees/<repo>/ y abre workspace cmux automáticamente.
+# Crea un worktree en ~/dev/worktrees/<repo>/ y abre sesión Zellij automáticamente.
 # Uso: wtadd <nombre> [branch]
 #   <nombre>  — nombre del worktree (crea ~/dev/worktrees/<repo>/<nombre>)
 #   [branch]  — branch existente o nueva (default: crea branch nueva con el mismo nombre)
@@ -82,9 +82,9 @@ wtadd() {
 
     echo "✓ Worktree creado: $wt_path"
 
-    # Abrir workspace cmux si está disponible
-    if [[ -n "$CMUX_WORKSPACE_ID" ]] || command -v cmux &>/dev/null; then
-        echo "→ Abriendo workspace cmux..."
+    # Abrir el agente en el multiplexor default si está disponible.
+    if [[ "${CORTEX_MULTIPLEXER:-zellij}" == "zellij" ]] || [[ -n "$ZELLIJ" ]]; then
+        echo "→ Abriendo sesión Zellij..."
         cc "$wt_path"
     fi
 }
