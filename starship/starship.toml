@@ -1,5 +1,7 @@
 # Formato general
 format = """
+${custom.ssh_context}\
+${custom.zellij_context}\
 ${custom.repo}\
 [|](fg:color_orange)\
 $directory\
@@ -89,6 +91,22 @@ shell = ["bash", "--noprofile", "--norc"]
 command = "basename \"$(git rev-parse --show-toplevel 2>/dev/null)\" | cut -c1-24"
 style = "fg:color_fg0 bg:color_orange"
 format = '[ $output ]($style)'
+
+[custom.ssh_context]
+description = "Host visible en shells remotos"
+when = "test -n \"$SSH_CONNECTION\""
+shell = ["bash", "--noprofile", "--norc"]
+command = "printf 'ssh:%s' \"${CORTEX_SSH_TARGET:-$(hostname -s 2>/dev/null || hostname)}\" | cut -c1-28"
+style = "fg:color_fg0 bg:color_red"
+format = '[ $output ]($style)[|](fg:color_red)'
+
+[custom.zellij_context]
+description = "Sesión Zellij visible en el prompt"
+when = "test -n \"$ZELLIJ\""
+shell = ["bash", "--noprofile", "--norc"]
+command = "printf 'zj:%s' \"${ZELLIJ_SESSION_NAME:-?}\" | cut -c1-28"
+style = "fg:color_fg0 bg:color_purple"
+format = '[ $output ]($style)[|](fg:color_purple)'
 
 [custom.sdd_auto]
 description = "Estado SDD auto del proyecto"

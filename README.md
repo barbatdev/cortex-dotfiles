@@ -7,7 +7,7 @@ Configuración local extraida de `cortex`: terminal, shell, prompt, helpers de A
 - **Terminal**: [Ghostty](https://ghostty.org/)
 - **Shell**: Zsh nativo de macOS
 - **Prompt**: [Starship](https://starship.rs/) — tema Gruvbox Dark
-- **Multiplexor**: [Zellij](https://zellij.dev/) + helpers de sesión
+- **Multiplexor**: [Zellij](https://zellij.dev/) + helpers de sesión; tmux queda como compat/legacy
 - **Barra macOS**: [SketchyBar](https://github.com/FelixKratz/SketchyBar) con tema Gruvbox
 - **Window manager macOS**: [yabai](https://github.com/koekeishiya/yabai) + [skhd](https://github.com/koekeishiya/skhd) opcional y gradual
 - **Keyboard remaps macOS**: [Karabiner-Elements](https://karabiner-elements.pqrs.org/) con profile `cortex`
@@ -29,7 +29,7 @@ bash install.sh
 ```
 
 El instalador macOS:
-1. Instala dependencias via Homebrew (starship, zellij, lazygit, micro, eza, sketchybar, yabai, skhd, Karabiner-Elements, FiraCode Nerd Font)
+1. Instala dependencias via Homebrew (starship, tmux, zellij, mosh, lazygit, micro, eza, sketchybar, yabai, skhd, Karabiner-Elements, FiraCode Nerd Font)
 2. Hace backup de configs existentes con timestamp
 3. Crea symlinks de los dotfiles y guardrails globales (`.npmrc`, `pnpm/rc`, `.bunfig.toml`, `uv.toml`)
 4. Intenta seleccionar el profile `cortex` de Karabiner si `karabiner_cli` está disponible
@@ -53,6 +53,7 @@ dotfiles/
 │   └── scripts/
 │       ├── claude-helpers.zsh   # Integración Claude Code
 │       ├── git-helpers.zsh      # Identidades Git y clone helpers
+│       ├── ssh-helpers.zsh      # SSH/Mosh con contexto visible y sesiones Zellij remotas por repo
 │       ├── tmux-helpers.zsh     # Compat aliases t* sobre Zellij
 │       ├── worktree-helpers.zsh # Helpers git worktree
 │       ├── screenshots.zsh      # Manejo de screenshots macOS
@@ -84,6 +85,11 @@ dotfiles/
 | `oc [path]` | Abrir OpenCode |
 | `zj [path]` | Entrar/crear sesión Zellij por repo/path |
 | `zsessions` | Listar sesiones Zellij |
+| `moshx <host> [remote-path]` | Mosh al host; con path entra al Zellij remoto del repo |
+| `moshx-doctor <host>` | Verifica `mosh-server`, `zellij`, `git` y `sh` en el host remoto |
+| `sshx <host>` | SSH en sesión Zellij `ssh-<host>` |
+| `sshc <host>` | SSH directo con host visible en prompt |
+| `whereami` | Mostrar host, cwd, repo, sesión y SSH |
 | `ccclip <files>` | Copiar código al clipboard |
 | `tcc`, `tdev`, `ta`, `tn`, `tl`, `tk` | Helpers Zellij compatibles con la memoria muscular tmux |
 | `wtadd`, `wtlist`, `wtremove` | Helpers de git worktrees |
@@ -128,6 +134,28 @@ Comportamiento:
 - Las sesiones se nombran con contexto visible: `local:<host>:<repo>` o `ssh:<host>:<repo>`.
 - El layout `innit` muestra tab bar arriba y status bar abajo usando el theme `innit`.
 - Si necesitás evitar Zellij puntualmente, seteá `CORTEX_MULTIPLEXER` vacío en esa shell y ejecutá el agente directo.
+
+La config versionada de Zellij prioriza orientación:
+
+- Barra superior con tabs y barra inferior de estado siempre visibles.
+- Pane frames activados para ver límites y foco.
+- Prompt Starship marca `zj:<session>` cuando estás dentro de Zellij.
+- `whereami` y `zwhere` muestran ubicación completa sin depender de la UI.
+
+Para workstation remota persistente, la unidad principal es una sesión Zellij por repo en el host remoto. Mosh es sólo el transporte resiliente:
+
+```bash
+moshx agent-dev-01 ~/dev/personal/cortex
+moshx agent-dev-01 ~/dev/personal/infra
+```
+
+Cada comando entra por Mosh y hace attach/create de una sesión Zellij remota nombrada por el repo. Para hosts sin Mosh o troubleshooting, `sshx agent-dev-01` queda como fallback SSH clásico.
+
+Si falla, diagnosticá primero:
+
+```bash
+moshx-doctor agent-dev-01
+```
 
 ## SketchyBar
 

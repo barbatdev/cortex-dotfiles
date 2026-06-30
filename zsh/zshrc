@@ -220,6 +220,7 @@ if [[ -d "$_SCRIPTS_DIR" ]]; then
     [[ -f "$_SCRIPTS_DIR/screenshots.zsh" ]]    && source "$_SCRIPTS_DIR/screenshots.zsh"
     [[ -f "$_SCRIPTS_DIR/claude-helpers.zsh" ]] && source "$_SCRIPTS_DIR/claude-helpers.zsh"
     [[ -f "$_SCRIPTS_DIR/git-helpers.zsh" ]]    && source "$_SCRIPTS_DIR/git-helpers.zsh"
+    [[ -f "$_SCRIPTS_DIR/ssh-helpers.zsh" ]]    && source "$_SCRIPTS_DIR/ssh-helpers.zsh"
     [[ -f "$_SCRIPTS_DIR/tmux-helpers.zsh" ]]       && source "$_SCRIPTS_DIR/tmux-helpers.zsh"
     [[ -f "$_SCRIPTS_DIR/worktree-helpers.zsh" ]] && source "$_SCRIPTS_DIR/worktree-helpers.zsh"
 fi
@@ -298,6 +299,8 @@ help-profile() {
     echo "\n${T}Claude Code${R}"
     echo "  ${C}cc [path]         ${R}Abrir Claude Code en directorio"
     echo "  ${C}oc [path]         ${R}Abrir OpenCode en directorio"
+    echo "  ${C}zj [path]         ${R}Entrar/crear sesión Zellij por repo/path"
+    echo "  ${C}zsessions         ${R}Listar sesiones Zellij"
     echo "  ${C}ccx <ctx> [p]     ${R}Claude Code con contexto inicial"
     echo "  ${C}ccd [sub]         ${R}Navegar al Claude workspace"
     echo "  ${C}ccclip <files>    ${R}Copiar código al clipboard"
@@ -306,6 +309,16 @@ help-profile() {
     echo "  ${C}zj [path]         ${R}Entrar/crear sesión Zellij por repo/path"
     echo "  ${C}zsessions         ${R}Listar sesiones Zellij"
     echo "  ${C}tcc               ${R}Abrir Claude Code en sesión Zellij del repo"
+
+    echo "\n${T}SSH / ubicación${R}"
+    echo "  ${C}moshx <h> [path] ${R}Mosh a host; con path entra al Zellij remoto del repo"
+    echo "  ${C}moshx-doctor <h> ${R}Verificar mosh-server, zellij, git y sh en el host"
+    echo "  ${C}sshx <host>       ${R}SSH en sesión Zellij ssh-<host>"
+    echo "  ${C}sshc <host>       ${R}SSH directo con host visible en prompt"
+    echo "  ${C}whereami          ${R}Mostrar host, cwd, repo, sesión y SSH"
+
+    echo "\n${T}Tmux — sesiones${R}"
+    echo "  ${C}tcc               ${R}Abrir Claude Code + lazygit (layout automático)"
     echo "  ${C}tdev              ${R}Sesión con nombre del directorio actual"
     echo "  ${C}ta [nombre]       ${R}Attach a sesión (o crearla)"
     echo "  ${C}tn <nombre>       ${R}Nueva sesión con nombre"

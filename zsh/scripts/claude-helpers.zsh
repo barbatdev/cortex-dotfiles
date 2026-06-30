@@ -57,7 +57,19 @@ _zellij_available() {
 
 _zellij_session_exists() {
     local session="$1"
-    zellij list-sessions 2>/dev/null | awk '{print $1}' | grep -Fxq "$session"
+    zellij list-sessions --short --no-formatting 2>/dev/null | grep -Fxq "$session"
+}
+
+_zellij_session_exited() {
+    local session="$1"
+    zellij list-sessions --no-formatting 2>/dev/null | grep -Eq "^${session}[[:space:]].*EXITED"
+}
+
+_zellij_recreate_if_exited() {
+    local session="$1"
+    if _zellij_session_exited "$session"; then
+        zellij delete-session "$session" >/dev/null 2>&1 || true
+    fi
 }
 
 _zellij_kdl_escape() {
@@ -67,16 +79,31 @@ _zellij_kdl_escape() {
     printf '%s' "$value"
 }
 
+_zellij_agent_session_name() {
+    local resolved="$1"
+    local agent="$2"
+    local base
+    base="$(_workspace_name_for_path "$resolved")"
+
+    if [[ -n "$agent" ]]; then
+        printf '%s-%s' "$base" "$agent"
+    else
+        printf '%s' "$base"
+    fi
+}
+
 _zellij_layout_for_command() {
     local resolved="$1"
     local command_line="$2"
+    local title="${3:-$(basename "$resolved")}"
     local layout_file
     layout_file=$(mktemp "${TMPDIR:-/tmp}/cortex-zellij-layout.XXXXXX.kdl")
 
-    local cwd_escaped command_escaped shell_name
+    local cwd_escaped command_escaped shell_name title_escaped
     cwd_escaped="$(_zellij_kdl_escape "$resolved")"
     command_escaped="$(_zellij_kdl_escape "cd ${(q)resolved} && $command_line; exec ${SHELL:-zsh}")"
     shell_name="$(_zellij_kdl_escape "${SHELL:-zsh}")"
+    title_escaped="$(_zellij_kdl_escape "$title")"
 
     cat > "$layout_file" <<EOF
 layout {
@@ -90,9 +117,11 @@ layout {
         }
     }
 
-    pane cwd="$cwd_escaped" {
-        command "$shell_name"
-        args "-lc" "$command_escaped"
+    tab name="$title_escaped" focus=true {
+        pane cwd="$cwd_escaped" {
+            command "$shell_name"
+            args "-lc" "$command_escaped"
+        }
     }
 }
 EOF
@@ -103,8 +132,14 @@ EOF
 _zellij_open_agent() {
     local resolved="$1"
     local command_line="$2"
+    local agent="${3:-}"
     local session
-    session="$(_zellij_session_name_for_path "$resolved")"
+    if [[ -n "$agent" ]]; then
+        session="$(_zellij_session_name_for_path "$resolved")-$agent"
+    else
+        session="$(_zellij_session_name_for_path "$resolved")"
+    fi
+    _zellij_recreate_if_exited "$session"
 
     if [[ -n "$ZELLIJ" ]]; then
         if [[ "${ZELLIJ_SESSION_NAME:-}" == "$session" && "$resolved" == "$PWD" ]]; then
@@ -118,7 +153,7 @@ _zellij_open_agent() {
         fi
 
         local layout_file
-        layout_file="$(_zellij_layout_for_command "$resolved" "$command_line")"
+        layout_file="$(_zellij_layout_for_command "$resolved" "$command_line" "$session")"
         zellij action switch-session -c "$resolved" --layout "$layout_file" "$session"
         return
     fi
@@ -129,7 +164,7 @@ _zellij_open_agent() {
     fi
 
     local layout_file
-    layout_file="$(_zellij_layout_for_command "$resolved" "$command_line")"
+    layout_file="$(_zellij_layout_for_command "$resolved" "$command_line" "$session")"
     zellij --session "$session" --layout "$layout_file"
 }
 
@@ -171,13 +206,46 @@ zj() {
         elif [[ -n "$layout_file" ]]; then
             cd "$resolved" && zellij --session "$session" --layout "$layout_file"
         else
-            cd "$resolved" && zellij attach "$session" --create
+            cd "$resolved" && zellij attach --create "$session"
         fi
     fi
 }
 
 zsessions() {
-    zellij list-sessions
+    zellij list-sessions --no-formatting
+}
+
+zwhere() {
+    if [[ -z "$ZELLIJ" ]]; then
+        echo "No estás dentro de Zellij"
+        return 1
+    fi
+
+    echo "Zellij: ${ZELLIJ_SESSION_NAME:-unknown}"
+    echo "Path:    $PWD"
+    if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+        echo "Repo:    $(git rev-parse --show-toplevel)"
+        echo "Branch:  $(git branch --show-current 2>/dev/null || printf detached)"
+    fi
+}
+
+zn() {
+    local target="${1:-.}"
+    local agent="${2:-}"
+    local resolved
+    resolved=$(cd "$target" 2>/dev/null && pwd)
+
+    if [[ -z "$resolved" ]]; then
+        echo "❌ Directorio no encontrado: $target"
+        return 1
+    fi
+
+    if [[ -z "$ZELLIJ" ]]; then
+        echo "❌ zn solo funciona dentro de Zellij"
+        return 1
+    fi
+
+    zellij action rename-session "$(_zellij_agent_session_name "$resolved" "$agent")"
 }
 
 _cmux_rename_workspace() {
@@ -208,7 +276,7 @@ cc() {
     fi
 
     if _zellij_preferred && _zellij_available; then
-        _zellij_open_agent "$resolved" "claude --enable-auto-mode --dangerously-skip-permissions"
+        _zellij_open_agent "$resolved" "claude --enable-auto-mode --dangerously-skip-permissions" "claude"
     elif _zellij_preferred; then
         echo "⚠️  zellij no está instalado; ejecutando Claude Code directo"
         cd "$resolved" && claude --enable-auto-mode --dangerously-skip-permissions
@@ -267,7 +335,7 @@ oc() {
     local oc_cmd="opencode ${OPENCODE_DEFAULT_FLAGS:-}"
 
     if _zellij_preferred && _zellij_available; then
-        _zellij_open_agent "$resolved" "$oc_cmd"
+        _zellij_open_agent "$resolved" "$oc_cmd" "opencode"
     elif _zellij_preferred; then
         echo "⚠️  zellij no está instalado; ejecutando OpenCode directo"
         cd "$resolved" && eval "$oc_cmd"
@@ -320,7 +388,7 @@ ccb() {
     local cc_cmd="claude --dangerously-skip-permissions"
 
     if _zellij_preferred && _zellij_available; then
-        _zellij_open_agent "$resolved" "$cc_cmd"
+        _zellij_open_agent "$resolved" "$cc_cmd" "claude"
     elif _zellij_preferred; then
         echo "⚠️  zellij no está instalado; ejecutando Claude Code directo"
         cd "$resolved" && eval "$cc_cmd"
@@ -373,7 +441,7 @@ ocb() {
     local oc_cmd="opencode ${OPENCODE_DEFAULT_FLAGS:-}"
 
     if _zellij_preferred && _zellij_available; then
-        _zellij_open_agent "$resolved" "$oc_cmd"
+        _zellij_open_agent "$resolved" "$oc_cmd" "opencode"
     elif _zellij_preferred; then
         echo "⚠️  zellij no está instalado; ejecutando OpenCode directo"
         cd "$resolved" && eval "$oc_cmd"
