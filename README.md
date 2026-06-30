@@ -82,7 +82,10 @@ dotfiles/
 | `cortex`, `dotfiles` | Navegación rápida al repo `cortex` y sus dotfiles |
 | `cc [path]` | Abrir Claude Code |
 | `oc [path]` | Abrir OpenCode |
-| `hhere [path]` | Entrar/crear sesión Herdr por host+repo+branch |
+| `hhere`, `hmain` | Volver a la sesión Herdr principal del repo/branch |
+| `hnew [path]` | Crear sesión Herdr independiente con timestamp |
+| `hrole <rol> [path]` | Entrar/crear sesión Herdr por rol operativo |
+| `hfocus`, `hside`, `hscratch` | Sesiones Herdr por rol para foco, lateral o scratch |
 | `hremote <host> [session]` | Attach remoto con `herdr --remote` |
 | `hname [label]` | Nombrar el pane Herdr actual |
 | `moshx <host> [remote-path]` | Mosh al host; con path entra a ese directorio remoto |
@@ -112,11 +115,13 @@ Editá `local/env.zsh` (gitignored) para configurar:
 
 ## Herdr remoto
 
-Para SSH/remoto, el modelo recomendado es Herdr. Usá un workspace por repo, tabs por objetivo y panes por agente/proceso:
+Para SSH/remoto, el modelo recomendado es Herdr. Usá sesiones nombradas para separar tableros persistentes, workspaces por repo, tabs por objetivo y panes por agente/proceso:
 
 ```bash
 hremote agent-dev-01 main
 hhere ~/dev/personal/cortex
+hfocus ~/dev/personal/cortex
+hside ~/dev/personal/cortex
 ```
 
 Si necesitás diagnosticar dependencias:
@@ -127,10 +132,14 @@ moshx-doctor agent-dev-01
 
 Comportamiento:
 
-- `hhere [path]` nombra la sesión por host + repo + branch.
+- `hhere [path]` y `hmain [path]` nombran la sesión principal por host + repo + branch, para reattach exacto.
+- `hnew [path]` crea otra sesión independiente del mismo repo/branch con timestamp corto.
+- `hrole <rol> [path]`, `hfocus [path]`, `hside [path]` y `hscratch [path]` crean/entran a sesiones independientes por intención operativa, no por monitor físico.
+- Si ya estás dentro de Herdr, esos helpers no intentan abrir Herdr anidado: crean o enfocan un workspace con el mismo nombre dentro de la sesión actual.
 - `hremote <host> [session]` usa el bridge remoto de Herdr.
 - `hname [label]` evita panes anónimos en el sidepanel.
 - `cc [path]`, `ccb [path]`, `oc [path]` y `ocb [path]` ejecutan el agente en el pane actual; Herdr provee persistencia.
+- Herdr también expone CLI scriptable para `workspace`, `tab`, `pane`, `agent`, `worktree`, `wait` e `integration`; los helpers solo cubren el flujo muscular diario.
 - Prompt Starship marca `herdr` cuando `CORTEX_MULTIPLEXER=herdr`.
 - `whereami` muestra ubicación completa sin depender de la UI.
 

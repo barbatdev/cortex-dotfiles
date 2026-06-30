@@ -35,6 +35,70 @@ _herdr_session_name_for_path() {
     printf '%s-%s' "$(_herdr_context_label)" "$(_herdr_workspace_name_for_path "${1:-$PWD}")"
 }
 
+_herdr_session_name_with_suffix() {
+    local session_path="${1:-$PWD}"
+    local suffix="$2"
+
+    if [[ -n "$suffix" ]]; then
+        printf '%s-%s' "$(_herdr_session_name_for_path "$session_path")" "${suffix//[^A-Za-z0-9_.-]/-}"
+    else
+        _herdr_session_name_for_path "$session_path"
+    fi
+}
+
+_herdr_open_session_for_path() {
+    local target="${1:-$PWD}"
+    local suffix="${2:-}"
+    local resolved session workspace_label
+
+    resolved=$(cd -q "$target" >/dev/null 2>&1 && pwd) || {
+        echo "Directorio no encontrado: $target"
+        return 1
+    }
+
+    if [[ "${HERDR_ENV:-}" == "1" ]]; then
+        workspace_label="$(_herdr_session_name_with_suffix "$resolved" "$suffix")"
+        workspace_label="${workspace_label#$(_herdr_context_label)-}"
+        _herdr_focus_or_create_workspace "$workspace_label" "$resolved"
+        return
+    fi
+
+    session="$(_herdr_session_name_with_suffix "$resolved" "$suffix")"
+    CORTEX_MULTIPLEXER=herdr herdr --session "$session"
+}
+
+_herdr_workspace_id_by_label() {
+    local label="$1"
+    herdr workspace list 2>/dev/null | python3 -c '
+import json
+import sys
+
+label = sys.argv[1]
+try:
+    data = json.load(sys.stdin)
+except Exception:
+    sys.exit(0)
+
+for workspace in data.get("result", {}).get("workspaces", []):
+    if workspace.get("label") == label:
+        print(workspace.get("workspace_id", ""))
+        break
+' "$label" 2>/dev/null
+}
+
+_herdr_focus_or_create_workspace() {
+    local label="$1"
+    local cwd="$2"
+    local workspace_id
+
+    workspace_id="$(_herdr_workspace_id_by_label "$label")"
+    if [[ -n "$workspace_id" ]]; then
+        herdr workspace focus "$workspace_id" >/dev/null && printf 'workspace: %s\n' "$label"
+    else
+        herdr workspace create --cwd "$cwd" --label "$label" --focus >/dev/null && printf 'workspace: %s\n' "$label"
+    fi
+}
+
 _herdr_current_pane_id() {
     command -v herdr >/dev/null 2>&1 || return 1
     herdr pane current --current 2>/dev/null | python3 -c 'import json,sys; print(json.load(sys.stdin)["result"]["pane"]["pane_id"])' 2>/dev/null
@@ -42,14 +106,40 @@ _herdr_current_pane_id() {
 
 # Entrar/crear una sesión Herdr nombrada por host + repo + branch del path actual.
 hhere() {
+    _herdr_open_session_for_path "${1:-$PWD}"
+}
+
+# Alias semántico de hhere: volver a la sesión principal del repo/branch actual.
+hmain() {
+    hhere "${1:-$PWD}"
+}
+
+# Entrar/crear una sesión Herdr con rol humano. Uso: hrole <rol> [path]
+hrole() {
+    local role="${1:?Uso: hrole <rol> [path]}"
+    local target="${2:-$PWD}"
+    _herdr_open_session_for_path "$target" "$role"
+}
+
+# Entrar/crear una sesión Herdr independiente con timestamp corto.
+hnew() {
     local target="${1:-$PWD}"
-    local resolved session
-    resolved=$(cd -q "$target" >/dev/null 2>&1 && pwd) || {
-        echo "Directorio no encontrado: $target"
-        return 1
-    }
-    session="$(_herdr_session_name_for_path "$resolved")"
-    CORTEX_MULTIPLEXER=herdr herdr --session "$session"
+    _herdr_open_session_for_path "$target" "new-$(date +%H%M%S)-$RANDOM"
+}
+
+# Entrar/crear la sesión Herdr de trabajo principal/intenso para este repo/branch.
+hfocus() {
+    _herdr_open_session_for_path "${1:-$PWD}" "focus"
+}
+
+# Entrar/crear una sesión Herdr lateral para este repo/branch.
+hside() {
+    _herdr_open_session_for_path "${1:-$PWD}" "side"
+}
+
+# Entrar/crear una sesión Herdr temporal para pruebas o tareas descartables.
+hscratch() {
+    _herdr_open_session_for_path "${1:-$PWD}" "scratch"
 }
 
 # Attach remoto con Herdr. Uso: hremote <ssh-target> [session]

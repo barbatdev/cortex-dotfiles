@@ -335,7 +335,11 @@ help-profile() {
     echo "  ${C}ccclip <files>    ${R}Copiar código al clipboard"
 
     echo "\n${T}SSH / ubicación${R}"
-    echo "  ${C}hhere [path]     ${R}Entrar/crear sesión Herdr por host+repo+branch"
+    echo "  ${C}hhere/hmain [p]  ${R}Volver a la sesión Herdr principal del repo/branch"
+    echo "  ${C}hnew [path]      ${R}Crear sesión Herdr independiente con timestamp"
+    echo "  ${C}hrole <r> [p]    ${R}Entrar/crear sesión Herdr por rol operativo"
+    echo "  ${C}hfocus/hside     ${R}Sesiones Herdr por rol: foco o lateral"
+    echo "  ${C}hscratch [path]  ${R}Sesión Herdr temporal para pruebas"
     echo "  ${C}hremote <h> [s]  ${R}Attach Herdr remoto a host con sesión opcional"
     echo "  ${C}hname [label]    ${R}Nombrar pane Herdr actual"
     echo "  ${C}hs, hl           ${R}Status Herdr y workspaces"
