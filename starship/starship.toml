@@ -19,19 +19,19 @@ $line_break$character"""
 # Módulos alineados a la derecha
 right_format = """$cmd_duration$time"""
 
-palette = 'gruvbox_dark'
+palette = 'innit_tech_slate'
 
-[palettes.gruvbox_dark]
-color_fg0 = '#fbf1c7'
-color_bg1 = '#3c3836'
-color_bg3 = '#665c54'
-color_blue = '#458588'
-color_aqua = '#689d6a'
-color_green = '#98971a'
-color_orange = '#d65d0e'
-color_purple = '#b16286'
-color_red = '#cc241d'
-color_yellow = '#d79921'
+[palettes.innit_tech_slate]
+color_fg0 = '#F6F8FA'
+color_bg1 = '#1C2128'
+color_bg3 = '#2D333B'
+color_blue = '#0054ff'
+color_aqua = '#58A6FF'
+color_green = '#3FB950'
+color_orange = '#0054ff'
+color_purple = '#8B5CF6'
+color_red = '#F85149'
+color_yellow = '#D29922'
 
 [os]
 disabled = true

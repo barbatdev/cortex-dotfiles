@@ -6,13 +6,12 @@ Configuración local extraida de `cortex`: terminal, shell, prompt, helpers de A
 
 - **Terminal**: [Ghostty](https://ghostty.org/)
 - **Shell**: Zsh nativo de macOS
-- **Prompt**: [Starship](https://starship.rs/) — tema Gruvbox Dark
+- **Prompt**: [Starship](https://starship.rs/) — paleta InnIT Tech Slate
 - **Multiplexor**: [Herdr](https://herdr.dev/) para sesiones locales/remotas persistentes
 - **Barra macOS**: [SketchyBar](https://github.com/FelixKratz/SketchyBar) con tema Gruvbox
 - **Window manager macOS**: [yabai](https://github.com/koekeishiya/yabai) + [skhd](https://github.com/koekeishiya/skhd) opcional y gradual
 - **Keyboard remaps macOS**: [Karabiner-Elements](https://karabiner-elements.pqrs.org/) con profile `cortex`
-- **Editor terminal**: [micro](https://micro-editor.github.io/)
-- **Editor principal**: Neovim basado en LazyVim/Gentleman.Dots con overlay RefactorIA
+- **Editor principal**: Neovim basado en LazyVim/Gentleman.Dots con overlay InnIT/RefactorIA
 - **Ls**: [eza](https://github.com/eza-community/eza)
 - **AI CLI UX**: Claude Code statusline, OpenCode helpers y sesiones Herdr por repo
 - **Supply-chain guardrails**: defaults globales para `uv`, `npm`, `pnpm` y `bun`
@@ -29,7 +28,7 @@ bash install.sh
 ```
 
 El instalador macOS:
-1. Instala dependencias via Homebrew (starship, herdr, mosh, lazygit, micro, eza, sketchybar, yabai, skhd, Karabiner-Elements, FiraCode Nerd Font)
+1. Instala dependencias via Homebrew (starship, herdr, mosh, lazygit, micro legacy, eza, sketchybar, yabai, skhd, Karabiner-Elements, FiraCode Nerd Font)
 2. Hace backup de configs existentes con timestamp
 3. Crea symlinks de los dotfiles y guardrails globales (`.npmrc`, `pnpm/rc`, `.bunfig.toml`, `uv.toml`)
 4. Intenta seleccionar el profile `cortex` de Karabiner si `karabiner_cli` está disponible
@@ -61,8 +60,8 @@ dotfiles/
 │       └── pcsoft-helpers.zsh   # Protección archivos PCSoft
 ├── lazygit/                  # Config lazygit
 ├── karabiner/                # Config Karabiner-Elements (~/.config/karabiner/karabiner.json)
-├── micro/                    # Settings y themes de micro
-├── nvim/                     # Notas de configuración Neovim RefactorIA
+├── micro/                    # Config legacy/fallback de micro
+├── nvim/                     # Notas de configuración Neovim InnIT/RefactorIA
 ├── sketchybar/               # Barra macOS y plugins
 ├── yabai/                    # Window manager macOS opcional
 ├── skhd/                     # Hotkeys macOS para yabai
