@@ -1,13 +1,13 @@
 #!/bin/bash
 
-# InnIT Tech Slate colors (truecolor ANSI)
-PRIMARY='\033[38;2;0;84;255m'       # InnIT blue (#0054ff)
+# Cortex Green colors (truecolor ANSI)
+PRIMARY='\033[38;2;63;185;80m'      # Cortex Green accent (#3FB950)
 ACCENT='\033[38;2;210;153;34m'      # warning (#D29922)
 SECONDARY='\033[38;2;88;166;255m'   # info blue (#58A6FF)
-MUTED='\033[38;2;139;148;158m'      # secondary text (#8B949E)
+MUTED='\033[38;2;168;179;193m'      # secondary text (#A8B3C1)
 SUCCESS='\033[38;2;63;185;80m'      # engineering green (#3FB950)
-ERROR='\033[38;2;248;81;73m'        # error (#F85149)
-PURPLE='\033[38;2;139;92;246m'      # syntax purple (#8B5CF6)
+ERROR='\033[38;2;255;123;114m'      # error (#FF7B72)
+PURPLE='\033[38;2;167;139;250m'     # syntax purple (#A78BFA)
 BOLD='\033[1m'
 STRIKE='\033[9m'
 NC='\033[0m'
@@ -134,7 +134,7 @@ format_brains() {
       local label
       if label=$(label_brain "$srv"); then
         [ -n "$result" ] && result+=" "
-        result+="${ERROR}${STRIKE}${label}${NC}"
+        result+="${ERROR}!${STRIKE}${label}${NC}"
       fi
     done
   fi
@@ -162,7 +162,7 @@ format_mcp() {
     IFS=',' read -ra SERVERS <<< "$MCP_DISCONNECTED"
     for srv in "${SERVERS[@]}"; do
       [ -n "$result" ] && result+=" "
-      result+="${ERROR}${STRIKE}${srv}${NC}"
+      result+="${ERROR}!${STRIKE}${srv}${NC}"
     done
   fi
 
@@ -287,7 +287,7 @@ BAR+="]${NC}"
 # Construir línea de estado
 SEP="${MUTED}  ${NC}"
 
-LINE="${BOLD}${PURPLE}${MODEL_ICON} ${MODEL}${NC}"
+LINE="${BOLD}${PRIMARY}${MODEL_ICON} ${MODEL}${NC}"
 LINE+="${SEP}"
 LINE+="${ACCENT} ${DIR_NAME}${NC}"
 
@@ -363,7 +363,7 @@ if [ -n "$CMUX_BIN" ]; then
   fi
 
   if [ -n "$SDD_SPEC" ]; then
-    env -u CMUX_SOCKET_PATH -u CMUX_SOCKET "$CMUX_BIN" set-status sdd_spec "$SDD_SPEC" --icon "doc.text" --color "#0054ff" > /dev/null 2>&1
+    env -u CMUX_SOCKET_PATH -u CMUX_SOCKET "$CMUX_BIN" set-status sdd_spec "$SDD_SPEC" --icon "doc.text" --color "#58A6FF" > /dev/null 2>&1
   else
     clear_sidebar_status sdd_spec
   fi

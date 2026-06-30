@@ -114,14 +114,16 @@ Editá `local/env.zsh` (gitignored) para configurar:
 - Aliases y paths personales
 
 Configs versionadas:
-- `opencode/tui.json` — TUI OpenCode con theme InnIT, `scroll_acceleration` y plugin de statusline
-- `opencode/themes/innit-tech-slate.json` — theme custom OpenCode
-- `claude/statusline.sh` — statusline Claude Code con paleta InnIT Tech Slate
-- `claude/themes/innit-tech-slate.json` — theme custom Claude Code; seleccionar con `/theme` como `InnIT Tech Slate`
+- `opencode/tui.json` — TUI OpenCode con theme `cortex-green`, `scroll_acceleration` y plugin de statusline
+- `opencode/themes/cortex-green.json` — theme custom OpenCode verde/azul
+- `opencode/themes/cortex.json` — theme custom OpenCode naranja/navy basado en Barbat.dev
+- `claude/statusline.sh` — statusline Claude Code con paleta Cortex Green accesible
+- `claude/themes/cortex-green.json` — theme custom Claude Code de acentos verdes; seleccionar con `/theme` como `Cortex Green`
+- `claude/themes/cortex.json` — theme custom Claude Code de acentos naranja/navy; seleccionar con `/theme` como `Cortex`
 
 Notas de theming AI CLI:
-- Claude Code carga themes custom desde `~/.claude/themes/`; `install.sh` symlinkea ese directorio.
-- OpenCode carga themes custom desde `~/.config/opencode/themes/`; `tui.json` selecciona `innit-tech-slate`.
+- Claude Code carga themes custom desde `~/.claude/themes/`; `install.sh` symlinkea ese directorio. Sus themes cambian acentos/adornos y backgrounds de mensajes cuando aplica, pero no reemplazan el fondo global del terminal.
+- OpenCode carga themes custom desde `~/.config/opencode/themes/`; `tui.json` selecciona `cortex-green` por defecto y deja `cortex` disponible en `/theme`.
 
 ## Herdr remoto
 
