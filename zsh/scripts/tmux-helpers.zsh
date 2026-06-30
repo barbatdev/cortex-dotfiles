@@ -1,29 +1,46 @@
-# tmux-helpers.zsh — Helpers para gestión de sesiones tmux
+# tmux-helpers.zsh — Compat aliases sobre Zellij
 
-# Alias base
-alias t="tmux"
+# Alias base: mantenemos la memoria muscular `t*`, pero el backend default es Zellij.
+alias t="zellij"
 
 # Listar sesiones activas
 tl() {
-    tmux ls 2>/dev/null || echo "No hay sesiones tmux activas"
+    zellij list-sessions 2>/dev/null || echo "No hay sesiones Zellij activas"
 }
 
 # Attach a una sesión (o crearla si no existe)
 ta() {
     local session="${1:-main}"
-    tmux attach -t "$session" 2>/dev/null || tmux new-session -s "$session"
+    local layout_file
+    session="$(_zellij_context_label):$session"
+    layout_file="$(_zellij_default_layout)"
+    if _zellij_session_exists "$session"; then
+        zellij attach "$session"
+    elif [[ -n "$layout_file" ]]; then
+        zellij --session "$session" --layout "$layout_file"
+    else
+        zellij attach "$session" --create
+    fi
 }
 
 # Nueva sesión con nombre
 tn() {
     local session="${1:?Uso: tn <nombre>}"
-    tmux new-session -s "$session"
+    local layout_file
+    session="$(_zellij_context_label):$session"
+    layout_file="$(_zellij_default_layout)"
+    if [[ -n "$layout_file" ]]; then
+        zellij --session "$session" --layout "$layout_file"
+    else
+        zellij attach "$session" --create
+    fi
 }
 
 # Matar una sesión
 tk() {
     local session="${1:?Uso: tk <nombre>}"
-    tmux kill-session -t "$session" && echo "✓ Sesión '$session' terminada"
+    [[ "$session" == *:* ]] || session="$(_zellij_context_label):$session"
+    zellij delete-session "$session" --force && echo "✓ Sesión '$session' terminada"
 }
 
 # Sesión de desarrollo: nombre = basename del directorio actual
@@ -34,18 +51,10 @@ tdev() {
     ta "$session"
 }
 
-# Sesión de Claude Code en tmux
+# Sesión de Claude Code en Zellij
 # Uso: cd ~/dev/work/myproject && tcc
 tcc() {
     local session
     session="$(basename "$PWD" | tr '.' '-')"
-
-    if tmux has-session -t "$session" 2>/dev/null; then
-        tmux attach -t "$session"
-        return
-    fi
-
-    tmux new-session -d -s "$session"
-    tmux send-keys -t "$session" "claude" Enter
-    tmux attach -t "$session"
+    CORTEX_MULTIPLEXER=zellij cc "$PWD"
 }

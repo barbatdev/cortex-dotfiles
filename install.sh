@@ -55,11 +55,11 @@ else
     echo "  ✓ eza ya instalado"
 fi
 
-if ! command -v tmux &>/dev/null; then
-    echo "  → Instalando tmux (multiplexor de terminal)..."
-    brew install tmux
+if ! command -v zellij &>/dev/null; then
+    echo "  → Instalando zellij (multiplexor de terminal)..."
+    brew install zellij
 else
-    echo "  ✓ tmux ya instalado"
+    echo "  ✓ zellij ya instalado"
 fi
 
 if ! command -v lazygit &>/dev/null; then
@@ -148,8 +148,8 @@ backup_if_exists "$HOME/.bunfig.toml"
 backup_if_exists "$HOME/.config/uv/uv.toml"
 backup_if_exists "$HOME/.config/starship.toml"
 backup_if_exists "$HOME/.config/ghostty/config"
-backup_if_exists "$HOME/Library/Application Support/com.cmuxterm.app/config.ghostty"
-backup_if_exists "$HOME/.tmux.conf"
+backup_if_exists "$HOME/.config/zellij/config.kdl"
+backup_if_exists "$HOME/.config/zellij/layouts/innit.kdl"
 backup_if_exists "$HOME/.claude/statusline.sh"
 backup_if_exists "$HOME/.config/lazygit/config.yml"
 backup_if_exists "$HOME/.config/sketchybar"
@@ -180,9 +180,9 @@ create_symlink "$DOTFILES/bun/bunfig.toml"         "$HOME/.bunfig.toml"
 create_symlink "$DOTFILES/uv/uv.toml"              "$HOME/.config/uv/uv.toml"
 create_symlink "$DOTFILES/starship/starship.toml"  "$HOME/.config/starship.toml"
 create_symlink "$DOTFILES/ghostty/config"          "$HOME/.config/ghostty/config"
-create_symlink "$DOTFILES/ghostty/cmux.conf"       "$HOME/Library/Application Support/com.cmuxterm.app/config.ghostty"
 create_symlink "$DOTFILES/ghostty/shaders"         "$HOME/.config/ghostty/shaders"
-create_symlink "$DOTFILES/tmux/tmux.conf"          "$HOME/.tmux.conf"
+create_symlink "$DOTFILES/zellij/config.kdl"       "$HOME/.config/zellij/config.kdl"
+create_symlink "$DOTFILES/zellij/layouts/innit.kdl" "$HOME/.config/zellij/layouts/innit.kdl"
 chmod +x "$DOTFILES/claude/statusline.sh"
 create_symlink "$DOTFILES/claude/statusline.sh"    "$HOME/.claude/statusline.sh"
 create_symlink "$DOTFILES/micro/settings.json"     "$HOME/.config/micro/settings.json"
@@ -282,8 +282,9 @@ echo "  Próximos pasos:"
 echo "  1. Abrí una nueva tab en Ghostty para cargar el nuevo profile"
 echo "  2. Editá local/env.zsh con tus paths personales"
 echo "  3. Ghostty ya usa FiraCode Nerd Font Mono Beard (reiniciá si no se ve bien)"
-echo "  4. Si macOS bloqueó servicios, habilitá Accessibility y corré los fallbacks impresos arriba"
-echo "  5. Abrí Karabiner-Elements y habilitá Input Monitoring/Accessibility si macOS lo pide"
+echo "  4. Usá zj, cc u oc para abrir sesiones Zellij por repo"
+echo "  5. Si macOS bloqueó servicios, habilitá Accessibility y corré los fallbacks impresos arriba"
+echo "  6. Abrí Karabiner-Elements y habilitá Input Monitoring/Accessibility si macOS lo pide"
 echo ""
 echo "  Para medir el load time:"
 echo "  \$ time zsh -i -c exit"
