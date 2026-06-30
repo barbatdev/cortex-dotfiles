@@ -4,17 +4,16 @@ Configuración local extraida de `cortex`: terminal, shell, prompt, helpers de A
 
 ## Stack
 
-- **Terminal**: [Ghostty](https://ghostty.org/) y Alacritty
+- **Terminal**: [Ghostty](https://ghostty.org/)
 - **Shell**: Zsh nativo de macOS
-- **Prompt**: [Starship](https://starship.rs/) — tema Gruvbox Dark
-- **Multiplexor**: tmux + helpers de sesión
+- **Prompt**: [Starship](https://starship.rs/) — paleta InnIT Tech Slate
+- **Multiplexor**: [Herdr](https://herdr.dev/) para sesiones locales/remotas persistentes
 - **Barra macOS**: [SketchyBar](https://github.com/FelixKratz/SketchyBar) con tema Gruvbox
 - **Window manager macOS**: [yabai](https://github.com/koekeishiya/yabai) + [skhd](https://github.com/koekeishiya/skhd) opcional y gradual
 - **Keyboard remaps macOS**: [Karabiner-Elements](https://karabiner-elements.pqrs.org/) con profile `cortex`
-- **Editor terminal**: [micro](https://micro-editor.github.io/)
-- **Editor principal**: Neovim basado en LazyVim/Gentleman.Dots con overlay RefactorIA
+- **Editor principal**: Neovim basado en LazyVim/Gentleman.Dots con overlay InnIT/RefactorIA
 - **Ls**: [eza](https://github.com/eza-community/eza)
-- **AI CLI UX**: Claude Code statusline, OpenCode helpers y cmux hooks opcionales
+- **AI CLI UX**: Claude Code statusline, OpenCode helpers y sesiones Herdr por repo
 - **Supply-chain guardrails**: defaults globales para `uv`, `npm`, `pnpm` y `bun`
 - **Fuente**: FiraCode Nerd Font + variante custom RefactorIA
 
@@ -23,13 +22,14 @@ Configuración local extraida de `cortex`: terminal, shell, prompt, helpers de A
 ### macOS
 
 ```bash
-git clone <repo-url> ~/dev/personal/cortex-dotfiles
-cd ~/dev/personal/cortex-dotfiles
+mkdir -p ~/.cortex
+git clone <repo-url> ~/.cortex/cortex-dotfiles
+cd ~/.cortex/cortex-dotfiles
 bash install.sh
 ```
 
 El instalador macOS:
-1. Instala dependencias via Homebrew (starship, tmux, lazygit, micro, eza, sketchybar, yabai, skhd, Karabiner-Elements, FiraCode Nerd Font)
+1. Instala dependencias via Homebrew (starship, herdr, mosh, lazygit, micro legacy, eza, sketchybar, yabai, skhd, Karabiner-Elements, FiraCode Nerd Font)
 2. Hace backup de configs existentes con timestamp
 3. Crea symlinks de los dotfiles y guardrails globales (`.npmrc`, `pnpm/rc`, `.bunfig.toml`, `uv.toml`)
 4. Intenta seleccionar el profile `cortex` de Karabiner si `karabiner_cli` está disponible
@@ -41,8 +41,10 @@ El instalador macOS:
 ```
 dotfiles/
 ├── claude/                   # Claude Code statusline
-├── ghostty/                  # Config Ghostty, cmux Ghostty config, muxy legado y shaders
+├── ghostty/                  # Config Ghostty y shaders
 ├── fonts/                    # Fuente RefactorIA y script de regeneración
+├── herdr/                    # Config Herdr
+├── opencode/                 # Config TUI OpenCode
 ├── npm/                      # Global npm defaults (~/.npmrc)
 ├── pnpm/                     # Global pnpm defaults (~/Library/Preferences/pnpm/rc)
 ├── bun/                      # Global bun defaults (~/.bunfig.toml)
@@ -52,15 +54,15 @@ dotfiles/
 │   └── scripts/
 │       ├── claude-helpers.zsh   # Integración Claude Code
 │       ├── git-helpers.zsh      # Identidades Git y clone helpers
-│       ├── tmux-helpers.zsh     # Helpers tmux
+│       ├── ssh-helpers.zsh      # SSH/Mosh con contexto visible
+│       ├── herdr-helpers.zsh    # Helpers Herdr para sesiones y orientación
 │       ├── worktree-helpers.zsh # Helpers git worktree
 │       ├── screenshots.zsh      # Manejo de screenshots macOS
 │       └── pcsoft-helpers.zsh   # Protección archivos PCSoft
-├── tmux/                     # Config tmux
 ├── lazygit/                  # Config lazygit
 ├── karabiner/                # Config Karabiner-Elements (~/.config/karabiner/karabiner.json)
-├── micro/                    # Settings y themes de micro
-├── nvim/                     # Notas de configuración Neovim RefactorIA
+├── micro/                    # Config legacy/fallback de micro
+├── nvim/                     # Notas de configuración Neovim InnIT/RefactorIA
 ├── sketchybar/               # Barra macOS y plugins
 ├── yabai/                    # Window manager macOS opcional
 ├── skhd/                     # Hotkeys macOS para yabai
@@ -77,12 +79,23 @@ dotfiles/
 |---------|-------------|
 | `gs`, `ga`, `gc`, `gp`, `gl` | Git shortcuts |
 | `dev`, `barbat`, `cowork`, `personal`, `tools`, `worktrees` | Navegación rápida en `~/dev` |
-| `work`, `work-apis`, `work-mobile`, `work-webs`, `work-pcsoft` | Navegación rápida de trabajo |
+| `work` | Navegación rápida de trabajo genérica |
+| `innit`, `innit-apis`, `innit-mobile`, `innit-webs`, `innit-pcsoft` | Navegación rápida de trabajo InnIT |
 | `cortex`, `dotfiles` | Navegación rápida al repo `cortex` y sus dotfiles |
 | `cc [path]` | Abrir Claude Code |
 | `oc [path]` | Abrir OpenCode |
+| `hhere`, `hmain` | Volver a la sesión Herdr principal del repo/branch |
+| `hnew [path]` | Crear sesión Herdr independiente con timestamp |
+| `hrole <rol> [path]` | Entrar/crear sesión Herdr por rol operativo |
+| `hfocus`, `hside`, `hscratch` | Sesiones Herdr por rol para foco, lateral o scratch |
+| `hremote <host> [session]` | Attach remoto con `herdr --remote` |
+| `hname [label]` | Nombrar el pane Herdr actual |
+| `moshx <host> [remote-path]` | Mosh al host; con path entra a ese directorio remoto |
+| `moshx-doctor <host>` | Verifica `mosh-server`, `herdr`, `git` y `sh` en el host remoto |
+| `sshx <host>` | SSH directo con contexto visible |
+| `sshc <host>` | SSH directo con host visible en prompt |
+| `whereami` | Mostrar host, cwd, repo, sesión y SSH |
 | `ccclip <files>` | Copiar código al clipboard |
-| `tcc`, `tdev`, `ta`, `tn`, `tl`, `tk` | Helpers tmux (`tcc` abre Claude Code en tmux) |
 | `wtadd`, `wtlist`, `wtremove` | Helpers de git worktrees |
 | `ss [n]` | Listar últimos screenshots |
 | `last [-c\|-o]` | Último screenshot |
@@ -97,9 +110,57 @@ dotfiles/
 Editá `local/env.zsh` (gitignored) para configurar:
 - `SCREENSHOTS_DIR` — directorio de screenshots
 - `WORKSPACE_DIR` — directorio raíz de tus proyectos
+- `CORTEX_HOME` — raíz canónica de cortex, por defecto `~/.cortex`
+- `CORTEX_ROOT` — repo principal cortex, por defecto `~/.cortex/cortex`
+- `CORTEX_DOTFILES_DIR` — repo dotfiles, por defecto `~/.cortex/cortex-dotfiles`
 - `OPENCODE_DEFAULT_FLAGS` — flags por defecto para `oc`
+- `CORTEX_MULTIPLEXER=herdr` — marca Herdr como multiplexor operativo para prompt/helpers
 - `INNIT_DIR` y overrides `INNIT_*_DIR` — navegación rápida de subdirectorios
 - Aliases y paths personales
+
+Configs versionadas:
+- `opencode/tui.json` — TUI OpenCode con theme `cortex-green`, `scroll_acceleration` y referencia al plugin de statusline global
+- `opencode/themes/cortex-green.json` — theme custom OpenCode verde/azul
+- `opencode/themes/cortex.json` — theme custom OpenCode naranja/navy basado en Barbat.dev
+- `claude/statusline.sh` — statusline Claude Code con paleta Cortex Green accesible
+- `claude/themes/cortex-green.json` — theme custom Claude Code de acentos verdes; seleccionar con `/theme` como `Cortex Green`
+- `claude/themes/cortex.json` — theme custom Claude Code de acentos naranja/navy; seleccionar con `/theme` como `Cortex`
+
+Notas de theming AI CLI:
+- Claude Code carga themes custom desde `~/.claude/themes/`; `install.sh` symlinkea ese directorio. Sus themes cambian acentos/adornos y backgrounds de mensajes cuando aplica, pero no reemplazan el fondo global del terminal.
+- OpenCode carga themes custom desde `~/.config/opencode/themes/`; `tui.json` selecciona `cortex-green` por defecto y deja `cortex` disponible en `/theme`.
+- El plugin OpenCode `plugins/statusline/statusline.tsx` vive en la config global de OpenCode, no en este repo de dotfiles.
+
+## Herdr remoto
+
+Para SSH/remoto, el modelo recomendado es Herdr. Usá sesiones nombradas para separar tableros persistentes, workspaces por repo, tabs por objetivo y panes por agente/proceso:
+
+```bash
+hremote agent-dev-01 main
+hhere ~/.cortex/cortex
+hfocus ~/.cortex/cortex
+hside ~/.cortex/cortex
+```
+
+Si necesitás diagnosticar dependencias:
+
+```bash
+moshx-doctor agent-dev-01
+```
+
+Comportamiento:
+
+- `hhere [path]` y `hmain [path]` nombran la sesión principal por host + repo + branch, para reattach exacto.
+- `hnew [path]` crea otra sesión independiente del mismo repo/branch con timestamp corto.
+- `hrole <rol> [path]`, `hfocus [path]`, `hside [path]` y `hscratch [path]` crean/entran a sesiones independientes por intención operativa, no por monitor físico.
+- Si ya estás dentro de Herdr, esos helpers no intentan abrir Herdr anidado: crean o enfocan un workspace con el mismo nombre dentro de la sesión actual.
+- `hremote <host> [session]` usa el bridge remoto de Herdr.
+- `hname [label]` evita panes anónimos en el sidepanel.
+- `cc [path]`, `ccb [path]`, `oc [path]` y `ocb [path]` ejecutan el agente en el pane actual; Herdr provee persistencia.
+- Herdr también expone CLI scriptable para `workspace`, `tab`, `pane`, `agent`, `worktree`, `wait` e `integration`; los helpers solo cubren el flujo muscular diario.
+- `install.sh` asegura `herdr integration install claude` y `herdr integration install opencode` en la máquina local. En hosts remotos, corré esas mismas integrations una vez por host.
+- Prompt Starship marca `herdr` cuando `CORTEX_MULTIPLEXER=herdr`.
+- `whereami` muestra ubicación completa sin depender de la UI.
 
 ## SketchyBar
 
@@ -110,9 +171,9 @@ Layout activo:
 | Pantalla | Uso | Layout |
 |------|-----|--------|
 | Mac Retina (`display=1`) | apps generales: Discord, WhatsApp, Mail, Postman, Zen Browser | app activa + network, volumen, calendario, hora, batería |
-| ViewSonic vertical (`display=2`) | auxiliar/random, cmux y Claude de formato vertical | brand + panel/spaces + app activa + git + issue/PR + SDD + brains + timer; derecha: RAM + CPU + hora |
-| LG Ultrawide (`display=3`) | mixto: cmux, Claude, ChatGPT, Obsidian | brand + panel/spaces + app activa + git + issue/PR + SDD + brains + timer; derecha: RAM + CPU + hora |
-| 4K derecho (`display=4`) | cmux exclusivo | brand + panel/spaces + app activa + git + issue/PR + SDD + brains + timer; derecha: RAM + CPU + hora |
+| ViewSonic vertical (`display=2`) | auxiliar/random, Ghostty/Herdr y Claude de formato vertical | brand + panel/spaces + app activa; derecha: RAM + CPU + hora |
+| LG Ultrawide (`display=3`) | mixto: Ghostty/Herdr, Claude, ChatGPT, Obsidian | brand + panel/spaces + app activa; derecha: RAM + CPU + hora |
+| 4K derecho (`display=4`) | Ghostty/Herdr exclusivo | brand + panel/spaces + app activa; derecha: RAM + CPU + hora |
 
 El centro queda libre para evitar el notch y reducir ruido visual.
 
@@ -126,7 +187,7 @@ Interacciones:
 | Batería | abre Battery Settings |
 | Fecha/hora | abre Calendar |
 
-La barra asume Mac con notch y varios monitores: el centro queda libre y los items operativos se mantienen en los laterales. Los items de contexto (`git`, issue/PR, SDD y timer) se actualizan con un agregador liviano que lee `${XDG_CACHE_HOME:-~/.cache}/cortex/active-workspace`. Un watcher de eventos `workspace.selected` de cmux actualiza ese archivo y refresca los items al cambiar de workspace. `SKETCHYBAR_WORKSPACE` permite forzar un repo específico.
+La barra asume Mac con notch y varios monitores: el centro queda libre y evita widgets de contexto remoto (`git`, issue/PR, SDD, brains, timer), porque el trabajo operativo corre en Herdr remoto.
 
 El layout cambia automáticamente al recargar SketchyBar: con un solo display, el Retina mantiene los indicadores de estado útiles; con varios displays, el Retina queda liviano y el layout completo se mueve al externo disponible.
 
@@ -251,7 +312,7 @@ El prompt usa una variante local de FiraCode Nerd Font Mono con el glyph de la b
 | Codepoint | `U+F0F00` |
 | Glyph test | `python3 -c 'print("\U000F0F00")'` |
 
-La config de Starship usa este glyph PUA directamente. Si la terminal no tiene seleccionada `FiraCode Nerd Font Mono Beard`, el prompt puede mostrar un cuadrado/tofu en lugar de la barba. En macOS, `install.sh` instala la fuente y deja configurados Ghostty y cmux con esa family.
+La config de Starship usa este glyph PUA directamente. Si la terminal no tiene seleccionada `FiraCode Nerd Font Mono Beard`, el prompt puede mostrar un cuadrado/tofu en lugar de la barba. En macOS, `install.sh` instala la fuente y deja configurado Ghostty con esa family.
 
 Para regenerar la fuente:
 

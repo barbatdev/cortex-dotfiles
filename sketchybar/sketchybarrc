@@ -2,11 +2,6 @@
 
 CONFIG_DIR="${CONFIG_DIR:-$HOME/.config/sketchybar}"
 PLUGIN_DIR="$CONFIG_DIR/plugins"
-WATCHER_PATTERN="$PLUGIN_DIR/cmux_workspace_watcher.sh"
-
-if ! pgrep -f "$WATCHER_PATTERN" >/dev/null 2>&1; then
-    "$PLUGIN_DIR/cmux_workspace_watcher.sh" >/dev/null 2>&1 &
-fi
 
 # SketchyBar es una barra exclusiva de macOS; este layout no intenta ser cross-platform.
 # Barra sobria para macOS con notch: centro vacío, información accionable a los lados.
@@ -201,148 +196,6 @@ sketchybar --add item front_app.4k left \
         script="$PLUGIN_DIR/front_app.sh" \
     --subscribe front_app.4k front_app_switched
 
-sketchybar --add item git_status left \
-    --set git_status \
-        display="$FOUR_K_DISPLAY" \
-        icon.color="$INNIT_GREEN" \
-        label.color="$TEXT" \
-        update_freq=30 \
-        script="$PLUGIN_DIR/git_status.sh" \
-    --subscribe git_status workspace_change system_woke
-
-sketchybar --add item work_item left \
-    --set work_item \
-        display="$FOUR_K_DISPLAY" \
-        icon.color="$INNIT_BLUE" \
-        label.color="$TEXT" \
-        update_freq=30 \
-        script="$PLUGIN_DIR/work_item.sh" \
-    --subscribe work_item workspace_change system_woke
-
-sketchybar --add item git_status.lg left \
-    --set git_status.lg \
-        display="$LG_DISPLAY" \
-        drawing="$LG_DRAWING" \
-        icon.color="$INNIT_GREEN" \
-        label.color="$TEXT" \
-        update_freq=30 \
-        script="$PLUGIN_DIR/git_status.sh" \
-    --subscribe git_status.lg workspace_change system_woke
-
-sketchybar --add item work_item.lg left \
-    --set work_item.lg \
-        display="$LG_DISPLAY" \
-        drawing="$LG_DRAWING" \
-        icon.color="$INNIT_BLUE" \
-        label.color="$TEXT" \
-        update_freq=30 \
-        script="$PLUGIN_DIR/work_item.sh" \
-    --subscribe work_item.lg workspace_change system_woke
-
-sketchybar --add item git_status.vertical left \
-    --set git_status.vertical \
-        display="$VIEWSONIC_DISPLAY" \
-        drawing="$VIEWSONIC_DRAWING" \
-        icon.color="$INNIT_GREEN" \
-        label.color="$TEXT" \
-        update_freq=30 \
-        script="$PLUGIN_DIR/git_status.sh" \
-    --subscribe git_status.vertical workspace_change system_woke
-
-sketchybar --add item work_item.vertical left \
-    --set work_item.vertical \
-        display="$VIEWSONIC_DISPLAY" \
-        drawing="$VIEWSONIC_DRAWING" \
-        icon.color="$INNIT_BLUE" \
-        label.color="$TEXT" \
-        update_freq=30 \
-        script="$PLUGIN_DIR/work_item.sh" \
-    --subscribe work_item.vertical workspace_change system_woke
-
-sketchybar --add item sdd_status.lg left \
-    --set sdd_status.lg \
-        display="$LG_DISPLAY" \
-        drawing="$LG_DRAWING" \
-        icon.color="$INNIT_GREEN" \
-        label.color="$TEXT" \
-        update_freq=120 \
-        script="$PLUGIN_DIR/sdd_status.sh" \
-    --subscribe sdd_status.lg workspace_change system_woke
-
-sketchybar --add item sdd_status.vertical left \
-    --set sdd_status.vertical \
-        display="$VIEWSONIC_DISPLAY" \
-        drawing="$VIEWSONIC_DRAWING" \
-        icon.color="$INNIT_GREEN" \
-        label.color="$TEXT" \
-        update_freq=120 \
-        script="$PLUGIN_DIR/sdd_status.sh" \
-    --subscribe sdd_status.vertical workspace_change system_woke
-
-sketchybar --add item brains_health.lg left \
-    --set brains_health.lg \
-        display="$LG_DISPLAY" \
-        drawing="$LG_DRAWING" \
-        icon.color="$INNIT_GREEN" \
-        label.color="$TEXT" \
-        update_freq=60 \
-        script="$PLUGIN_DIR/brains_health.sh"
-
-sketchybar --add item brains_health.vertical left \
-    --set brains_health.vertical \
-        display="$VIEWSONIC_DISPLAY" \
-        drawing="$VIEWSONIC_DRAWING" \
-        icon.color="$INNIT_GREEN" \
-        label.color="$TEXT" \
-        update_freq=60 \
-        script="$PLUGIN_DIR/brains_health.sh"
-
-sketchybar --add item checkpoint_timer.lg left \
-    --set checkpoint_timer.lg \
-        display="$LG_DISPLAY" \
-        drawing="$LG_DRAWING" \
-        icon.color="$INNIT_GREEN" \
-        label.color="$TEXT" \
-        update_freq=60 \
-        script="$PLUGIN_DIR/checkpoint_timer.sh" \
-    --subscribe checkpoint_timer.lg workspace_change system_woke
-
-sketchybar --add item checkpoint_timer.vertical left \
-    --set checkpoint_timer.vertical \
-        display="$VIEWSONIC_DISPLAY" \
-        drawing="$VIEWSONIC_DRAWING" \
-        icon.color="$INNIT_GREEN" \
-        label.color="$TEXT" \
-        update_freq=60 \
-        script="$PLUGIN_DIR/checkpoint_timer.sh" \
-    --subscribe checkpoint_timer.vertical workspace_change system_woke
-
-sketchybar --add item sdd_status left \
-    --set sdd_status \
-        display="$FOUR_K_DISPLAY" \
-        icon.color="$INNIT_GREEN" \
-        label.color="$TEXT" \
-        update_freq=120 \
-        script="$PLUGIN_DIR/sdd_status.sh" \
-    --subscribe sdd_status workspace_change system_woke
-
-sketchybar --add item brains_health left \
-    --set brains_health \
-        display="$FOUR_K_DISPLAY" \
-        icon.color="$INNIT_GREEN" \
-        label.color="$TEXT" \
-        update_freq=60 \
-        script="$PLUGIN_DIR/brains_health.sh"
-
-sketchybar --add item checkpoint_timer left \
-    --set checkpoint_timer \
-        display="$FOUR_K_DISPLAY" \
-        icon.color="$INNIT_GREEN" \
-        label.color="$TEXT" \
-        update_freq=60 \
-        script="$PLUGIN_DIR/checkpoint_timer.sh" \
-    --subscribe checkpoint_timer workspace_change system_woke
-
 sketchybar --add item clock.lg right \
     --set clock.lg \
         display="$LG_DISPLAY" \
@@ -441,13 +294,6 @@ sketchybar --add item memory.4k right \
         update_freq=10 \
         script="$PLUGIN_DIR/memory.sh"
 
-sketchybar --add item workspace_context left \
-    --set workspace_context \
-        drawing=off \
-        updates=on \
-        update_freq=30 \
-        script="$PLUGIN_DIR/workspace_context.sh"
-
 sketchybar --add item battery right \
     --set battery \
         display="$MAC_DISPLAY" \
@@ -519,9 +365,7 @@ sketchybar --add item cpu right \
         script="$PLUGIN_DIR/cpu.sh"
 
 sketchybar --update
-"$PLUGIN_DIR/cmux_workspace_watcher.sh" >/dev/null 2>&1 &
 NAME=front_app "$PLUGIN_DIR/front_app.sh"
 NAME=front_app.lg "$PLUGIN_DIR/front_app.sh"
 NAME=front_app.vertical "$PLUGIN_DIR/front_app.sh"
 NAME=front_app.4k "$PLUGIN_DIR/front_app.sh"
-NAME=workspace_context "$PLUGIN_DIR/workspace_context.sh"
