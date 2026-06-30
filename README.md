@@ -44,6 +44,7 @@ dotfiles/
 ├── ghostty/                  # Config Ghostty y shaders
 ├── fonts/                    # Fuente RefactorIA y script de regeneración
 ├── herdr/                    # Config Herdr
+├── opencode/                 # Config TUI OpenCode
 ├── npm/                      # Global npm defaults (~/.npmrc)
 ├── pnpm/                     # Global pnpm defaults (~/Library/Preferences/pnpm/rc)
 ├── bun/                      # Global bun defaults (~/.bunfig.toml)
@@ -112,6 +113,9 @@ Editá `local/env.zsh` (gitignored) para configurar:
 - `CORTEX_MULTIPLEXER=herdr` — marca Herdr como multiplexor operativo para prompt/helpers
 - `INNIT_DIR` y overrides `INNIT_*_DIR` — navegación rápida de subdirectorios
 - Aliases y paths personales
+
+Configs versionadas:
+- `opencode/tui.json` — TUI OpenCode con `scroll_acceleration` y plugin de statusline
 
 ## Herdr remoto
 
