@@ -3,33 +3,33 @@ font-family = FiraCode Nerd Font Mono Beard
 font-family = FiraCode Nerd Font
 font-size = 14
 
-# Paleta Dark Vibrant (portada desde Windows Terminal)
-background = #0c0c0c
-foreground = #ffffff
-cursor-color = #5fd787
-cursor-text = #0c0c0c
-selection-background = #2f8f5b
-selection-foreground = #000000
+# Paleta InnIT Tech Slate (tokens de innit.com.uy)
+background = #0F1419
+foreground = #F6F8FA
+cursor-color = #3FB950
+cursor-text = #0F1419
+selection-background = #2D333B
+selection-foreground = #F6F8FA
 
 # Colores ANSI normales
-palette = 0=#000000
-palette = 1=#ff5555
-palette = 2=#50fa7b
-palette = 3=#f1fa8c
-palette = 4=#7aa2f7
-palette = 5=#881798
-palette = 6=#3a96dd
-palette = 7=#ffffff
+palette = 0=#0F1419
+palette = 1=#F85149
+palette = 2=#3FB950
+palette = 3=#D29922
+palette = 4=#0054ff
+palette = 5=#8B5CF6
+palette = 6=#58A6FF
+palette = 7=#F6F8FA
 
 # Colores brillantes
-palette = 8=#555555
-palette = 9=#ff6e6e
-palette = 10=#69ff94
-palette = 11=#ffffa5
-palette = 12=#89b4fa
-palette = 13=#a020f0
-palette = 14=#4aa5ee
-palette = 15=#ffffff
+palette = 8=#57606A
+palette = 9=#ff6b64
+palette = 10=#4CC55E
+palette = 11=#E3B341
+palette = 12=#1a68ff
+palette = 13=#A78BFA
+palette = 14=#79C0FF
+palette = 15=#FFFFFF
 
 # Transparencia
 background-opacity = 1.0
