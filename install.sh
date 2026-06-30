@@ -219,6 +219,21 @@ else
     create_symlink "$DOTFILES/pnpm/rc"                 "$HOME/.config/pnpm/rc"
 fi
 
+if command -v herdr &>/dev/null; then
+    echo ""
+    echo "🐑 Asegurando integrations Herdr..."
+    if herdr integration install claude &>/dev/null; then
+        echo "  ✓ claude integration"
+    else
+        echo "  ! No se pudo instalar claude integration"
+    fi
+    if herdr integration install opencode &>/dev/null; then
+        echo "  ✓ opencode integration"
+    else
+        echo "  ! No se pudo instalar opencode integration"
+    fi
+fi
+
 if $IS_MACOS; then
     # --- Servicios macOS ---
     echo ""

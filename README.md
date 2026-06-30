@@ -140,6 +140,7 @@ Comportamiento:
 - `hname [label]` evita panes anónimos en el sidepanel.
 - `cc [path]`, `ccb [path]`, `oc [path]` y `ocb [path]` ejecutan el agente en el pane actual; Herdr provee persistencia.
 - Herdr también expone CLI scriptable para `workspace`, `tab`, `pane`, `agent`, `worktree`, `wait` e `integration`; los helpers solo cubren el flujo muscular diario.
+- `install.sh` asegura `herdr integration install claude` y `herdr integration install opencode` en la máquina local. En hosts remotos, corré esas mismas integrations una vez por host.
 - Prompt Starship marca `herdr` cuando `CORTEX_MULTIPLEXER=herdr`.
 - `whereami` muestra ubicación completa sin depender de la UI.
 
