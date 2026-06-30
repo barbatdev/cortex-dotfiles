@@ -18,7 +18,7 @@ GitHub Actions ejecuta un smoke check mínimo en pull requests y pushes a `main`
 - **Editor terminal**: [micro](https://micro-editor.github.io/)
 - **Editor principal**: Neovim basado en LazyVim/Gentleman.Dots con overlay RefactorIA
 - **Ls**: [eza](https://github.com/eza-community/eza)
-- **AI CLI UX**: Claude Code statusline, OpenCode helpers y cmux hooks opcionales
+- **AI CLI UX**: Claude Code statusline, OpenCode helpers y Herdr remoto
 - **Supply-chain guardrails**: defaults globales para `uv`, `npm`, `pnpm` y `bun`
 - **Fuente**: FiraCode Nerd Font + variante custom RefactorIA
 
@@ -27,8 +27,9 @@ GitHub Actions ejecuta un smoke check mínimo en pull requests y pushes a `main`
 ### macOS
 
 ```bash
-git clone <repo-url> ~/dev/personal/cortex-dotfiles
-cd ~/dev/personal/cortex-dotfiles
+mkdir -p ~/.cortex
+git clone <repo-url> ~/.cortex/cortex-dotfiles
+cd ~/.cortex/cortex-dotfiles
 bash install.sh
 ```
 
@@ -58,7 +59,7 @@ El instalador macOS:
 dotfiles/
 ├── claude/                   # Claude Code statusline
 ├── docs/                     # Especificaciones Cortex locales
-├── ghostty/                  # Config Ghostty, cmux Ghostty config, muxy legado y shaders
+├── ghostty/                  # Config Ghostty, muxy legado y shaders
 ├── fonts/                    # Fuente RefactorIA y script de regeneración
 ├── npm/                      # Global npm defaults (~/.npmrc)
 ├── pnpm/                     # Global pnpm defaults (~/Library/Preferences/pnpm/rc)
@@ -119,6 +120,9 @@ dotfiles/
 Editá `local/env.zsh` (gitignored) para configurar:
 - `SCREENSHOTS_DIR` — directorio de screenshots
 - `WORKSPACE_DIR` — directorio raíz de tus proyectos
+- `CORTEX_HOME` — raíz canónica de cortex, por defecto `~/.cortex`
+- `CORTEX_ROOT` — repo principal cortex, por defecto `~/.cortex/cortex`
+- `CORTEX_DOTFILES_DIR` — repo dotfiles, por defecto `~/.cortex/cortex-dotfiles`
 - `OPENCODE_DEFAULT_FLAGS` — flags por defecto para `oc`
 - `INNIT_DIR` y overrides `INNIT_*_DIR` — navegación rápida de subdirectorios
 - Aliases y paths personales
@@ -141,9 +145,9 @@ Layout activo:
 | Pantalla | Uso | Layout |
 |------|-----|--------|
 | Mac Retina (`display=1`) | apps generales: Discord, WhatsApp, Mail, Postman, Zen Browser | app activa + network, volumen, calendario, hora, batería |
-| ViewSonic vertical (`display=2`) | auxiliar/random, cmux y Claude de formato vertical | brand + panel/spaces + app activa + git + issue/PR + SDD + brains + timer; derecha: RAM + CPU + hora |
-| LG Ultrawide (`display=3`) | mixto: cmux, Claude, ChatGPT, Obsidian | brand + panel/spaces + app activa + git + issue/PR + SDD + brains + timer; derecha: RAM + CPU + hora |
-| 4K derecho (`display=4`) | cmux exclusivo | brand + panel/spaces + app activa + git + issue/PR + SDD + brains + timer; derecha: RAM + CPU + hora |
+| ViewSonic vertical (`display=2`) | auxiliar/random, Ghostty/Herdr y Claude de formato vertical | brand + panel/spaces + app activa; derecha: RAM + CPU + hora |
+| LG Ultrawide (`display=3`) | mixto: Ghostty/Herdr, Claude, ChatGPT, Obsidian | brand + panel/spaces + app activa; derecha: RAM + CPU + hora |
+| 4K derecho (`display=4`) | Ghostty/Herdr exclusivo | brand + panel/spaces + app activa; derecha: RAM + CPU + hora |
 
 El centro queda libre para evitar el notch y reducir ruido visual.
 
@@ -157,7 +161,7 @@ Interacciones:
 | Batería | abre Battery Settings |
 | Fecha/hora | abre Calendar |
 
-La barra asume Mac con notch y varios monitores: el centro queda libre y los items operativos se mantienen en los laterales. Los items de contexto (`git`, issue/PR, SDD y timer) se actualizan con un agregador liviano que lee `${XDG_CACHE_HOME:-~/.cache}/cortex/active-workspace`. Un watcher de eventos `workspace.selected` de cmux actualiza ese archivo y refresca los items al cambiar de workspace. `SKETCHYBAR_WORKSPACE` permite forzar un repo específico.
+La barra asume Mac con notch y varios monitores: el centro queda libre y evita widgets de contexto remoto (`git`, issue/PR, SDD, brains, timer), porque el trabajo operativo corre en Herdr remoto.
 
 El layout cambia automáticamente al recargar SketchyBar: con un solo display, el Retina mantiene los indicadores de estado útiles; con varios displays, el Retina queda liviano y el layout completo se mueve al externo disponible.
 
@@ -282,7 +286,7 @@ El prompt usa una variante local de FiraCode Nerd Font Mono con el glyph de la b
 | Codepoint | `U+F0F00` |
 | Glyph test | `python3 -c 'print("\U000F0F00")'` |
 
-La config de Starship usa este glyph PUA directamente. Si la terminal no tiene seleccionada `FiraCode Nerd Font Mono Beard`, el prompt puede mostrar un cuadrado/tofu en lugar de la barba. En macOS, `install.sh` instala la fuente y deja configurados Ghostty y cmux con esa family.
+La config de Starship usa este glyph PUA directamente. Si la terminal no tiene seleccionada `FiraCode Nerd Font Mono Beard`, el prompt puede mostrar un cuadrado/tofu en lugar de la barba. En macOS, `install.sh` instala la fuente y deja configurado Ghostty con esa family.
 
 Para regenerar la fuente:
 

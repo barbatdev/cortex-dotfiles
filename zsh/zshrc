@@ -56,6 +56,10 @@ export VISUAL="$EDITOR"
 # Workspace principal de desarrollo
 export WORKSPACE_DIR="${WORKSPACE_DIR:-$HOME/dev}"
 export CLAUDE_CODE_EFFORT_LEVEL=high
+export CORTEX_HOME="${CORTEX_HOME:-$HOME/.cortex}"
+export CORTEX_ROOT="${CORTEX_ROOT:-$CORTEX_HOME/cortex}"
+export CORTEX_DOTFILES_DIR="${CORTEX_DOTFILES_DIR:-$CORTEX_HOME/cortex-dotfiles}"
+export CORTEX_MULTIPLEXER="${CORTEX_MULTIPLEXER:-herdr}"
 
 # Proyectos de la organización
 export WORK_PROJECTS_DIR="${WORK_PROJECTS_DIR:-$HOME/dev/work}"

@@ -29,26 +29,6 @@ DIR=$(echo "$input" | jq -r '.workspace.current_dir // "~"')
 MCP_CACHE_KEY=$(printf '%s' "$DIR" | tr '/ ' '__')
 MCP_CACHE_FILE="/tmp/claude_mcp_cache_${MCP_CACHE_KEY}"
 
-# --- Integración cmux sidebar ---
-# CMUX_WORKSPACE_ID no se hereda desde Claude Code — leerlo desde el archivo
-# que escribió cmux-claude-hook.sh en session-start (keyed por directorio)
-if [ -z "$CMUX_WORKSPACE_ID" ]; then
-  _SAFE_DIR=$(echo "$DIR" | tr '/' '_')
-  _WS_FILE="/tmp/cmux_ws_${_SAFE_DIR}"
-  [ -f "$_WS_FILE" ] && CMUX_WORKSPACE_ID=$(cat "$_WS_FILE" 2>/dev/null)
-fi
-# Exportar para que cmux lo use nativamente en subprocesos (& background)
-export CMUX_WORKSPACE_ID
-
-# Detectar binary cmux (solo si tenemos workspace ID)
-CMUX_BIN=""
-if [ -n "$CMUX_WORKSPACE_ID" ]; then
-  if command -v cmux > /dev/null 2>&1; then
-    CMUX_BIN="cmux"
-  elif [ -x "/Applications/cmux.app/Contents/Resources/bin/cmux" ]; then
-    CMUX_BIN="/Applications/cmux.app/Contents/Resources/bin/cmux"
-  fi
-fi
 ADDED=$(echo "$input" | jq -r '.cost.total_lines_added // 0')
 REMOVED=$(echo "$input" | jq -r '.cost.total_lines_removed // 0')
 
@@ -327,71 +307,6 @@ fi
 if [ -n "$SDD_TASKS" ]; then
   LINE+="${SEP}"
   LINE+="${MUTED}tasks:${NC} ${SUCCESS}${SDD_TASKS}${NC}"
-fi
-
-# Actualizar sidebar cmux con progreso y modelo
-if [ -n "$CMUX_BIN" ]; then
-  clear_sidebar_status() {
-    # env -u descarta el socket heredado del caller; cmux auto-descubre el socket vivo
-    env -u CMUX_SOCKET_PATH -u CMUX_SOCKET "$CMUX_BIN" clear-status "$1" --workspace "$CMUX_WORKSPACE_ID" > /dev/null 2>&1 || true
-  }
-
-  # Modelo abreviado — siempre actualizar (cache por modelo para no spamear)
-  case "$MODEL" in
-    *Opus*)   MODEL_SHORT="O4.6" ;;
-    *Sonnet*) MODEL_SHORT="S4.6" ;;
-    *Haiku*)  MODEL_SHORT="H4.5" ;;
-    *)        MODEL_SHORT="Claude" ;;
-  esac
-  MODEL_CACHE="/tmp/cmux_model_${CMUX_WORKSPACE_ID}"
-  PREV_MODEL=""
-  [ -f "$MODEL_CACHE" ] && PREV_MODEL=$(cat "$MODEL_CACHE" 2>/dev/null)
-  if [ "$MODEL_SHORT" != "$PREV_MODEL" ]; then
-    echo "$MODEL_SHORT" > "$MODEL_CACHE"
-    # env -u descarta el socket heredado del caller para evitar "Connection refused"
-    env -u CMUX_SOCKET_PATH -u CMUX_SOCKET "$CMUX_BIN" set-status claude_model "$MODEL_SHORT" --icon "cpu" --color "#a6e3a1" > /dev/null 2>&1
-  fi
-
-  if [ -n "$SDD_MODE" ]; then
-    if [ "$SDD_MODE" = "auto" ]; then
-      env -u CMUX_SOCKET_PATH -u CMUX_SOCKET "$CMUX_BIN" set-status sdd_mode "$SDD_MODE" --icon "arrow.right.circle" --color "#a6e3a1" > /dev/null 2>&1
-    else
-      env -u CMUX_SOCKET_PATH -u CMUX_SOCKET "$CMUX_BIN" set-status sdd_mode "$SDD_MODE" --icon "pause.circle" --color "#f9e2af" > /dev/null 2>&1
-    fi
-  else
-    clear_sidebar_status sdd_mode
-  fi
-
-  if [ -n "$SDD_SPEC" ]; then
-    env -u CMUX_SOCKET_PATH -u CMUX_SOCKET "$CMUX_BIN" set-status sdd_spec "$SDD_SPEC" --icon "doc.text" --color "#89b4fa" > /dev/null 2>&1
-  else
-    clear_sidebar_status sdd_spec
-  fi
-
-  if [ -n "$SDD_TASKS" ]; then
-    env -u CMUX_SOCKET_PATH -u CMUX_SOCKET "$CMUX_BIN" set-status sdd_tasks "$SDD_TASKS" --icon "checklist" --color "#94e2d5" > /dev/null 2>&1
-  else
-    clear_sidebar_status sdd_tasks
-  fi
-
-  if [ -n "$BRAINS_DISPLAY" ]; then
-    env -u CMUX_SOCKET_PATH -u CMUX_SOCKET "$CMUX_BIN" set-status brains "$(printf '%s' "$BRAINS_DISPLAY" | sed -E 's/\x1b\[[0-9;]*m//g')" --icon "brain.head.profile" --color "#89dceb" > /dev/null 2>&1
-  else
-    clear_sidebar_status brains
-  fi
-
-  # Progreso — throttle: solo actualizar si cambio ≥ 2 puntos
-  PROGRESS_CACHE="/tmp/cmux_progress_${CMUX_WORKSPACE_ID}"
-  PREV_CTX=0
-  [ -f "$PROGRESS_CACHE" ] && PREV_CTX=$(cat "$PROGRESS_CACHE" 2>/dev/null || echo 0)
-  DIFF=$(( CTX_PERCENT - PREV_CTX ))
-  [ "$DIFF" -lt 0 ] && DIFF=$(( -DIFF ))
-  if [ "$DIFF" -ge 2 ]; then
-    echo "$CTX_PERCENT" > "$PROGRESS_CACHE"
-    PROGRESS_VAL=$(awk "BEGIN {printf \"%.2f\", $CTX_PERCENT / 100}")
-    # env -u descarta el socket heredado del caller para evitar "Connection refused"
-    env -u CMUX_SOCKET_PATH -u CMUX_SOCKET "$CMUX_BIN" set-progress "$PROGRESS_VAL" --label "ctx ${CTX_PERCENT}%" > /dev/null 2>&1
-  fi
 fi
 
 echo -e "${LINE}\033[K"
