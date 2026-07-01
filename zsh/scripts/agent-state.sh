@@ -13,6 +13,7 @@ import hashlib
 import json
 import os
 import shutil
+import subprocess
 import sys
 import uuid
 from datetime import datetime, timedelta, timezone
@@ -20,6 +21,7 @@ from pathlib import Path
 
 SCHEMA = "cortex.agent_state.v1"
 VALID_STATES = {"working", "blocked", "idle", "unknown"}
+HERDR_SOURCE = "cortex.agent-state"
 
 
 def now_utc():
@@ -99,6 +101,49 @@ def write_json_atomic(path, data):
     tmp.replace(path)
 
 
+def herdr_safe(value):
+    return "".join(ch if ch.isalnum() or ch in ".:_-" else "-" for ch in value)
+
+
+def report_to_herdr(event):
+    if os.environ.get("CORTEX_AGENT_STATE_HERDR") == "0":
+        return
+    if os.environ.get("HERDR_ENV") != "1":
+        return
+
+    pane_id = event.get("context", {}).get("pane_id")
+    if not pane_id:
+        return
+
+    herdr = shutil.which("herdr")
+    if not herdr:
+        return
+
+    state = event.get("state", "unknown")
+    if state == "unknown":
+        return
+
+    agent = event.get("agent", {}).get("agent_id", "")
+    message = event.get("message", "")
+    try:
+        subprocess.run([
+            herdr,
+            "pane",
+            "report-agent",
+            pane_id,
+            "--source",
+            HERDR_SOURCE,
+            "--agent",
+            herdr_safe(agent),
+            "--state",
+            state,
+            "--message",
+            message,
+        ], check=False, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    except OSError:
+        return
+
+
 def cmd_report(args):
     root, events_path, current_dir = paths()
     root.mkdir(parents=True, exist_ok=True)
@@ -112,6 +157,7 @@ def cmd_report(args):
     pane_id = event.get("context", {}).get("pane_id")
     key = current_key(event["source"]["adapter"], event["agent"]["agent_id"], pane_id)
     write_json_atomic(current_dir / f"{key}.json", event)
+    report_to_herdr(event)
     print(f"reported {event['state']} {event['agent']['agent_id']}")
 
 
