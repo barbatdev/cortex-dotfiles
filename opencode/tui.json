@@ -3,8 +3,5 @@
   "theme": "cortex-green",
   "scroll_acceleration": {
     "enabled": true
-  },
-  "plugin": [
-    "plugins/statusline/statusline.tsx"
-  ]
+  }
 }
