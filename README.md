@@ -2,6 +2,10 @@
 
 Configuración local extraida de `cortex`: terminal, shell, prompt, helpers de AI CLI y herramientas de desarrollo para macOS.
 
+## CI
+
+GitHub Actions ejecuta un smoke check mínimo en pull requests y pushes a `main`: sintaxis Zsh/Bash, JSON con `jq`, TOML con `python3`/`tomllib`, y `./install.sh --check` cuando el instalador lo soporte.
+
 ## Stack
 
 - **Terminal**: [Ghostty](https://ghostty.org/) y Alacritty
