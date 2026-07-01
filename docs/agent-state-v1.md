@@ -174,7 +174,7 @@ cortex.agent_state.v1 clear
 
 `agent-state` is an alias for the same command when `zsh/zshrc` is loaded. The command records only caller-provided `message` text plus allowlisted Herdr context environment fields when present: `HERDR_PANE_ID`, `HERDR_SESSION` and `HERDR_WORKSPACE_ID`. It does not inspect prompts, command output, file contents or arbitrary environment variables.
 
-When running inside Herdr (`HERDR_ENV=1`) with `HERDR_PANE_ID` set and a `herdr` binary available on `PATH`, `report` also makes a best-effort pane update:
+When running inside Herdr (`HERDR_ENV=1` or `CORTEX_MULTIPLEXER=herdr`) with `HERDR_PANE_ID` set and a `herdr` binary available on `PATH`, `report` also makes a best-effort pane update:
 
 ```bash
 herdr pane report-agent "$HERDR_PANE_ID" --source cortex.agent-state --agent "$agent" --state "$state" --message "$message"
@@ -214,8 +214,9 @@ Expected adapter flow:
 
 1. Normalize the native agent event to `cortex.agent_state.v1`.
 2. Send useful non-`unknown` states through Herdr `report-agent` for pane-visible status.
-3. Send supporting fields through Herdr `report-metadata` for rollups and debug surfaces.
-4. Let Herdr or downstream renderers apply rollup order, TTL and notification rules.
+3. Let Herdr or downstream renderers apply rollup order, TTL and notification rules.
+
+The first local bridge only reports semantic state via `report-agent`; richer metadata reporting is left to a later adapter slice.
 
 Herdr-specific extensions must live under `metadata.herdr` so generic consumers can ignore them safely.
 
