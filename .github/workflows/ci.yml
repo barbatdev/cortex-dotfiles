@@ -1,0 +1,86 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    name: Smoke checks
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install minimal tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends zsh jq shellcheck
+
+      - name: Validate shell syntax
+        shell: bash
+        run: |
+          set -euo pipefail
+          shopt -s nullglob globstar
+
+          zsh_files=(zsh/zshrc zsh/scripts/*.zsh)
+          for file in "${zsh_files[@]}"; do
+            [[ -f "$file" ]] || continue
+            zsh -n "$file"
+          done
+
+          bash_files=(
+            install.sh
+            claude/statusline.sh
+            zsh/scripts/*.sh
+            scripts/*.sh
+            sketchybar/**/*.sh
+          )
+          for file in "${bash_files[@]}"; do
+            [[ -f "$file" ]] || continue
+            bash -n "$file"
+          done
+
+          if command -v shellcheck >/dev/null 2>&1; then
+            shellcheck --severity=error --shell=bash "${bash_files[@]}"
+          fi
+
+      - name: Validate JSON configs
+        shell: bash
+        run: |
+          set -euo pipefail
+          while IFS= read -r file; do
+            jq empty "$file"
+          done < <(git ls-files '*.json')
+
+      - name: Validate TOML configs
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import pathlib
+          import subprocess
+          import tomllib
+
+          files = subprocess.check_output(
+              ["git", "ls-files", "*.toml"], text=True
+          ).splitlines()
+          for file in files:
+              with pathlib.Path(file).open("rb") as handle:
+                  tomllib.load(handle)
+          PY
+
+      - name: Run installer check when available
+        shell: bash
+        run: |
+          set -euo pipefail
+          if grep -Eq -- '(^|[[:space:]])--check([^[:alnum:]_-]|$)' install.sh; then
+            ./install.sh --check
+          else
+            printf '%s\n' 'install.sh --check not available; skipping.'
+          fi
