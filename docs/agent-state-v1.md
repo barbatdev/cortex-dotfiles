@@ -161,11 +161,27 @@ Visible panes should not spam the user.
 - Renderers should still update visual state even when notifications are suppressed.
 - Visibility checks are best-effort. Missing visibility data must not block state reporting.
 
+## Minimal Local CLI
+
+The first runtime slice is a neutral local command backed only by POSIX shell and `python3`:
+
+```bash
+cortex.agent_state.v1 report --source opencode --agent opencode:cortex-dotfiles --state working --message "running tests"
+cortex.agent_state.v1 list
+cortex.agent_state.v1 get --agent opencode:cortex-dotfiles
+cortex.agent_state.v1 clear
+```
+
+`agent-state` is an alias for the same command when `zsh/zshrc` is loaded. The command records only caller-provided `message` text plus allowlisted Herdr context environment fields when present: `HERDR_PANE_ID`, `HERDR_SESSION` and `HERDR_WORKSPACE_ID`. It does not inspect prompts, command output, file contents or arbitrary environment variables.
+
+Herdr reporting is intentionally not implemented in this slice. A future adapter can read the same local state or call the command and then forward normalized events to Herdr's pane metadata API.
+
 ## Storage Guidance
 
 State storage should be local, ephemeral and overwrite-friendly.
 
-- Use a cache path such as `${XDG_CACHE_HOME:-~/.cache}/cortex/agent-state/`.
+- Use a state path such as `${XDG_STATE_HOME:-~/.local/state}/cortex/agent-state/`.
+- The minimal CLI appends events to `events.jsonl` and stores current records in `current/`.
 - Store one latest JSON record per stable `context.pane_id` or per `agent_id` plus `pane_id`.
 - Keep optional append logs disabled by default and rotate aggressively when enabled for debugging.
 - Do not store prompts, model output, command output, file diffs, tokens, credentials or environment dumps.

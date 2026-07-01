@@ -221,7 +221,11 @@ if [[ -d "$_SCRIPTS_DIR" ]]; then
     [[ -f "$_SCRIPTS_DIR/git-helpers.zsh" ]]    && source "$_SCRIPTS_DIR/git-helpers.zsh"
     [[ -f "$_SCRIPTS_DIR/tmux-helpers.zsh" ]]       && source "$_SCRIPTS_DIR/tmux-helpers.zsh"
     [[ -f "$_SCRIPTS_DIR/worktree-helpers.zsh" ]] && source "$_SCRIPTS_DIR/worktree-helpers.zsh"
+    [[ -f "$_SCRIPTS_DIR/agent-state.sh" ]] && source "$_SCRIPTS_DIR/agent-state.sh"
 fi
+
+alias cortex.agent_state.v1="cortex_agent_state"
+alias agent-state="cortex_agent_state"
 #endregion
 
 #region Local Overrides
