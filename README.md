@@ -14,6 +14,7 @@ Configuración local extraida de `cortex`: terminal, shell, prompt, helpers de A
 - **Editor principal**: Neovim basado en LazyVim/Gentleman.Dots con overlay InnIT/RefactorIA
 - **Ls**: [eza](https://github.com/eza-community/eza)
 - **AI CLI UX**: Claude Code statusline, OpenCode helpers y sesiones Herdr por repo
+- **Workflow docs**: [Herdr workflow](docs/herdr-workflow.md) y [keymaps prácticos](docs/keymaps.md)
 - **Supply-chain guardrails**: defaults globales para `uv`, `npm`, `pnpm` y `bun`
 - **Fuente**: FiraCode Nerd Font + variante custom RefactorIA
 
@@ -40,6 +41,7 @@ El instalador macOS:
 ```
 dotfiles/
 ├── claude/                   # Claude Code statusline
+├── docs/                     # Referencias operativas y keymaps
 ├── ghostty/                  # Config Ghostty y shaders
 ├── fonts/                    # Fuente RefactorIA y script de regeneración
 ├── herdr/                    # Config Herdr
@@ -129,6 +131,8 @@ Notas de theming AI CLI:
 
 ## Herdr remoto
 
+Referencia completa: [Herdr workflow](docs/herdr-workflow.md). Atajos prácticos: [keymaps](docs/keymaps.md).
+
 Para SSH/remoto, el modelo recomendado es Herdr. Usá sesiones nombradas para separar tableros persistentes, workspaces por repo, tabs por objetivo y panes por agente/proceso:
 
 ```bash
@@ -210,6 +214,8 @@ sketchybar --reload
 ```
 
 ## yabai + skhd
+
+Atajos resumidos junto al resto del stack: [keymaps](docs/keymaps.md).
 
 La config incluida es gradual y no usa scripting addition: no requiere desactivar SIP. Sirve para acostumbrarse al tiling y navegación por teclado sin cambiar partes sensibles de macOS.
 
