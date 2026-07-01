@@ -19,6 +19,7 @@ GitHub Actions ejecuta un smoke check mínimo en pull requests y pushes a `main`
 - **Editor principal**: Neovim basado en LazyVim/Gentleman.Dots con overlay RefactorIA
 - **Ls**: [eza](https://github.com/eza-community/eza)
 - **AI CLI UX**: Claude Code statusline, OpenCode helpers y Herdr remoto
+- **Workflow docs**: [Herdr workflow](docs/herdr-workflow.md) y [keymaps prácticos](docs/keymaps.md)
 - **Supply-chain guardrails**: defaults globales para `uv`, `npm`, `pnpm` y `bun`
 - **Fuente**: FiraCode Nerd Font + variante custom RefactorIA
 
@@ -58,7 +59,7 @@ El instalador macOS:
 ```
 dotfiles/
 ├── claude/                   # Claude Code statusline
-├── docs/                     # Especificaciones Cortex locales
+├── docs/                     # Referencias operativas y keymaps
 ├── ghostty/                  # Config Ghostty, muxy legado y shaders
 ├── fonts/                    # Fuente RefactorIA y script de regeneración
 ├── npm/                      # Global npm defaults (~/.npmrc)
@@ -131,6 +132,8 @@ Editá `local/env.zsh` (gitignored) para configurar:
 
 ## Herdr remoto
 
+Referencia completa: [Herdr workflow](docs/herdr-workflow.md). Atajos prácticos: [keymaps](docs/keymaps.md).
+
 Usá `hremote` desde tu terminal local en macOS. No hagas `ssh` primero y después intentes levantar `herdr` dentro de esa sesión remota.
 
 - Para pegar una imagen del clipboard local en la terminal remota, usá `Ctrl+V` por defecto (no `Cmd+V`).
@@ -190,6 +193,8 @@ sketchybar --reload
 ```
 
 ## yabai + skhd
+
+Atajos resumidos junto al resto del stack: [keymaps](docs/keymaps.md).
 
 La config incluida es gradual y no usa scripting addition: no requiere desactivar SIP. Sirve para acostumbrarse al tiling y navegación por teclado sin cambiar partes sensibles de macOS.
 
