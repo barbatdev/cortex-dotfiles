@@ -34,6 +34,12 @@ Para auditar el entorno sin instalar paquetes ni modificar archivos:
 bash install.sh --check
 ```
 
+Para previsualizar lo que haría la instalación sin mutar archivos, instalar paquetes, arrancar servicios ni crear `local/env.zsh`:
+
+```bash
+bash install.sh --dry-run
+```
+
 El instalador macOS:
 1. Instala dependencias via Homebrew (starship, tmux, lazygit, micro, eza, sketchybar, yabai, skhd, Karabiner-Elements, FiraCode Nerd Font)
 2. Hace backup de configs existentes con timestamp
