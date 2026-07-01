@@ -101,6 +101,15 @@ Editá `local/env.zsh` (gitignored) para configurar:
 - `INNIT_DIR` y overrides `INNIT_*_DIR` — navegación rápida de subdirectorios
 - Aliases y paths personales
 
+## Herdr remoto
+
+Usá `hremote` desde tu terminal local en macOS. No hagas `ssh` primero y después intentes levantar `herdr` dentro de esa sesión remota.
+
+- Para pegar una imagen del clipboard local en la terminal remota, usá `Ctrl+V` por defecto (no `Cmd+V`).
+- `herdr --remote` puentea ese pegado copiando la imagen a un archivo temporal remoto y pegando el path resultante en la shell remota.
+- Una sesión SSH normal no puede leer el clipboard del escritorio local de macOS, así que ese flujo depende de Herdr corriendo del lado local.
+- Para archivos que no sean imágenes del clipboard, puede seguir haciendo falta un fallback separado de transferencia.
+
 ## SketchyBar
 
 La config macOS enlaza `sketchybar/` en `~/.config/sketchybar`. El diseño es sobrio, notch-safe y usa la paleta dark/green de InnIT.
