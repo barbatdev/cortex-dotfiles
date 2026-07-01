@@ -10,7 +10,7 @@ show_agent_labels_on_pane_borders = true
 prompt_new_tab_name = true
 pane_borders = true
 pane_gaps = true
-accent = "#0054ff"
+accent = "#FCD34D"
 
 [terminal]
 new_cwd = "follow"
@@ -26,7 +26,7 @@ name = "terminal"
 auto_switch = false
 
 [theme.custom]
-panel_bg = "#1C2128"
-accent = "#0054ff"
-red = "#F85149"
-green = "#3FB950"
+panel_bg = "#171512"
+accent = "#FCD34D"
+red = "#F87171"
+green = "#10B981"
