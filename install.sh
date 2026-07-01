@@ -157,6 +157,8 @@ PY
             check_command starship warn
             check_command micro warn
             check_command eza warn
+            check_command herdr warn
+            check_command mosh warn
             check_command tmux warn
             check_command lazygit warn
             check_command sketchybar warn
@@ -173,6 +175,8 @@ PY
             check_command bash fail
             check_command zsh warn
             check_command python3 warn
+            check_command herdr warn
+            check_command mosh warn
             ;;
         *)
             warn "unsupported platform: $(uname -s)"
@@ -201,6 +205,7 @@ PY
     check_symlink_target "$DOTFILES/bun/bunfig.toml" "$HOME/.bunfig.toml"
     check_symlink_target "$DOTFILES/uv/uv.toml" "$HOME/.config/uv/uv.toml"
     check_symlink_target "$DOTFILES/starship/starship.toml" "$HOME/.config/starship.toml"
+    check_symlink_target "$DOTFILES/herdr/config.toml" "$HOME/.config/herdr/config.toml"
     check_symlink_target "$DOTFILES/ghostty/config" "$HOME/.config/ghostty/config"
     check_symlink_target "$DOTFILES/ghostty/shaders" "$HOME/.config/ghostty/shaders"
     check_symlink_target "$DOTFILES/tmux/tmux.conf" "$HOME/.tmux.conf"
@@ -326,6 +331,8 @@ karabiner_cli_path() {
 
 install_formula_if_missing micro micro "editor terminal"
 install_formula_if_missing eza eza "ls mejorado"
+install_formula_if_missing herdr herdr "multiplexor remoto persistente"
+install_formula_if_missing mosh mosh "SSH resiliente para workstations remotas"
 install_formula_if_missing tmux tmux "multiplexor de terminal"
 install_formula_if_missing lazygit lazygit "git TUI"
 install_formula_if_missing sketchybar sketchybar "barra macOS"
@@ -408,6 +415,7 @@ backup_if_exists "$HOME/Library/Preferences/pnpm/rc"
 backup_if_exists "$HOME/.bunfig.toml"
 backup_if_exists "$HOME/.config/uv/uv.toml"
 backup_if_exists "$HOME/.config/starship.toml"
+backup_if_exists "$HOME/.config/herdr/config.toml"
 backup_if_exists "$HOME/.config/ghostty/config"
 backup_if_exists "$HOME/.tmux.conf"
 backup_if_exists "$HOME/.claude/statusline.sh"
@@ -443,6 +451,7 @@ create_symlink "$DOTFILES/pnpm/rc"                 "$HOME/Library/Preferences/pn
 create_symlink "$DOTFILES/bun/bunfig.toml"         "$HOME/.bunfig.toml"
 create_symlink "$DOTFILES/uv/uv.toml"              "$HOME/.config/uv/uv.toml"
 create_symlink "$DOTFILES/starship/starship.toml"  "$HOME/.config/starship.toml"
+create_symlink "$DOTFILES/herdr/config.toml"       "$HOME/.config/herdr/config.toml"
 create_symlink "$DOTFILES/ghostty/config"          "$HOME/.config/ghostty/config"
 create_symlink "$DOTFILES/ghostty/shaders"         "$HOME/.config/ghostty/shaders"
 create_symlink "$DOTFILES/tmux/tmux.conf"          "$HOME/.tmux.conf"

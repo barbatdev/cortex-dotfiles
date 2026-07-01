@@ -42,6 +42,10 @@ _cmux_rename_workspace() {
     fi
 }
 
+_cortex_use_herdr_runtime() {
+    [[ "${CORTEX_MULTIPLEXER:-}" == "herdr" || -n "${HERDR_ENV:-}" ]]
+}
+
 # Abrir Claude Code en tmux
 # Si no está en tmux, crea una sesión nueva
 cc() {
@@ -52,6 +56,11 @@ cc() {
     if [[ -z "$resolved" ]]; then
         echo "❌ Directorio no encontrado: $target"
         return 1
+    fi
+
+    if _cortex_use_herdr_runtime; then
+        cd "$resolved" && claude --enable-auto-mode --dangerously-skip-permissions
+        return
     fi
 
     if [[ -n "$CMUX_WORKSPACE_ID" ]]; then
@@ -117,6 +126,11 @@ oc() {
 
     local oc_cmd="opencode ${OPENCODE_DEFAULT_FLAGS:-}"
 
+    if _cortex_use_herdr_runtime; then
+        cd "$resolved" && eval "$oc_cmd"
+        return
+    fi
+
     if [[ -n "$CMUX_WORKSPACE_ID" ]]; then
         local workspace_name
         workspace_name="$(_workspace_name_for_path "$resolved")"
@@ -173,6 +187,11 @@ ccb() {
 
     local cc_cmd="claude --dangerously-skip-permissions"
 
+    if _cortex_use_herdr_runtime; then
+        cd "$resolved" && eval "$cc_cmd"
+        return
+    fi
+
     if [[ -n "$CMUX_WORKSPACE_ID" ]]; then
         local workspace_name
         workspace_name="$(_workspace_name_for_path "$resolved")"
@@ -228,6 +247,11 @@ ocb() {
     fi
 
     local oc_cmd="opencode ${OPENCODE_DEFAULT_FLAGS:-}"
+
+    if _cortex_use_herdr_runtime; then
+        cd "$resolved" && eval "$oc_cmd"
+        return
+    fi
 
     if [[ -n "$CMUX_WORKSPACE_ID" ]]; then
         local workspace_name
@@ -288,6 +312,11 @@ ccx() {
     if [[ -z "$resolved" ]]; then
         echo "❌ Directorio no encontrado: $target"
         return 1
+    fi
+
+    if _cortex_use_herdr_runtime; then
+        cd "$resolved" && echo "$context" | claude
+        return
     fi
 
     if [[ -n "$CMUX_WORKSPACE_ID" ]]; then
