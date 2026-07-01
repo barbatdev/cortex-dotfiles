@@ -55,14 +55,17 @@ export VISUAL="$EDITOR"
 #region Environment Variables
 # Workspace principal de desarrollo
 export WORKSPACE_DIR="${WORKSPACE_DIR:-$HOME/dev}"
+export BARBATDEV_DIR="${BARBATDEV_DIR:-$WORKSPACE_DIR/barbatdev}"
 export CLAUDE_CODE_EFFORT_LEVEL=high
 export CORTEX_HOME="${CORTEX_HOME:-$HOME/.cortex}"
-export CORTEX_ROOT="${CORTEX_ROOT:-$CORTEX_HOME/cortex}"
-export CORTEX_DOTFILES_DIR="${CORTEX_DOTFILES_DIR:-$CORTEX_HOME/cortex-dotfiles}"
+export CORTEX_ROOT="${CORTEX_ROOT:-$BARBATDEV_DIR/cortex/cortex}"
+export CORTEX_DOTFILES_DIR="${CORTEX_DOTFILES_DIR:-$BARBATDEV_DIR/cortex/cortex-dotfiles}"
 export CORTEX_MULTIPLEXER="${CORTEX_MULTIPLEXER:-herdr}"
 
 # Proyectos de la organización
-export WORK_PROJECTS_DIR="${WORK_PROJECTS_DIR:-$HOME/dev/work}"
+export WORK_PROJECTS_DIR="${WORK_PROJECTS_DIR:-$BARBATDEV_DIR/innit}"
+export PERSONAL_PROJECTS_DIR="${PERSONAL_PROJECTS_DIR:-$BARBATDEV_DIR/products}"
+export INNIT_DIR="${INNIT_DIR:-$BARBATDEV_DIR/innit}"
 
 # Screenshots (configurable en local/env.zsh)
 export SCREENSHOTS_DIR="${SCREENSHOTS_DIR:-$HOME/Screenshots}"
@@ -98,20 +101,32 @@ _go_dev_dir() {
     fi
 }
 
+_go_first_existing_dir() {
+    local target
+    for target in "$@"; do
+        if [[ -d "$target" ]]; then
+            cd "$target"
+            return
+        fi
+    done
+    echo "❌ Directorio no encontrado: $1"
+    return 1
+}
+
 dev()         { _go_dev_dir "$HOME/dev"; }
-barbat()      { _go_dev_dir "$HOME/dev/barbat"; }
-cowork()      { _go_dev_dir "$HOME/dev/cowork"; }
-personal()    { _go_dev_dir "$HOME/dev/personal"; }
-tools()       { _go_dev_dir "$HOME/dev/tools"; }
+barbat()      { _go_dev_dir "$BARBATDEV_DIR"; }
+cowork()      { _go_first_existing_dir "$WORK_PROJECTS_DIR" "$BARBATDEV_DIR/innit"; }
+personal()    { _go_first_existing_dir "$PERSONAL_PROJECTS_DIR" "$BARBATDEV_DIR/products"; }
+tools()       { _go_dev_dir "$BARBATDEV_DIR/tools"; }
 worktrees()   { _go_dev_dir "$HOME/dev/worktrees"; }
-work()        { _go_dev_dir "${WORK_PROJECTS_DIR:-$HOME/dev/work}"; }
-innit()       { _go_dev_dir "${INNIT_DIR:-$HOME/dev/innit}"; }
-innit-apis()  { _go_dev_dir "${INNIT_APIS_DIR:-${INNIT_DIR:-$HOME/dev/innit}/apis}"; }
-innit-mobile(){ _go_dev_dir "${INNIT_MOBILE_DIR:-${INNIT_DIR:-$HOME/dev/innit}/mobile}"; }
-innit-webs()  { _go_dev_dir "${INNIT_WEBS_DIR:-${INNIT_DIR:-$HOME/dev/innit}/webs}"; }
-innit-pcsoft(){ _go_dev_dir "${INNIT_PCSOFT_DIR:-${INNIT_DIR:-$HOME/dev/innit}/pcsoft}"; }
-cortex()      { _go_dev_dir "$HOME/cortex"; }
-dotfiles()    { _go_dev_dir "${_DOTFILES_DIR:-$HOME/dev/personal/cortex-dotfiles}"; }
+work()        { _go_first_existing_dir "$WORK_PROJECTS_DIR" "$BARBATDEV_DIR/innit"; }
+innit()       { _go_first_existing_dir "$INNIT_DIR" "$BARBATDEV_DIR/innit"; }
+innit-apis()  { _go_first_existing_dir "${INNIT_APIS_DIR:-$INNIT_DIR}" "$INNIT_DIR"; }
+innit-mobile(){ _go_first_existing_dir "${INNIT_MOBILE_DIR:-$INNIT_DIR}" "$INNIT_DIR"; }
+innit-webs()  { _go_first_existing_dir "${INNIT_WEBS_DIR:-$INNIT_DIR}" "$INNIT_DIR"; }
+innit-pcsoft(){ _go_first_existing_dir "${INNIT_PCSOFT_DIR:-$INNIT_DIR}" "$INNIT_DIR"; }
+cortex()      { _go_dev_dir "$CORTEX_ROOT"; }
+dotfiles()    { _go_dev_dir "${_DOTFILES_DIR:-$CORTEX_DOTFILES_DIR}"; }
 #endregion
 
 #region System Aliases
