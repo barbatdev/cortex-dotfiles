@@ -41,6 +41,7 @@ El instalador macOS:
 ```
 dotfiles/
 ├── claude/                   # Claude Code statusline
+├── docs/                     # Especificaciones Cortex locales
 ├── ghostty/                  # Config Ghostty, cmux Ghostty config, muxy legado y shaders
 ├── fonts/                    # Fuente RefactorIA y script de regeneración
 ├── npm/                      # Global npm defaults (~/.npmrc)
@@ -70,6 +71,10 @@ dotfiles/
 │   └── env.zsh.example       # Template de config local (gitignored)
 └── install.sh
 ```
+
+## Especificaciones
+
+- [Cortex Agent State v1](docs/agent-state-v1.md): contrato `cortex.agent_state.v1` para normalizar estados de agentes hacia Herdr, statuslines, SketchyBar y notificaciones.
 
 ## Comandos principales
 
