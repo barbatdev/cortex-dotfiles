@@ -174,7 +174,13 @@ cortex.agent_state.v1 clear
 
 `agent-state` is an alias for the same command when `zsh/zshrc` is loaded. The command records only caller-provided `message` text plus allowlisted Herdr context environment fields when present: `HERDR_PANE_ID`, `HERDR_SESSION` and `HERDR_WORKSPACE_ID`. It does not inspect prompts, command output, file contents or arbitrary environment variables.
 
-Herdr reporting is intentionally not implemented in this slice. A future adapter can read the same local state or call the command and then forward normalized events to Herdr's pane metadata API.
+When running inside Herdr (`HERDR_ENV=1` or `CORTEX_MULTIPLEXER=herdr`) with `HERDR_PANE_ID` set and a `herdr` binary available on `PATH`, `report` also makes a best-effort pane update:
+
+```bash
+herdr pane report-metadata "$HERDR_PANE_ID" --source cortex.agent-state --custom-status "$status" --state-label "$state=$label"
+```
+
+The Herdr call is optional and never blocks the local state write. Set `CORTEX_AGENT_STATE_HERDR=0` to disable it. The bridge skips `unknown` states because they are useful for the local contract but not useful as pane presentation updates. The bridge is presentation metadata first; it must not try to take lifecycle authority away from official Herdr integrations such as opencode pane detection.
 
 ## Storage Guidance
 
@@ -198,18 +204,19 @@ Mapping guidance:
 |--------------|-------------------|
 | `context.pane_id` | Herdr pane identifier. |
 | `context.session_id` | Herdr session/window identifier. |
-| `state` | `report-agent` state payload. |
-| `agent.agent_id` | `report-agent` logical agent id. |
-| `agent.display_name` | `report-agent` display label. |
-| `message`, `reason` | `report-agent` summary/status fields. |
-| `source`, `observed_at`, `expires_at`, `visibility`, `metadata` | `report-metadata` payload. |
+| `state` | `report-metadata --state-label` presentation label. |
+| `agent.agent_id` | `report-metadata --agent` when safe to expose. |
+| `agent.display_name` | `report-metadata --display-agent` when safe to expose. |
+| `message`, `reason` | `report-metadata --custom-status` compact presentation text. |
+| `source`, `observed_at`, `expires_at`, `visibility`, `metadata` | Local event payload; Herdr receives only allowlisted presentation metadata. |
 
 Expected adapter flow:
 
 1. Normalize the native agent event to `cortex.agent_state.v1`.
-2. Send the canonical state through Herdr `report-agent` for pane-visible status.
-3. Send supporting fields through Herdr `report-metadata` for rollups and debug surfaces.
-4. Let Herdr or downstream renderers apply rollup order, TTL and notification rules.
+2. Send useful non-`unknown` states through Herdr `report-metadata` for pane-visible presentation.
+3. Let Herdr or downstream renderers apply rollup order, TTL and notification rules.
+
+The first local bridge reports compact presentation metadata only. It does not override `agent_status` or otherwise take lifecycle authority from official integrations. A future adapter may add a `report-agent` fallback only for panes that have no official agent owner.
 
 Herdr-specific extensions must live under `metadata.herdr` so generic consumers can ignore them safely.
 

@@ -13,13 +13,17 @@ import hashlib
 import json
 import os
 import shutil
+import subprocess
 import sys
+import unicodedata
 import uuid
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 SCHEMA = "cortex.agent_state.v1"
 VALID_STATES = {"working", "blocked", "idle", "unknown"}
+HERDR_SOURCE = "cortex.agent-state"
+MAX_MESSAGE_LENGTH = 240
 
 
 def now_utc():
@@ -32,6 +36,13 @@ def parse_time(value):
 
 def format_time(value):
     return value.astimezone(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
+
+
+def sanitize_message(value):
+    if not value:
+        return ""
+    clean = "".join(ch for ch in value if not unicodedata.category(ch).startswith("C"))
+    return clean[:MAX_MESSAGE_LENGTH]
 
 
 def state_root():
@@ -85,8 +96,9 @@ def build_event(args):
         "observed_at": format_time(observed_at),
         "expires_at": format_time(expires_at),
     }
-    if args.message:
-        event["message"] = args.message
+    message = sanitize_message(args.message)
+    if message:
+        event["message"] = message
     return event
 
 
@@ -97,6 +109,64 @@ def write_json_atomic(path, data):
         json.dump(data, handle, sort_keys=True, separators=(",", ":"))
         handle.write("\n")
     tmp.replace(path)
+
+
+def herdr_safe(value):
+    return "".join(ch if ch.isalnum() or ch in ".:_-" else "-" for ch in value)
+
+
+def state_label(state):
+    return {
+        "working": "Working",
+        "blocked": "Blocked",
+        "idle": "Idle",
+    }.get(state, "Unknown")
+
+
+def custom_status(state, message):
+    label = state_label(state)
+    return f"{label}: {message}" if message else label
+
+
+def report_to_herdr(event):
+    if os.environ.get("CORTEX_AGENT_STATE_HERDR") == "0":
+        return
+
+    pane_id = event.get("context", {}).get("pane_id")
+    if not pane_id:
+        return
+    if os.environ.get("HERDR_ENV") != "1" and os.environ.get("CORTEX_MULTIPLEXER") != "herdr":
+        return
+
+    herdr = shutil.which("herdr")
+    if not herdr:
+        return
+
+    state = event.get("state", "unknown")
+    if state == "unknown":
+        return
+
+    agent = event.get("agent", {}).get("agent_id", "")
+    message = sanitize_message(event.get("message", ""))
+    command = [
+        herdr,
+        "pane",
+        "report-metadata",
+        pane_id,
+        "--source",
+        HERDR_SOURCE,
+        "--custom-status",
+        custom_status(state, message),
+        "--state-label",
+        f"{state}={state_label(state)}",
+    ]
+    if agent:
+        command.extend(["--agent", herdr_safe(agent), "--display-agent", sanitize_message(agent)])
+
+    try:
+        subprocess.run(command, check=False, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    except OSError:
+        return
 
 
 def cmd_report(args):
@@ -112,6 +182,7 @@ def cmd_report(args):
     pane_id = event.get("context", {}).get("pane_id")
     key = current_key(event["source"]["adapter"], event["agent"]["agent_id"], pane_id)
     write_json_atomic(current_dir / f"{key}.json", event)
+    report_to_herdr(event)
     print(f"reported {event['state']} {event['agent']['agent_id']}")
 
 
@@ -122,17 +193,30 @@ def iter_current():
     records = []
     for path in sorted(current_dir.glob("*.json")):
         try:
-            records.append(json.loads(path.read_text(encoding="utf-8")))
+            record = json.loads(path.read_text(encoding="utf-8"))
         except (OSError, json.JSONDecodeError):
             continue
+        if isinstance(record, dict):
+            records.append(record)
     return records
 
 
 def stale_label(record, current_time):
-    expires_at = parse_time(record["expires_at"])
+    try:
+        expires_at = parse_time(record["expires_at"])
+    except (KeyError, TypeError, ValueError):
+        return "unknown"
     if expires_at <= current_time:
         return "stale"
     return "fresh"
+
+
+def nested_value(record, key, nested_key):
+    value = record.get(key, {})
+    if not isinstance(value, dict):
+        return ""
+    nested = value.get(nested_key, "")
+    return nested if isinstance(nested, str) else ""
 
 
 def cmd_list(_args):
@@ -144,23 +228,22 @@ def cmd_list(_args):
 
     print("SOURCE\tAGENT\tSTATE\tSTALE\tPANE\tMESSAGE")
     for record in records:
-        context = record.get("context", {})
         print("\t".join([
-            record.get("source", {}).get("adapter", ""),
-            record.get("agent", {}).get("agent_id", ""),
-            record.get("state", "unknown"),
+            nested_value(record, "source", "adapter"),
+            nested_value(record, "agent", "agent_id"),
+            record.get("state") if isinstance(record.get("state"), str) else "unknown",
             stale_label(record, current_time),
-            context.get("pane_id", ""),
-            record.get("message", ""),
+            nested_value(record, "context", "pane_id"),
+            sanitize_message(record.get("message", "")),
         ]))
 
 
 def cmd_get(args):
     matches = []
     for record in iter_current():
-        if args.agent and record.get("agent", {}).get("agent_id") != args.agent:
+        if args.agent and nested_value(record, "agent", "agent_id") != args.agent:
             continue
-        if args.source and record.get("source", {}).get("adapter") != args.source:
+        if args.source and nested_value(record, "source", "adapter") != args.source:
             continue
         matches.append(record)
 
