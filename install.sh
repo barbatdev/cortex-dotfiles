@@ -158,6 +158,7 @@ PY
             check_command micro warn
             check_command eza warn
             check_command tmux warn
+            check_command herdr warn
             check_command lazygit warn
             check_command sketchybar warn
             check_command yabai warn
@@ -203,8 +204,12 @@ PY
     check_symlink_target "$DOTFILES/starship/starship.toml" "$HOME/.config/starship.toml"
     check_symlink_target "$DOTFILES/ghostty/config" "$HOME/.config/ghostty/config"
     check_symlink_target "$DOTFILES/ghostty/shaders" "$HOME/.config/ghostty/shaders"
+    check_symlink_target "$DOTFILES/herdr/config.toml" "$HOME/.config/herdr/config.toml"
+    check_symlink_target "$DOTFILES/opencode/tui.json" "$HOME/.config/opencode/tui.json"
+    check_symlink_target "$DOTFILES/opencode/themes" "$HOME/.config/opencode/themes"
     check_symlink_target "$DOTFILES/tmux/tmux.conf" "$HOME/.tmux.conf"
     check_symlink_target "$DOTFILES/claude/statusline.sh" "$HOME/.claude/statusline.sh"
+    check_symlink_target "$DOTFILES/claude/themes" "$HOME/.claude/themes"
     check_symlink_target "$DOTFILES/micro/settings.json" "$HOME/.config/micro/settings.json"
     check_symlink_target "$DOTFILES/lazygit/config.yml" "$HOME/.config/lazygit/config.yml"
     check_symlink_target "$DOTFILES/sketchybar" "$HOME/.config/sketchybar"
@@ -327,6 +332,7 @@ karabiner_cli_path() {
 install_formula_if_missing micro micro "editor terminal"
 install_formula_if_missing eza eza "ls mejorado"
 install_formula_if_missing tmux tmux "multiplexor de terminal"
+install_formula_if_missing herdr herdr "multiplexor de terminal"
 install_formula_if_missing lazygit lazygit "git TUI"
 install_formula_if_missing sketchybar sketchybar "barra macOS"
 install_formula_if_missing yabai yabai "window manager macOS" koekeishiya/formulae
@@ -409,8 +415,12 @@ backup_if_exists "$HOME/.bunfig.toml"
 backup_if_exists "$HOME/.config/uv/uv.toml"
 backup_if_exists "$HOME/.config/starship.toml"
 backup_if_exists "$HOME/.config/ghostty/config"
+backup_if_exists "$HOME/.config/herdr/config.toml"
+backup_if_exists "$HOME/.config/opencode/tui.json"
+backup_if_exists "$HOME/.config/opencode/themes"
 backup_if_exists "$HOME/.tmux.conf"
 backup_if_exists "$HOME/.claude/statusline.sh"
+backup_if_exists "$HOME/.claude/themes"
 backup_if_exists "$HOME/.config/lazygit/config.yml"
 backup_if_exists "$HOME/.config/sketchybar"
 backup_if_exists "$HOME/.config/yabai/yabairc"
@@ -445,9 +455,13 @@ create_symlink "$DOTFILES/uv/uv.toml"              "$HOME/.config/uv/uv.toml"
 create_symlink "$DOTFILES/starship/starship.toml"  "$HOME/.config/starship.toml"
 create_symlink "$DOTFILES/ghostty/config"          "$HOME/.config/ghostty/config"
 create_symlink "$DOTFILES/ghostty/shaders"         "$HOME/.config/ghostty/shaders"
+create_symlink "$DOTFILES/herdr/config.toml"       "$HOME/.config/herdr/config.toml"
+create_symlink "$DOTFILES/opencode/tui.json"       "$HOME/.config/opencode/tui.json"
+create_symlink "$DOTFILES/opencode/themes"         "$HOME/.config/opencode/themes"
 create_symlink "$DOTFILES/tmux/tmux.conf"          "$HOME/.tmux.conf"
 run_or_plan "chmod +x $DOTFILES/claude/statusline.sh" chmod +x "$DOTFILES/claude/statusline.sh"
 create_symlink "$DOTFILES/claude/statusline.sh"    "$HOME/.claude/statusline.sh"
+create_symlink "$DOTFILES/claude/themes"           "$HOME/.claude/themes"
 create_symlink "$DOTFILES/micro/settings.json"     "$HOME/.config/micro/settings.json"
 create_symlink "$DOTFILES/lazygit/config.yml"      "$HOME/.config/lazygit/config.yml"
 run_or_plan "chmod +x sketchybar scripts" chmod +x "$DOTFILES/sketchybar/sketchybarrc" "$DOTFILES/sketchybar/plugins"/*.sh
