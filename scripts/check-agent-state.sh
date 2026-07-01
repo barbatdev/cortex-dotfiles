@@ -27,7 +27,7 @@ import pathlib
 import sys
 
 log = pathlib.Path(sys.argv[1]).read_text(encoding="utf-8")
-assert "pane report-agent pane-smoke --source cortex.agent-state --agent smoke-agent --state working --message smoke test" in log
+assert "pane report-metadata pane-smoke --source cortex.agent-state --custom-status Working: smoke test --state-label working=Working --agent smoke-agent --display-agent smoke-agent" in log
 PY
 "$CMD" list | python3 -c 'import sys; data=sys.stdin.read(); assert "smoke-agent" in data and "fresh" in data'
 "$CMD" get --agent smoke-agent | python3 -c 'import json,sys; rec=json.load(sys.stdin); assert rec["schema"] == "cortex.agent_state.v1"; assert rec["context"]["pane_id"] == "pane-smoke"'
@@ -37,7 +37,7 @@ import pathlib
 import sys
 
 log = pathlib.Path(sys.argv[1]).read_text(encoding="utf-8")
-assert "pane report-agent pane-smoke --source cortex.agent-state --agent mux-agent --state working --message mux test" in log
+assert "pane report-metadata pane-smoke --source cortex.agent-state --custom-status Working: mux test --state-label working=Working --agent mux-agent --display-agent mux-agent" in log
 PY
 "$CMD" report --source smoke --agent safe-agent --state blocked --message "line1
 line2	$(printf '\001')$(python3 -c 'print("x" * 260)')" >/dev/null

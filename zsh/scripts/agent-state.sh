@@ -115,6 +115,19 @@ def herdr_safe(value):
     return "".join(ch if ch.isalnum() or ch in ".:_-" else "-" for ch in value)
 
 
+def state_label(state):
+    return {
+        "working": "Working",
+        "blocked": "Blocked",
+        "idle": "Idle",
+    }.get(state, "Unknown")
+
+
+def custom_status(state, message):
+    label = state_label(state)
+    return f"{label}: {message}" if message else label
+
+
 def report_to_herdr(event):
     if os.environ.get("CORTEX_AGENT_STATE_HERDR") == "0":
         return
@@ -135,21 +148,23 @@ def report_to_herdr(event):
 
     agent = event.get("agent", {}).get("agent_id", "")
     message = sanitize_message(event.get("message", ""))
+    command = [
+        herdr,
+        "pane",
+        "report-metadata",
+        pane_id,
+        "--source",
+        HERDR_SOURCE,
+        "--custom-status",
+        custom_status(state, message),
+        "--state-label",
+        f"{state}={state_label(state)}",
+    ]
+    if agent:
+        command.extend(["--agent", herdr_safe(agent), "--display-agent", sanitize_message(agent)])
+
     try:
-        subprocess.run([
-            herdr,
-            "pane",
-            "report-agent",
-            pane_id,
-            "--source",
-            HERDR_SOURCE,
-            "--agent",
-            herdr_safe(agent),
-            "--state",
-            state,
-            "--message",
-            message,
-        ], check=False, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        subprocess.run(command, check=False, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     except OSError:
         return
 
