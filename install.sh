@@ -5,6 +5,244 @@ set -e
 DOTFILES="$(cd "$(dirname "$0")" && pwd)"
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)
 
+if [[ "${1:-}" == "--check" ]]; then
+    WARNINGS=0
+    CRITICAL_FAILURES=0
+
+    pass() {
+        printf 'PASS %s\n' "$1"
+    }
+
+    warn() {
+        printf 'WARN %s\n' "$1"
+        WARNINGS=$((WARNINGS + 1))
+    }
+
+    fail() {
+        printf 'FAIL %s\n' "$1"
+        CRITICAL_FAILURES=$((CRITICAL_FAILURES + 1))
+    }
+
+    rel_path() {
+        local path="$1"
+        printf '%s\n' "${path#"$DOTFILES"/}"
+    }
+
+    check_command() {
+        local command_name="$1"
+        local severity="${2:-warn}"
+
+        if command -v "$command_name" &>/dev/null; then
+            pass "tool available: $command_name"
+        elif [[ "$severity" == "fail" ]]; then
+            fail "missing required tool: $command_name"
+        else
+            warn "missing optional tool: $command_name"
+        fi
+    }
+
+    check_file() {
+        local path="$1"
+        if [[ -e "$path" ]]; then
+            pass "repo file exists: $(rel_path "$path")"
+        else
+            fail "missing repo file: $(rel_path "$path")"
+        fi
+    }
+
+    check_symlink_target() {
+        local src="$1"
+        local dst="$2"
+
+        check_file "$src"
+
+        if [[ -L "$dst" ]]; then
+            local current
+            current="$(readlink "$dst")"
+            if [[ "$current" == "$src" ]]; then
+                pass "symlink ok: $dst -> $src"
+            else
+                warn "symlink points elsewhere: $dst -> $current (expected $src)"
+            fi
+        elif [[ -e "$dst" ]]; then
+            warn "existing non-symlink would be backed up by install: $dst"
+        else
+            warn "dotfile target not installed yet: $dst"
+        fi
+    }
+
+    check_json() {
+        local path="$1"
+        [[ -f "$path" ]] || return 0
+
+        if command -v python3 &>/dev/null; then
+            if python3 -m json.tool "$path" >/dev/null; then
+                pass "JSON syntax ok: $(rel_path "$path")"
+            else
+                fail "JSON syntax invalid: $(rel_path "$path")"
+            fi
+        else
+            warn "python3 unavailable; skipped JSON syntax: $(rel_path "$path")"
+        fi
+    }
+
+    check_toml() {
+        local path="$1"
+        [[ -f "$path" ]] || return 0
+
+        if command -v python3 &>/dev/null; then
+            if python3 - "$path" <<'PY'
+import sys
+try:
+    import tomllib
+except ModuleNotFoundError:
+    sys.exit(2)
+with open(sys.argv[1], 'rb') as fh:
+    tomllib.load(fh)
+PY
+            then
+                pass "TOML syntax ok: $(rel_path "$path")"
+            else
+                local status=$?
+                if [[ "$status" -eq 2 ]]; then
+                    warn "python3 tomllib unavailable; skipped TOML syntax: $(rel_path "$path")"
+                else
+                    fail "TOML syntax invalid: $(rel_path "$path")"
+                fi
+            fi
+        else
+            warn "python3 unavailable; skipped TOML syntax: $(rel_path "$path")"
+        fi
+    }
+
+    check_shell() {
+        local path="$1"
+        local shell_name="$2"
+        [[ -f "$path" ]] || return 0
+
+        if command -v "$shell_name" &>/dev/null; then
+            if "$shell_name" -n "$path"; then
+                pass "$shell_name syntax ok: $(rel_path "$path")"
+            else
+                fail "$shell_name syntax invalid: $(rel_path "$path")"
+            fi
+        else
+            warn "$shell_name unavailable; skipped shell syntax: $(rel_path "$path")"
+        fi
+    }
+
+    check_karabiner_app_exists() {
+        [[ -d "/Applications/Karabiner-Elements.app" || -d "$HOME/Applications/Karabiner-Elements.app" ]]
+    }
+
+    check_karabiner_cli_available() {
+        command -v karabiner_cli &>/dev/null || [[ -x "/Library/Application Support/org.pqrs/Karabiner-Elements/bin/karabiner_cli" ]]
+    }
+
+    echo "dotfiles install check"
+    echo "repo: $DOTFILES"
+    echo ""
+
+    case "$(uname -s)" in
+        Darwin)
+            pass "platform supported: macOS"
+            check_command brew fail
+            check_command zsh fail
+            check_command bash fail
+            check_command starship warn
+            check_command micro warn
+            check_command eza warn
+            check_command tmux warn
+            check_command lazygit warn
+            check_command sketchybar warn
+            check_command yabai warn
+            check_command skhd warn
+            if check_karabiner_cli_available || check_karabiner_app_exists; then
+                pass "Karabiner-Elements available"
+            else
+                warn "Karabiner-Elements unavailable"
+            fi
+            ;;
+        Linux)
+            warn "platform is Linux; installer is macOS-focused, so Homebrew/macOS services are not required for this check"
+            check_command bash fail
+            check_command zsh warn
+            check_command python3 warn
+            ;;
+        *)
+            warn "unsupported platform: $(uname -s)"
+            check_command bash fail
+            check_command zsh warn
+            check_command python3 warn
+            ;;
+    esac
+
+    echo ""
+    echo "checking fonts"
+    check_file "$DOTFILES/fonts/FiraCodeNerdFontMonoBeard-Reg.ttf"
+    if [[ -f "$HOME/Library/Fonts/FiraCodeNerdFontMonoBeard-Reg.ttf" ]]; then
+        pass "font installed: FiraCode Nerd Font Mono Beard"
+    elif compgen -G "$HOME/Library/Fonts/FiraCodeNerdFont*" >/dev/null; then
+        warn "FiraCode Nerd Font present, custom Beard font not installed"
+    else
+        warn "FiraCode Nerd Font not found in ~/Library/Fonts"
+    fi
+
+    echo ""
+    echo "checking symlink targets"
+    check_symlink_target "$DOTFILES/zsh/zshrc" "$HOME/.zshrc"
+    check_symlink_target "$DOTFILES/npm/npmrc" "$HOME/.npmrc"
+    check_symlink_target "$DOTFILES/pnpm/rc" "$HOME/Library/Preferences/pnpm/rc"
+    check_symlink_target "$DOTFILES/bun/bunfig.toml" "$HOME/.bunfig.toml"
+    check_symlink_target "$DOTFILES/uv/uv.toml" "$HOME/.config/uv/uv.toml"
+    check_symlink_target "$DOTFILES/starship/starship.toml" "$HOME/.config/starship.toml"
+    check_symlink_target "$DOTFILES/ghostty/config" "$HOME/.config/ghostty/config"
+    check_symlink_target "$DOTFILES/ghostty/cmux.conf" "$HOME/Library/Application Support/com.cmuxterm.app/config.ghostty"
+    check_symlink_target "$DOTFILES/ghostty/shaders" "$HOME/.config/ghostty/shaders"
+    check_symlink_target "$DOTFILES/tmux/tmux.conf" "$HOME/.tmux.conf"
+    check_symlink_target "$DOTFILES/claude/statusline.sh" "$HOME/.claude/statusline.sh"
+    check_symlink_target "$DOTFILES/micro/settings.json" "$HOME/.config/micro/settings.json"
+    check_symlink_target "$DOTFILES/lazygit/config.yml" "$HOME/.config/lazygit/config.yml"
+    check_symlink_target "$DOTFILES/sketchybar" "$HOME/.config/sketchybar"
+    check_symlink_target "$DOTFILES/yabai/yabairc" "$HOME/.config/yabai/yabairc"
+    check_symlink_target "$DOTFILES/yabai/yabairc" "$HOME/.yabairc"
+    check_symlink_target "$DOTFILES/skhd/skhdrc" "$HOME/.config/skhd/skhdrc"
+    check_symlink_target "$DOTFILES/skhd/skhdrc" "$HOME/.skhdrc"
+    check_symlink_target "$DOTFILES/karabiner/karabiner.json" "$HOME/.config/karabiner/karabiner.json"
+
+    echo ""
+    echo "checking syntax"
+    check_shell "$DOTFILES/install.sh" bash
+    check_shell "$DOTFILES/claude/statusline.sh" bash
+    for path in "$DOTFILES"/sketchybar/sketchybarrc "$DOTFILES"/sketchybar/sketchybar-profile.sh "$DOTFILES"/sketchybar/plugins/*.sh; do
+        check_shell "$path" bash
+    done
+    check_shell "$DOTFILES/zsh/zshrc" zsh
+    for path in "$DOTFILES"/zsh/scripts/*.zsh; do
+        check_shell "$path" zsh
+    done
+    check_json "$DOTFILES/karabiner/karabiner.json"
+    check_json "$DOTFILES/micro/settings.json"
+    for path in "$DOTFILES"/opencode/*.json "$DOTFILES"/opencode/**/*.json "$DOTFILES"/claude/themes/*.json; do
+        check_json "$path"
+    done
+    check_toml "$DOTFILES/starship/starship.toml"
+    check_toml "$DOTFILES/bun/bunfig.toml"
+    check_toml "$DOTFILES/uv/uv.toml"
+    for path in "$DOTFILES"/herdr/*.toml "$DOTFILES"/herdr/**/*.toml; do
+        check_toml "$path"
+    done
+
+    echo ""
+    if [[ "$CRITICAL_FAILURES" -gt 0 ]]; then
+        echo "FAIL check completed with $CRITICAL_FAILURES critical failure(s) and $WARNINGS warning(s)"
+        exit 1
+    fi
+
+    echo "PASS check completed with $WARNINGS warning(s)"
+    exit 0
+fi
+
 echo ""
 echo "  ╔══════════════════════════════════════╗"
 echo "  ║      dotfiles — Instalador macOS     ║"

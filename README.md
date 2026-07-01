@@ -28,6 +28,12 @@ cd ~/dev/personal/cortex-dotfiles
 bash install.sh
 ```
 
+Para auditar el entorno sin instalar paquetes ni modificar archivos:
+
+```bash
+bash install.sh --check
+```
+
 El instalador macOS:
 1. Instala dependencias via Homebrew (starship, tmux, lazygit, micro, eza, sketchybar, yabai, skhd, Karabiner-Elements, FiraCode Nerd Font)
 2. Hace backup de configs existentes con timestamp
