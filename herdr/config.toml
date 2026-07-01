@@ -19,7 +19,7 @@ new_cwd = "follow"
 resume_agents_on_restore = true
 
 [remote]
-manage_ssh_config = true
+manage_ssh_config = false
 
 [theme]
 name = "terminal"
