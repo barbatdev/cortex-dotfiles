@@ -44,8 +44,8 @@ setopt NO_BEEP
 #region Editor
 if command -v nvim &>/dev/null; then
     export EDITOR="$(command -v nvim)"
-elif command -v micro &>/dev/null; then
-    export EDITOR="$(command -v micro)"
+elif command -v vim &>/dev/null; then
+    export EDITOR="$(command -v vim)"
 else
     export EDITOR="nano"
 fi

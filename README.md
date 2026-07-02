@@ -15,8 +15,7 @@ GitHub Actions ejecuta un smoke check mínimo en pull requests y pushes a `main`
 - **Barra macOS**: [SketchyBar](https://github.com/FelixKratz/SketchyBar) con tema Gruvbox
 - **Window manager macOS**: [yabai](https://github.com/koekeishiya/yabai) + [skhd](https://github.com/koekeishiya/skhd) opcional y gradual
 - **Keyboard remaps macOS**: [Karabiner-Elements](https://karabiner-elements.pqrs.org/) con profile `cortex`
-- **Editor terminal**: [micro](https://micro-editor.github.io/)
-- **Editor principal**: Neovim basado en LazyVim/Gentleman.Dots con overlay RefactorIA
+- **Editor terminal**: Neovim basado en LazyVim/Gentleman.Dots con overlay RefactorIA
 - **Ls**: [eza](https://github.com/eza-community/eza)
 - **AI CLI UX**: Claude Code statusline, OpenCode helpers y Herdr remoto
 - **Workflow docs**: [Herdr workflow](docs/herdr-workflow.md) y [keymaps prácticos](docs/keymaps.md)
@@ -47,7 +46,7 @@ bash install.sh --dry-run
 ```
 
 El instalador macOS:
-1. Instala dependencias via Homebrew (starship, tmux, lazygit, micro, eza, sketchybar, yabai, skhd, Karabiner-Elements, FiraCode Nerd Font)
+1. Instala dependencias via Homebrew (starship, tmux, lazygit, neovim, eza, sketchybar, yabai, skhd, Karabiner-Elements, FiraCode Nerd Font)
 2. Hace backup de configs existentes con timestamp
 3. Crea symlinks de los dotfiles y guardrails globales (`.npmrc`, `pnpm/rc`, `.bunfig.toml`, `uv.toml`)
 4. Intenta seleccionar el profile `cortex` de Karabiner si `karabiner_cli` está disponible
@@ -78,7 +77,6 @@ dotfiles/
 ├── tmux/                     # Config tmux
 ├── lazygit/                  # Config lazygit
 ├── karabiner/                # Config Karabiner-Elements (~/.config/karabiner/karabiner.json)
-├── micro/                    # Settings y themes de micro
 ├── nvim/                     # Notas de configuración Neovim RefactorIA
 ├── sketchybar/               # Barra macOS y plugins
 ├── yabai/                    # Window manager macOS opcional

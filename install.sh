@@ -1,10 +1,11 @@
 #!/bin/bash
-# install.sh — Instalador de dotfiles macOS
+# install.sh — Instalador de dotfiles macOS/Linux
 set -e
 
 DOTFILES="$(cd "$(dirname "$0")" && pwd)"
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)
 DRY_RUN=false
+PLATFORM="$(uname -s)"
 
 if [[ "${1:-}" == "--dry-run" ]]; then
     DRY_RUN=true
@@ -155,7 +156,7 @@ PY
             check_command zsh fail
             check_command bash fail
             check_command starship warn
-            check_command micro warn
+            check_command nvim warn
             check_command eza warn
             check_command herdr warn
             check_command mosh warn
@@ -172,12 +173,16 @@ PY
             fi
             ;;
         Linux)
-            warn "platform is Linux; installer is macOS-focused, so Homebrew/macOS services are not required for this check"
+            pass "platform supported: Linux"
             check_command bash fail
             check_command zsh warn
             check_command python3 warn
+            check_command starship warn
+            check_command nvim warn
             check_command herdr warn
             check_command mosh warn
+            check_command tmux warn
+            check_command lazygit warn
             ;;
         *)
             warn "unsupported platform: $(uname -s)"
@@ -190,7 +195,9 @@ PY
     echo ""
     echo "checking fonts"
     check_file "$DOTFILES/fonts/FiraCodeNerdFontMonoBeard-Reg.ttf"
-    if [[ -f "$HOME/Library/Fonts/FiraCodeNerdFontMonoBeard-Reg.ttf" ]]; then
+    if [[ "$(uname -s)" != "Darwin" ]]; then
+        pass "font install check skipped on non-macOS platform"
+    elif [[ -f "$HOME/Library/Fonts/FiraCodeNerdFontMonoBeard-Reg.ttf" ]]; then
         pass "font installed: FiraCode Nerd Font Mono Beard"
     elif compgen -G "$HOME/Library/Fonts/FiraCodeNerdFont*" >/dev/null; then
         warn "FiraCode Nerd Font present, custom Beard font not installed"
@@ -202,7 +209,6 @@ PY
     echo "checking symlink targets"
     check_symlink_target "$DOTFILES/zsh/zshrc" "$HOME/.zshrc"
     check_symlink_target "$DOTFILES/npm/npmrc" "$HOME/.npmrc"
-    check_symlink_target "$DOTFILES/pnpm/rc" "$HOME/Library/Preferences/pnpm/rc"
     check_symlink_target "$DOTFILES/bun/bunfig.toml" "$HOME/.bunfig.toml"
     check_symlink_target "$DOTFILES/uv/uv.toml" "$HOME/.config/uv/uv.toml"
     check_symlink_target "$DOTFILES/starship/starship.toml" "$HOME/.config/starship.toml"
@@ -215,14 +221,18 @@ PY
     check_symlink_target "$DOTFILES/tmux/tmux.conf" "$HOME/.tmux.conf"
     check_symlink_target "$DOTFILES/claude/statusline.sh" "$HOME/.claude/statusline.sh"
     check_symlink_target "$DOTFILES/claude/themes" "$HOME/.claude/themes"
-    check_symlink_target "$DOTFILES/micro/settings.json" "$HOME/.config/micro/settings.json"
     check_symlink_target "$DOTFILES/lazygit/config.yml" "$HOME/.config/lazygit/config.yml"
-    check_symlink_target "$DOTFILES/sketchybar" "$HOME/.config/sketchybar"
-    check_symlink_target "$DOTFILES/yabai/yabairc" "$HOME/.config/yabai/yabairc"
-    check_symlink_target "$DOTFILES/yabai/yabairc" "$HOME/.yabairc"
-    check_symlink_target "$DOTFILES/skhd/skhdrc" "$HOME/.config/skhd/skhdrc"
-    check_symlink_target "$DOTFILES/skhd/skhdrc" "$HOME/.skhdrc"
-    check_symlink_target "$DOTFILES/karabiner/karabiner.json" "$HOME/.config/karabiner/karabiner.json"
+    if [[ "$(uname -s)" == "Darwin" ]]; then
+        check_symlink_target "$DOTFILES/pnpm/rc" "$HOME/Library/Preferences/pnpm/rc"
+        check_symlink_target "$DOTFILES/sketchybar" "$HOME/.config/sketchybar"
+        check_symlink_target "$DOTFILES/yabai/yabairc" "$HOME/.config/yabai/yabairc"
+        check_symlink_target "$DOTFILES/yabai/yabairc" "$HOME/.yabairc"
+        check_symlink_target "$DOTFILES/skhd/skhdrc" "$HOME/.config/skhd/skhdrc"
+        check_symlink_target "$DOTFILES/skhd/skhdrc" "$HOME/.skhdrc"
+        check_symlink_target "$DOTFILES/karabiner/karabiner.json" "$HOME/.config/karabiner/karabiner.json"
+    else
+        pass "macOS-only symlink targets skipped on non-macOS platform"
+    fi
 
     echo ""
     echo "checking syntax"
@@ -236,7 +246,6 @@ PY
         check_shell "$path" zsh
     done
     check_json "$DOTFILES/karabiner/karabiner.json"
-    check_json "$DOTFILES/micro/settings.json"
     for path in "$DOTFILES"/opencode/*.json "$DOTFILES"/opencode/**/*.json "$DOTFILES"/claude/themes/*.json; do
         check_json "$path"
     done
@@ -264,7 +273,7 @@ fi
 
 echo ""
 echo "  ╔══════════════════════════════════════╗"
-echo "  ║      dotfiles — Instalador macOS     ║"
+echo "  ║    dotfiles — Instalador macOS/Linux ║"
 echo "  ╚══════════════════════════════════════╝"
 echo ""
 
@@ -304,19 +313,31 @@ install_formula_if_missing() {
 }
 
 # --- Verificar dependencias base ---
-if ! command -v brew &>/dev/null; then
-    if [[ "$DRY_RUN" == true ]]; then
-        echo "  → Would require Homebrew before installing packages"
-    else
-        echo "❌ Homebrew no está instalado. Instalá desde https://brew.sh"
-        exit 1
+echo "📦 Verificando herramientas ($PLATFORM)..."
+
+if [[ "$PLATFORM" == "Darwin" ]]; then
+    if ! command -v brew &>/dev/null; then
+        if [[ "$DRY_RUN" == true ]]; then
+            echo "  → Would require Homebrew before installing packages"
+        else
+            echo "❌ Homebrew no está instalado. Instalá desde https://brew.sh"
+            exit 1
+        fi
     fi
+
+    install_formula_if_missing starship starship "prompt"
+elif [[ "$PLATFORM" == "Linux" ]]; then
+    for tool in zsh starship nvim herdr mosh tmux lazygit; do
+        if command -v "$tool" &>/dev/null; then
+            echo "  ✓ $tool ya instalado"
+        else
+            echo "  ! $tool no encontrado; instalalo con el package manager del sistema si lo necesitás"
+        fi
+    done
+else
+    echo "❌ Plataforma no soportada: $PLATFORM"
+    exit 1
 fi
-
-install_formula_if_missing starship starship "prompt"
-
-# --- Instalar herramientas opcionales ---
-echo "📦 Verificando herramientas..."
 
 karabiner_app_exists() {
     [[ -d "/Applications/Karabiner-Elements.app" || -d "$HOME/Applications/Karabiner-Elements.app" ]]
@@ -334,33 +355,36 @@ karabiner_cli_path() {
     fi
 }
 
-install_formula_if_missing micro micro "editor terminal"
-install_formula_if_missing eza eza "ls mejorado"
-install_formula_if_missing herdr herdr "multiplexor remoto persistente"
-install_formula_if_missing mosh mosh "SSH resiliente para workstations remotas"
-install_formula_if_missing tmux tmux "multiplexor de terminal"
-install_formula_if_missing herdr herdr "multiplexor de terminal"
-install_formula_if_missing lazygit lazygit "git TUI"
-install_formula_if_missing sketchybar sketchybar "barra macOS"
-install_formula_if_missing yabai yabai "window manager macOS" koekeishiya/formulae
-install_formula_if_missing skhd skhd "hotkeys macOS" koekeishiya/formulae
+if [[ "$PLATFORM" == "Darwin" ]]; then
+    install_formula_if_missing nvim neovim "editor terminal"
+    install_formula_if_missing eza eza "ls mejorado"
+    install_formula_if_missing herdr herdr "multiplexor remoto persistente"
+    install_formula_if_missing mosh mosh "SSH resiliente para workstations remotas"
+    install_formula_if_missing tmux tmux "multiplexor de terminal"
+    install_formula_if_missing lazygit lazygit "git TUI"
+    install_formula_if_missing sketchybar sketchybar "barra macOS"
+    install_formula_if_missing yabai yabai "window manager macOS" koekeishiya/formulae
+    install_formula_if_missing skhd skhd "hotkeys macOS" koekeishiya/formulae
 
-if ! karabiner_cli_available && ! karabiner_app_exists; then
-    if [[ "$DRY_RUN" == true ]]; then
-        echo "  → Would install karabiner-elements via Homebrew cask"
+    if ! karabiner_cli_available && ! karabiner_app_exists; then
+        if [[ "$DRY_RUN" == true ]]; then
+            echo "  → Would install karabiner-elements via Homebrew cask"
+        else
+            echo "  → Instalando Karabiner-Elements..."
+            brew install --cask karabiner-elements
+        fi
     else
-        echo "  → Instalando Karabiner-Elements..."
-        brew install --cask karabiner-elements
+        echo "  ✓ Karabiner-Elements ya instalado"
     fi
-else
-    echo "  ✓ Karabiner-Elements ya instalado"
 fi
 
 # --- Fuentes ---
 echo ""
 echo "📦 Verificando fuentes..."
 
-if ! ls "$HOME/Library/Fonts/FiraCodeNerdFont"* &>/dev/null 2>&1; then
+if [[ "$PLATFORM" != "Darwin" ]]; then
+    echo "  - fuentes macOS omitidas en Linux"
+elif ! ls "$HOME/Library/Fonts/FiraCodeNerdFont"* &>/dev/null 2>&1; then
     if [[ "$DRY_RUN" == true ]]; then
         echo "  → Would install font-fira-code-nerd-font via Homebrew cask"
     else
@@ -372,7 +396,9 @@ else
     echo "  ✓ FiraCode Nerd Font ya instalada"
 fi
 
-if [[ "$DRY_RUN" == true ]]; then
+if [[ "$PLATFORM" != "Darwin" ]]; then
+    :
+elif [[ "$DRY_RUN" == true ]]; then
     echo "  → Would create $HOME/Library/Fonts"
     echo "  → Would copy $DOTFILES/fonts/FiraCodeNerdFontMonoBeard-Reg.ttf to $HOME/Library/Fonts/FiraCodeNerdFontMonoBeard-Reg.ttf"
 else
@@ -392,7 +418,7 @@ backup_if_exists() {
         if [[ "$DRY_RUN" == true ]]; then
             echo "  → Would backup $src to $backup"
         else
-            cp "$src" "$backup"
+            cp -R "$src" "$backup"
             echo "  → Backup: $backup"
         fi
     fi
@@ -417,7 +443,6 @@ backup_karabiner_if_exists() {
 
 backup_if_exists "$HOME/.zshrc"
 backup_if_exists "$HOME/.npmrc"
-backup_if_exists "$HOME/Library/Preferences/pnpm/rc"
 backup_if_exists "$HOME/.bunfig.toml"
 backup_if_exists "$HOME/.config/uv/uv.toml"
 backup_if_exists "$HOME/.config/starship.toml"
@@ -430,12 +455,15 @@ backup_if_exists "$HOME/.tmux.conf"
 backup_if_exists "$HOME/.claude/statusline.sh"
 backup_if_exists "$HOME/.claude/themes"
 backup_if_exists "$HOME/.config/lazygit/config.yml"
-backup_if_exists "$HOME/.config/sketchybar"
-backup_if_exists "$HOME/.config/yabai/yabairc"
-backup_if_exists "$HOME/.yabairc"
-backup_if_exists "$HOME/.config/skhd/skhdrc"
-backup_if_exists "$HOME/.skhdrc"
-backup_karabiner_if_exists
+if [[ "$PLATFORM" == "Darwin" ]]; then
+    backup_if_exists "$HOME/Library/Preferences/pnpm/rc"
+    backup_if_exists "$HOME/.config/sketchybar"
+    backup_if_exists "$HOME/.config/yabai/yabairc"
+    backup_if_exists "$HOME/.yabairc"
+    backup_if_exists "$HOME/.config/skhd/skhdrc"
+    backup_if_exists "$HOME/.skhdrc"
+    backup_karabiner_if_exists
+fi
 
 # --- Crear symlinks ---
 echo ""
@@ -457,7 +485,6 @@ create_symlink() {
 
 create_symlink "$DOTFILES/zsh/zshrc"              "$HOME/.zshrc"
 create_symlink "$DOTFILES/npm/npmrc"               "$HOME/.npmrc"
-create_symlink "$DOTFILES/pnpm/rc"                 "$HOME/Library/Preferences/pnpm/rc"
 create_symlink "$DOTFILES/bun/bunfig.toml"         "$HOME/.bunfig.toml"
 create_symlink "$DOTFILES/uv/uv.toml"              "$HOME/.config/uv/uv.toml"
 create_symlink "$DOTFILES/starship/starship.toml"  "$HOME/.config/starship.toml"
@@ -471,28 +498,30 @@ create_symlink "$DOTFILES/tmux/tmux.conf"          "$HOME/.tmux.conf"
 run_or_plan "chmod +x $DOTFILES/claude/statusline.sh" chmod +x "$DOTFILES/claude/statusline.sh"
 create_symlink "$DOTFILES/claude/statusline.sh"    "$HOME/.claude/statusline.sh"
 create_symlink "$DOTFILES/claude/themes"           "$HOME/.claude/themes"
-create_symlink "$DOTFILES/micro/settings.json"     "$HOME/.config/micro/settings.json"
 create_symlink "$DOTFILES/lazygit/config.yml"      "$HOME/.config/lazygit/config.yml"
-run_or_plan "chmod +x sketchybar scripts" chmod +x "$DOTFILES/sketchybar/sketchybarrc" "$DOTFILES/sketchybar/plugins"/*.sh
-create_symlink "$DOTFILES/sketchybar"              "$HOME/.config/sketchybar"
-run_or_plan "chmod +x $DOTFILES/yabai/yabairc" chmod +x "$DOTFILES/yabai/yabairc"
-create_symlink "$DOTFILES/yabai/yabairc"           "$HOME/.config/yabai/yabairc"
-create_symlink "$DOTFILES/yabai/yabairc"           "$HOME/.yabairc"
-create_symlink "$DOTFILES/skhd/skhdrc"             "$HOME/.config/skhd/skhdrc"
-create_symlink "$DOTFILES/skhd/skhdrc"             "$HOME/.skhdrc"
-create_symlink "$DOTFILES/karabiner/karabiner.json" "$HOME/.config/karabiner/karabiner.json"
+if [[ "$PLATFORM" == "Darwin" ]]; then
+    create_symlink "$DOTFILES/pnpm/rc"                 "$HOME/Library/Preferences/pnpm/rc"
+    run_or_plan "chmod +x sketchybar scripts" chmod +x "$DOTFILES/sketchybar/sketchybarrc" "$DOTFILES/sketchybar/plugins"/*.sh
+    create_symlink "$DOTFILES/sketchybar"              "$HOME/.config/sketchybar"
+    run_or_plan "chmod +x $DOTFILES/yabai/yabairc" chmod +x "$DOTFILES/yabai/yabairc"
+    create_symlink "$DOTFILES/yabai/yabairc"           "$HOME/.config/yabai/yabairc"
+    create_symlink "$DOTFILES/yabai/yabairc"           "$HOME/.yabairc"
+    create_symlink "$DOTFILES/skhd/skhdrc"             "$HOME/.config/skhd/skhdrc"
+    create_symlink "$DOTFILES/skhd/skhdrc"             "$HOME/.skhdrc"
+    create_symlink "$DOTFILES/karabiner/karabiner.json" "$HOME/.config/karabiner/karabiner.json"
 
-KARABINER_CLI="$(karabiner_cli_path || true)"
-if [[ -n "$KARABINER_CLI" ]]; then
-    if [[ "$DRY_RUN" == true ]]; then
-        echo "  → Would select Karabiner profile cortex with $KARABINER_CLI"
-    elif "$KARABINER_CLI" --select-profile cortex &>/dev/null; then
-        echo "  ✓ Perfil Karabiner cortex seleccionado"
-    else
-        echo "  ! No se pudo seleccionar el perfil Karabiner cortex; abrí Karabiner-Elements para activarlo"
+    KARABINER_CLI="$(karabiner_cli_path || true)"
+    if [[ -n "$KARABINER_CLI" ]]; then
+        if [[ "$DRY_RUN" == true ]]; then
+            echo "  → Would select Karabiner profile cortex with $KARABINER_CLI"
+        elif "$KARABINER_CLI" --select-profile cortex &>/dev/null; then
+            echo "  ✓ Perfil Karabiner cortex seleccionado"
+        else
+            echo "  ! No se pudo seleccionar el perfil Karabiner cortex; abrí Karabiner-Elements para activarlo"
+        fi
+    elif [[ "$DRY_RUN" == true ]]; then
+        echo "  → Would select Karabiner profile cortex if karabiner_cli is available after install"
     fi
-elif [[ "$DRY_RUN" == true ]]; then
-    echo "  → Would select Karabiner profile cortex if karabiner_cli is available after install"
 fi
 
 # --- Servicios macOS ---
@@ -506,7 +535,9 @@ warn_service() {
     echo "    Fallback manual: $command_hint"
 }
 
-if [[ "$DRY_RUN" == true ]]; then
+if [[ "$PLATFORM" != "Darwin" ]]; then
+    echo "  - servicios macOS omitidos en $PLATFORM"
+elif [[ "$DRY_RUN" == true ]]; then
     echo "  → Would start sketchybar via brew services if available"
 elif command -v brew &>/dev/null && command -v sketchybar &>/dev/null; then
     if brew services start sketchybar &>/dev/null; then
@@ -518,7 +549,9 @@ else
     echo "  - sketchybar no disponible; se omite"
 fi
 
-if [[ "$DRY_RUN" == true ]]; then
+if [[ "$PLATFORM" != "Darwin" ]]; then
+    :
+elif [[ "$DRY_RUN" == true ]]; then
     echo "  → Would start or restart yabai service if available"
 elif command -v yabai &>/dev/null; then
     if pgrep -x yabai &>/dev/null; then
@@ -536,7 +569,9 @@ else
     echo "  - yabai no disponible; se omite"
 fi
 
-if [[ "$DRY_RUN" == true ]]; then
+if [[ "$PLATFORM" != "Darwin" ]]; then
+    :
+elif [[ "$DRY_RUN" == true ]]; then
     echo "  → Would start or reload skhd service if available"
 elif command -v skhd &>/dev/null; then
     if pgrep -x skhd &>/dev/null; then
@@ -552,18 +587,6 @@ elif command -v skhd &>/dev/null; then
     fi
 else
     echo "  - skhd no disponible; se omite"
-fi
-
-# --- Copiar colorschemes de micro (no pueden ser symlink) ---
-echo ""
-echo "📝 Copiando colorschemes de micro..."
-if [[ "$DRY_RUN" == true ]]; then
-    echo "  → Would create $HOME/.config/micro/colorschemes"
-    echo "  → Would copy $DOTFILES/micro/colorschemes/*.micro to $HOME/.config/micro/colorschemes/"
-else
-    mkdir -p "$HOME/.config/micro/colorschemes"
-    cp -v "$DOTFILES/micro/colorschemes"/*.micro "$HOME/.config/micro/colorschemes/" || true
-    echo "  ✓ Colorschemes copiados"
 fi
 
 # --- Configuración local ---
@@ -588,11 +611,15 @@ else
 fi
 echo ""
 echo "  Próximos pasos:"
-echo "  1. Abrí una nueva tab en Ghostty para cargar el nuevo profile"
+echo "  1. Abrí una nueva terminal para cargar el nuevo profile"
 echo "  2. Editá local/env.zsh con tus paths personales"
-echo "  3. Ghostty ya usa FiraCode Nerd Font Mono Beard (reiniciá si no se ve bien)"
-echo "  4. Si macOS bloqueó servicios, habilitá Accessibility y corré los fallbacks impresos arriba"
-echo "  5. Abrí Karabiner-Elements y habilitá Input Monitoring/Accessibility si macOS lo pide"
+if [[ "$PLATFORM" == "Darwin" ]]; then
+    echo "  3. Ghostty ya usa FiraCode Nerd Font Mono Beard (reiniciá si no se ve bien)"
+    echo "  4. Si macOS bloqueó servicios, habilitá Accessibility y corré los fallbacks impresos arriba"
+    echo "  5. Abrí Karabiner-Elements y habilitá Input Monitoring/Accessibility si macOS lo pide"
+else
+    echo "  3. Instalá zsh/starship/neovim/herdr/mosh/tmux/lazygit con el package manager del sistema si faltan"
+fi
 echo ""
 echo "  Para medir el load time:"
 echo "  \$ time zsh -i -c exit"
