@@ -538,10 +538,15 @@ warn_service() {
 if [[ "$PLATFORM" != "Darwin" ]]; then
     echo "  - servicios macOS omitidos en $PLATFORM"
 elif [[ "$DRY_RUN" == true ]]; then
-    echo "  → Would start sketchybar via brew services if available"
+    echo "  → Would start sketchybar via brew services and reload if available"
 elif command -v brew &>/dev/null && command -v sketchybar &>/dev/null; then
     if brew services start sketchybar &>/dev/null; then
         echo "  ✓ sketchybar iniciado via brew services"
+        if sketchybar --reload &>/dev/null; then
+            echo "  ✓ sketchybar recargado"
+        else
+            warn_service "sketchybar" "sketchybar --reload"
+        fi
     else
         warn_service "sketchybar" "brew services start sketchybar"
     fi
