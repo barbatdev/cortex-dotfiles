@@ -90,6 +90,26 @@ dotfiles/
 
 > Nota migración cmux: el path legacy `~/Library/Application Support/com.cmuxterm.app/config.ghostty` ya no está gestionado por estos dotfiles. Si todavía existe en tu máquina, podés borrarlo manualmente sin afectar la configuración actual.
 
+## Boundary con Cortex
+
+Este repo sigue siendo standalone: `install.sh` no requiere tener el repo `cortex` disponible y estos dotfiles deben poder instalarse por sí solos.
+
+Algunos artefactos viven acá temporalmente porque nacieron junto al setup personal, pero conceptualmente son propios del producto Cortex y no deberían tener a `cortex-dotfiles` como source of truth permanente:
+
+- `opencode/themes/` — themes Cortex para OpenCode.
+- `claude/themes/` — themes Cortex para Claude Code.
+- `claude/statusline.sh` — statusline orientada a superficies Cortex.
+- `docs/agent-state-v1.md` — contrato `cortex.agent_state.v1`.
+- `scripts/check-agent-state.sh` — smoke check del contrato agent-state.
+- `zsh/scripts/agent-state.sh` — bridge local para reportar estado de agentes.
+- `zsh/scripts/postcompact-hook.sh` y `zsh/scripts/memsave-nudge.sh` — hooks ligados al workflow Cortex.
+
+La migración se coordina en tres repos independientes: `cortex` define ownership de los artefactos product-owned, `cortex-dotfiles` conserva instalación/adaptación local, y `cortex-dots` sigue siendo un snapshot OSS-safe de dotfiles sin depender de `cortex`.
+
+No borrar ni cambiar estos artefactos acá hasta que `cortex` tenga reemplazos validados y se decida qué queda como adaptación local.
+
+Seguimiento: [cortex-dotfiles #31](https://github.com/barbatdev/cortex-dotfiles/issues/31), [cortex #1038](https://github.com/barbatdev/cortex/issues/1038), [cortex-dots #14](https://github.com/barbatdev/cortex-dots/issues/14).
+
 ## Especificaciones
 
 - [Cortex Agent State v1](docs/agent-state-v1.md): contrato `cortex.agent_state.v1` para normalizar estados de agentes hacia Herdr, statuslines, SketchyBar y notificaciones.
