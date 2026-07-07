@@ -272,13 +272,14 @@ fi
 
 #region Welcome
 _welcome() {
-    local ms=$(( int(($EPOCHREALTIME - _PROFILE_START) * 1000) ))
+    local ms
+    ms=$(printf "%.0f" "$(( (EPOCHREALTIME - _PROFILE_START) * 1000 ))")
 
     echo ""
     echo "  ╔══════════════════════════════════════╗"
     echo "  ║      Dev Environment                 ║"
     echo "  ╠══════════════════════════════════════╣"
-    printf "  ║  ⚡ Cargado en \033[1;32m${ms}ms\033[0m\n"
+    printf "  ║  ⚡ Cargado en \033[1;32m%sms\033[0m\n" "$ms"
     printf "  ║  🕐 \033[1;34m%s\033[0m\n" "$(date '+%H:%M:%S')"
     echo "  ╚══════════════════════════════════════╝"
     echo ""
