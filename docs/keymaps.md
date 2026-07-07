@@ -46,7 +46,7 @@ This table favors the shortcuts used by these dotfiles and Herdr defaults. It is
 | OpenCode | `oc [path]` | Start OpenCode in the current or given directory. |
 | OpenCode | `ocb [path]` | Alias for `oc`, preserving default flags. |
 
-Claude Code and OpenCode keybindings are mostly app-native. This repo adds launch helpers, themes/statusline config, and Herdr integration so sessions survive terminal detach/reattach.
+Claude Code and OpenCode keybindings are mostly app-native. This repo only keeps shell launch helpers; themes, statuslines, skills, agents, and orchestration live in `cortex`.
 
 ## macOS Windowing
 

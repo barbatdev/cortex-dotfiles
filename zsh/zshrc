@@ -59,7 +59,8 @@ export BARBATDEV_DIR="${BARBATDEV_DIR:-$WORKSPACE_DIR/barbatdev}"
 export CLAUDE_CODE_EFFORT_LEVEL=high
 export CORTEX_HOME="${CORTEX_HOME:-$HOME/.cortex}"
 export CORTEX_ROOT="${CORTEX_ROOT:-$BARBATDEV_DIR/cortex/cortex}"
-export CORTEX_DOTFILES_DIR="${CORTEX_DOTFILES_DIR:-$BARBATDEV_DIR/cortex/cortex-dotfiles}"
+export CORTEX_CONFIG_HOME="${CORTEX_CONFIG_HOME:-${XDG_CONFIG_HOME:-$HOME/.config}/cortex-dotfiles}"
+export CORTEX_DOTFILES_DIR="${CORTEX_DOTFILES_DIR:-$CORTEX_CONFIG_HOME}"
 export CORTEX_MULTIPLEXER="${CORTEX_MULTIPLEXER:-herdr}"
 
 # Proyectos de la organización
@@ -181,7 +182,7 @@ myip() {
 
 # Mostrar el logo de RefactorIA en Braille Unicode bajo demanda.
 refactoria() {
-    local logo="${_DOTFILES_DIR:-$HOME/dev/personal/cortex-dotfiles}/assets/refactoria-braille.txt"
+    local logo="${_DOTFILES_DIR:-$CORTEX_CONFIG_HOME}/assets/refactoria-braille.txt"
     if [[ -f "$logo" ]]; then
         cat "$logo"
     else
@@ -226,11 +227,15 @@ function ep { edit "$_DOTFILES_DIR/zsh/zshrc" }
 #endregion
 
 #region Source Scripts
+_DOTFILES_DIR="$CORTEX_CONFIG_HOME"
 _ZSHRC_SOURCE="${(%):-%x}"
 if [[ -L "$_ZSHRC_SOURCE" ]]; then
     _ZSHRC_SOURCE="$(readlink "$_ZSHRC_SOURCE")"
+    _ZSHRC_DOTFILES_DIR="$(cd "$(dirname "$_ZSHRC_SOURCE")/.." && pwd)"
+    if [[ -d "$_ZSHRC_DOTFILES_DIR/zsh/scripts" ]]; then
+        _DOTFILES_DIR="$_ZSHRC_DOTFILES_DIR"
+    fi
 fi
-_DOTFILES_DIR="$(cd "$(dirname "$_ZSHRC_SOURCE")/.." && pwd)"
 _SCRIPTS_DIR="$_DOTFILES_DIR/zsh/scripts"
 
 if [[ -d "$_SCRIPTS_DIR" ]]; then
@@ -242,16 +247,13 @@ if [[ -d "$_SCRIPTS_DIR" ]]; then
     [[ -f "$_SCRIPTS_DIR/herdr-helpers.zsh" ]]  && source "$_SCRIPTS_DIR/herdr-helpers.zsh"
     [[ -f "$_SCRIPTS_DIR/tmux-helpers.zsh" ]]   && source "$_SCRIPTS_DIR/tmux-helpers.zsh"
     [[ -f "$_SCRIPTS_DIR/worktree-helpers.zsh" ]] && source "$_SCRIPTS_DIR/worktree-helpers.zsh"
-    [[ -f "$_SCRIPTS_DIR/agent-state.sh" ]] && source "$_SCRIPTS_DIR/agent-state.sh"
+    [[ -f "$_SCRIPTS_DIR/ports-helpers.zsh" ]] && source "$_SCRIPTS_DIR/ports-helpers.zsh"
 fi
-
-alias cortex.agent_state.v1="cortex_agent_state"
-alias agent-state="cortex_agent_state"
 #endregion
 
 #region Local Overrides
 # Cargar configuración local (gitignored: paths personales, tokens, etc.)
-_LOCAL_ENV="$_DOTFILES_DIR/local/env.zsh"
+_LOCAL_ENV="$CORTEX_CONFIG_HOME/local/env.zsh"
 [[ -f "$_LOCAL_ENV" ]] && source "$_LOCAL_ENV"
 #endregion
 

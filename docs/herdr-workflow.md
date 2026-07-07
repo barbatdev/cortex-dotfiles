@@ -89,5 +89,4 @@ Before detaching long-running work, name important panes and run `whereami` if t
 
 - [Keymaps](keymaps.md)
 - [Practical keymaps](keymaps.md)
-- [Cortex Agent State v1](agent-state-v1.md)
 - [README](../README.md)

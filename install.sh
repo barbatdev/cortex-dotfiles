@@ -5,13 +5,41 @@ set -e
 DOTFILES="$(cd "$(dirname "$0")" && pwd)"
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)
 DRY_RUN=false
+CHECK_MODE=false
+INSTALL_MODE="copy"
 PLATFORM="$(uname -s)"
+CORTEX_CONFIG_HOME="${CORTEX_CONFIG_HOME:-${XDG_CONFIG_HOME:-$HOME/.config}/cortex-dotfiles}"
 
-if [[ "${1:-}" == "--dry-run" ]]; then
-    DRY_RUN=true
-fi
+case "$PLATFORM" in
+    Darwin)
+        PNPM_CONFIG_TARGET="$HOME/Library/Preferences/pnpm/rc"
+        ;;
+    *)
+        PNPM_CONFIG_TARGET="${XDG_CONFIG_HOME:-$HOME/.config}/pnpm/rc"
+        ;;
+esac
 
-if [[ "${1:-}" == "--check" ]]; then
+for arg in "$@"; do
+    case "$arg" in
+        --check)
+            CHECK_MODE=true
+            ;;
+        --dry-run)
+            DRY_RUN=true
+            ;;
+        --symlink)
+            INSTALL_MODE="symlink"
+            ;;
+        *)
+            echo "Usage: $0 [--check] [--dry-run] [--symlink]"
+            exit 1
+            ;;
+    esac
+done
+
+INSTALL_LOG="$CORTEX_CONFIG_HOME/install.log"
+
+if [[ "$CHECK_MODE" == true ]]; then
     WARNINGS=0
     CRITICAL_FAILURES=0
 
@@ -56,7 +84,7 @@ if [[ "${1:-}" == "--check" ]]; then
         fi
     }
 
-    check_symlink_target() {
+    check_install_target() {
         local src="$1"
         local dst="$2"
 
@@ -66,12 +94,12 @@ if [[ "${1:-}" == "--check" ]]; then
             local current
             current="$(readlink "$dst")"
             if [[ "$current" == "$src" ]]; then
-                pass "symlink ok: $dst -> $src"
+                pass "target ok (symlink): $dst -> $src"
             else
                 warn "symlink points elsewhere: $dst -> $current (expected $src)"
             fi
         elif [[ -e "$dst" ]]; then
-            warn "existing non-symlink would be backed up by install: $dst"
+            pass "target exists (copy install): $dst"
         else
             warn "dotfile target not installed yet: $dst"
         fi
@@ -195,6 +223,9 @@ PY
     echo ""
     echo "checking fonts"
     check_file "$DOTFILES/fonts/FiraCodeNerdFontMonoBeard-Reg.ttf"
+    check_file "$DOTFILES/Brewfile"
+    check_file "$DOTFILES/bootstrap.sh"
+    check_file "$DOTFILES/scripts/macos-defaults.sh"
     if [[ "$(uname -s)" != "Darwin" ]]; then
         pass "font install check skipped on non-macOS platform"
     elif [[ -f "$HOME/Library/Fonts/FiraCodeNerdFontMonoBeard-Reg.ttf" ]]; then
@@ -206,38 +237,37 @@ PY
     fi
 
     echo ""
-    echo "checking symlink targets"
-    check_symlink_target "$DOTFILES/zsh/zshrc" "$HOME/.zshrc"
-    check_symlink_target "$DOTFILES/npm/npmrc" "$HOME/.npmrc"
-    check_symlink_target "$DOTFILES/bun/bunfig.toml" "$HOME/.bunfig.toml"
-    check_symlink_target "$DOTFILES/uv/uv.toml" "$HOME/.config/uv/uv.toml"
-    check_symlink_target "$DOTFILES/starship/starship.toml" "$HOME/.config/starship.toml"
-    check_symlink_target "$DOTFILES/herdr/config.toml" "$HOME/.config/herdr/config.toml"
-    check_symlink_target "$DOTFILES/ghostty/config" "$HOME/.config/ghostty/config"
-    check_symlink_target "$DOTFILES/ghostty/shaders" "$HOME/.config/ghostty/shaders"
-    check_symlink_target "$DOTFILES/herdr/config.toml" "$HOME/.config/herdr/config.toml"
-    check_symlink_target "$DOTFILES/opencode/tui.json" "$HOME/.config/opencode/tui.json"
-    check_symlink_target "$DOTFILES/opencode/themes" "$HOME/.config/opencode/themes"
-    check_symlink_target "$DOTFILES/tmux/tmux.conf" "$HOME/.tmux.conf"
-    check_symlink_target "$DOTFILES/claude/statusline.sh" "$HOME/.claude/statusline.sh"
-    check_symlink_target "$DOTFILES/claude/themes" "$HOME/.claude/themes"
-    check_symlink_target "$DOTFILES/lazygit/config.yml" "$HOME/.config/lazygit/config.yml"
+    echo "checking installed targets"
+    check_install_target "$DOTFILES/zsh/zshrc" "$HOME/.zshrc"
+    check_install_target "$DOTFILES/zsh/scripts" "$CORTEX_CONFIG_HOME/zsh/scripts"
+    check_install_target "$DOTFILES/assets" "$CORTEX_CONFIG_HOME/assets"
+    check_install_target "$DOTFILES/npm/npmrc" "$HOME/.npmrc"
+    check_install_target "$DOTFILES/bun/bunfig.toml" "$HOME/.bunfig.toml"
+    check_install_target "$DOTFILES/uv/uv.toml" "$HOME/.config/uv/uv.toml"
+    check_install_target "$DOTFILES/starship/starship.toml" "$HOME/.config/starship.toml"
+    check_install_target "$DOTFILES/herdr/config.toml" "$HOME/.config/herdr/config.toml"
+    check_install_target "$DOTFILES/ghostty/config" "$HOME/.config/ghostty/config"
+    check_install_target "$DOTFILES/ghostty/shaders" "$HOME/.config/ghostty/shaders"
+    check_install_target "$DOTFILES/tmux/tmux.conf" "$HOME/.tmux.conf"
+    check_install_target "$DOTFILES/lazygit/config.yml" "$HOME/.config/lazygit/config.yml"
     if [[ "$(uname -s)" == "Darwin" ]]; then
-        check_symlink_target "$DOTFILES/pnpm/rc" "$HOME/Library/Preferences/pnpm/rc"
-        check_symlink_target "$DOTFILES/sketchybar" "$HOME/.config/sketchybar"
-        check_symlink_target "$DOTFILES/yabai/yabairc" "$HOME/.config/yabai/yabairc"
-        check_symlink_target "$DOTFILES/yabai/yabairc" "$HOME/.yabairc"
-        check_symlink_target "$DOTFILES/skhd/skhdrc" "$HOME/.config/skhd/skhdrc"
-        check_symlink_target "$DOTFILES/skhd/skhdrc" "$HOME/.skhdrc"
-        check_symlink_target "$DOTFILES/karabiner/karabiner.json" "$HOME/.config/karabiner/karabiner.json"
+        check_install_target "$DOTFILES/pnpm/rc" "$PNPM_CONFIG_TARGET"
+        check_install_target "$DOTFILES/sketchybar" "$HOME/.config/sketchybar"
+        check_install_target "$DOTFILES/yabai/yabairc" "$HOME/.config/yabai/yabairc"
+        check_install_target "$DOTFILES/yabai/yabairc" "$HOME/.yabairc"
+        check_install_target "$DOTFILES/skhd/skhdrc" "$HOME/.config/skhd/skhdrc"
+        check_install_target "$DOTFILES/skhd/skhdrc" "$HOME/.skhdrc"
+        check_install_target "$DOTFILES/karabiner/karabiner.json" "$HOME/.config/karabiner/karabiner.json"
     else
-        pass "macOS-only symlink targets skipped on non-macOS platform"
+        check_install_target "$DOTFILES/pnpm/rc" "$PNPM_CONFIG_TARGET"
+        pass "macOS-only install targets skipped on non-macOS platform"
     fi
 
     echo ""
     echo "checking syntax"
     check_shell "$DOTFILES/install.sh" bash
-    check_shell "$DOTFILES/claude/statusline.sh" bash
+    check_shell "$DOTFILES/bootstrap.sh" bash
+    check_shell "$DOTFILES/scripts/macos-defaults.sh" bash
     for path in "$DOTFILES"/sketchybar/sketchybarrc "$DOTFILES"/sketchybar/sketchybar-profile.sh "$DOTFILES"/sketchybar/plugins/*.sh; do
         check_shell "$path" bash
     done
@@ -246,15 +276,26 @@ PY
         check_shell "$path" zsh
     done
     check_json "$DOTFILES/karabiner/karabiner.json"
-    for path in "$DOTFILES"/opencode/*.json "$DOTFILES"/opencode/**/*.json "$DOTFILES"/claude/themes/*.json; do
-        check_json "$path"
-    done
     check_toml "$DOTFILES/starship/starship.toml"
     check_toml "$DOTFILES/bun/bunfig.toml"
     check_toml "$DOTFILES/uv/uv.toml"
     for path in "$DOTFILES"/herdr/*.toml "$DOTFILES"/herdr/**/*.toml; do
         check_toml "$path"
     done
+
+    if [[ "$(uname -s)" == "Darwin" && -f "$DOTFILES/Brewfile" ]]; then
+        if command -v brew &>/dev/null; then
+            if brew bundle check --file="$DOTFILES/Brewfile" >/dev/null; then
+                pass "Brewfile dependencies installed"
+            else
+                warn "Brewfile has missing dependencies; run: brew bundle --file=$DOTFILES/Brewfile"
+            fi
+        else
+            warn "brew unavailable; skipped Brewfile check"
+        fi
+    else
+        pass "Brewfile check skipped on non-macOS platform"
+    fi
 
     echo ""
     if [[ "$CRITICAL_FAILURES" -gt 0 ]]; then
@@ -266,9 +307,18 @@ PY
     exit 0
 fi
 
-if [[ "${1:-}" != "" && "${1:-}" != "--dry-run" ]]; then
-    echo "Usage: $0 [--check|--dry-run]"
-    exit 1
+if [[ "$CHECK_MODE" != true && "$DRY_RUN" != true ]]; then
+    mkdir -p "$CORTEX_CONFIG_HOME"
+    touch "$INSTALL_LOG"
+    exec > >(tee -a "$INSTALL_LOG") 2>&1
+
+    echo ""
+    echo "===== cortex-dotfiles install $(date -Is) ====="
+    echo "log: $INSTALL_LOG"
+    echo "repo: $DOTFILES"
+    echo "platform: $PLATFORM"
+    echo "mode: $INSTALL_MODE"
+    echo "pid: $$"
 fi
 
 echo ""
@@ -278,9 +328,11 @@ echo "  ╚═══════════════════════
 echo ""
 
 if [[ "$DRY_RUN" == true ]]; then
-    echo "DRY RUN: no files, packages, services, symlinks, chmods, or local config will be changed."
+    echo "DRY RUN: no files, packages, services, install targets, chmods, or local config will be changed."
     echo ""
 fi
+
+echo "Install mode: $INSTALL_MODE"
 
 run_or_plan() {
     local message="$1"
@@ -442,21 +494,18 @@ backup_karabiner_if_exists() {
 }
 
 backup_if_exists "$HOME/.zshrc"
+backup_if_exists "$CORTEX_CONFIG_HOME/zsh/scripts"
+backup_if_exists "$CORTEX_CONFIG_HOME/assets"
 backup_if_exists "$HOME/.npmrc"
+backup_if_exists "$PNPM_CONFIG_TARGET"
 backup_if_exists "$HOME/.bunfig.toml"
 backup_if_exists "$HOME/.config/uv/uv.toml"
 backup_if_exists "$HOME/.config/starship.toml"
 backup_if_exists "$HOME/.config/herdr/config.toml"
 backup_if_exists "$HOME/.config/ghostty/config"
-backup_if_exists "$HOME/.config/herdr/config.toml"
-backup_if_exists "$HOME/.config/opencode/tui.json"
-backup_if_exists "$HOME/.config/opencode/themes"
 backup_if_exists "$HOME/.tmux.conf"
-backup_if_exists "$HOME/.claude/statusline.sh"
-backup_if_exists "$HOME/.claude/themes"
 backup_if_exists "$HOME/.config/lazygit/config.yml"
 if [[ "$PLATFORM" == "Darwin" ]]; then
-    backup_if_exists "$HOME/Library/Preferences/pnpm/rc"
     backup_if_exists "$HOME/.config/sketchybar"
     backup_if_exists "$HOME/.config/yabai/yabairc"
     backup_if_exists "$HOME/.yabairc"
@@ -465,50 +514,71 @@ if [[ "$PLATFORM" == "Darwin" ]]; then
     backup_karabiner_if_exists
 fi
 
-# --- Crear symlinks ---
+# --- Instalar configs ---
 echo ""
-echo "🔗 Creando symlinks..."
+echo "🔗 Instalando configs ($INSTALL_MODE)..."
 
-create_symlink() {
+install_target() {
     local src="$1"
     local dst="$2"
+    local tmp="${dst}.tmp.$$"
+    local replaced="${dst}.previous_${TIMESTAMP}.$$"
+
     if [[ "$DRY_RUN" == true ]]; then
-        echo "  → Would symlink $dst → $src"
-    else
+        if [[ "$INSTALL_MODE" == "symlink" ]]; then
+            echo "  → Would symlink $dst → $src"
+        else
+            echo "  → Would atomically copy $src → $dst"
+        fi
+    elif [[ "$INSTALL_MODE" == "symlink" ]]; then
         mkdir -p "$(dirname "$dst")"
         # -n evita que ln dereferencie un symlink-a-directorio existente y cree
         # un link adentro (caso ghostty/shaders → loop shaders/shaders)
         ln -sfn "$src" "$dst"
         echo "  ✓ $dst → $src"
+    else
+        mkdir -p "$(dirname "$dst")"
+
+        if [[ -e "$tmp" || -L "$tmp" ]]; then
+            mv "$tmp" "${tmp}.stale_${TIMESTAMP}"
+        fi
+
+        if [[ -d "$src" ]]; then
+            cp -R "$src" "$tmp"
+            if [[ -e "$dst" || -L "$dst" ]]; then
+                mv "$dst" "$replaced"
+            fi
+            mv "$tmp" "$dst"
+        else
+            cp "$src" "$tmp"
+            mv -f "$tmp" "$dst"
+        fi
+        echo "  ✓ $dst ← $src"
     fi
 }
 
-create_symlink "$DOTFILES/zsh/zshrc"              "$HOME/.zshrc"
-create_symlink "$DOTFILES/npm/npmrc"               "$HOME/.npmrc"
-create_symlink "$DOTFILES/bun/bunfig.toml"         "$HOME/.bunfig.toml"
-create_symlink "$DOTFILES/uv/uv.toml"              "$HOME/.config/uv/uv.toml"
-create_symlink "$DOTFILES/starship/starship.toml"  "$HOME/.config/starship.toml"
-create_symlink "$DOTFILES/herdr/config.toml"       "$HOME/.config/herdr/config.toml"
-create_symlink "$DOTFILES/ghostty/config"          "$HOME/.config/ghostty/config"
-create_symlink "$DOTFILES/ghostty/shaders"         "$HOME/.config/ghostty/shaders"
-create_symlink "$DOTFILES/herdr/config.toml"       "$HOME/.config/herdr/config.toml"
-create_symlink "$DOTFILES/opencode/tui.json"       "$HOME/.config/opencode/tui.json"
-create_symlink "$DOTFILES/opencode/themes"         "$HOME/.config/opencode/themes"
-create_symlink "$DOTFILES/tmux/tmux.conf"          "$HOME/.tmux.conf"
-run_or_plan "chmod +x $DOTFILES/claude/statusline.sh" chmod +x "$DOTFILES/claude/statusline.sh"
-create_symlink "$DOTFILES/claude/statusline.sh"    "$HOME/.claude/statusline.sh"
-create_symlink "$DOTFILES/claude/themes"           "$HOME/.claude/themes"
-create_symlink "$DOTFILES/lazygit/config.yml"      "$HOME/.config/lazygit/config.yml"
+install_target "$DOTFILES/zsh/zshrc"              "$HOME/.zshrc"
+install_target "$DOTFILES/zsh/scripts"            "$CORTEX_CONFIG_HOME/zsh/scripts"
+install_target "$DOTFILES/assets"                 "$CORTEX_CONFIG_HOME/assets"
+install_target "$DOTFILES/npm/npmrc"              "$HOME/.npmrc"
+install_target "$DOTFILES/pnpm/rc"                "$PNPM_CONFIG_TARGET"
+install_target "$DOTFILES/bun/bunfig.toml"        "$HOME/.bunfig.toml"
+install_target "$DOTFILES/uv/uv.toml"             "$HOME/.config/uv/uv.toml"
+install_target "$DOTFILES/starship/starship.toml" "$HOME/.config/starship.toml"
+install_target "$DOTFILES/herdr/config.toml"      "$HOME/.config/herdr/config.toml"
+install_target "$DOTFILES/ghostty/config"         "$HOME/.config/ghostty/config"
+install_target "$DOTFILES/ghostty/shaders"        "$HOME/.config/ghostty/shaders"
+install_target "$DOTFILES/tmux/tmux.conf"         "$HOME/.tmux.conf"
+install_target "$DOTFILES/lazygit/config.yml"     "$HOME/.config/lazygit/config.yml"
 if [[ "$PLATFORM" == "Darwin" ]]; then
-    create_symlink "$DOTFILES/pnpm/rc"                 "$HOME/Library/Preferences/pnpm/rc"
     run_or_plan "chmod +x sketchybar scripts" chmod +x "$DOTFILES/sketchybar/sketchybarrc" "$DOTFILES/sketchybar/plugins"/*.sh
-    create_symlink "$DOTFILES/sketchybar"              "$HOME/.config/sketchybar"
+    install_target "$DOTFILES/sketchybar"              "$HOME/.config/sketchybar"
     run_or_plan "chmod +x $DOTFILES/yabai/yabairc" chmod +x "$DOTFILES/yabai/yabairc"
-    create_symlink "$DOTFILES/yabai/yabairc"           "$HOME/.config/yabai/yabairc"
-    create_symlink "$DOTFILES/yabai/yabairc"           "$HOME/.yabairc"
-    create_symlink "$DOTFILES/skhd/skhdrc"             "$HOME/.config/skhd/skhdrc"
-    create_symlink "$DOTFILES/skhd/skhdrc"             "$HOME/.skhdrc"
-    create_symlink "$DOTFILES/karabiner/karabiner.json" "$HOME/.config/karabiner/karabiner.json"
+    install_target "$DOTFILES/yabai/yabairc"           "$HOME/.config/yabai/yabairc"
+    install_target "$DOTFILES/yabai/yabairc"           "$HOME/.yabairc"
+    install_target "$DOTFILES/skhd/skhdrc"             "$HOME/.config/skhd/skhdrc"
+    install_target "$DOTFILES/skhd/skhdrc"             "$HOME/.skhdrc"
+    install_target "$DOTFILES/karabiner/karabiner.json" "$HOME/.config/karabiner/karabiner.json"
 
     KARABINER_CLI="$(karabiner_cli_path || true)"
     if [[ -n "$KARABINER_CLI" ]]; then
@@ -596,15 +666,16 @@ fi
 
 # --- Configuración local ---
 echo ""
-if [[ ! -f "$DOTFILES/local/env.zsh" ]]; then
+if [[ ! -f "$CORTEX_CONFIG_HOME/local/env.zsh" ]]; then
     if [[ "$DRY_RUN" == true ]]; then
-        echo "📝 Would create local/env.zsh from local/env.zsh.example"
+        echo "📝 Would create $CORTEX_CONFIG_HOME/local/env.zsh from local/env.zsh.example"
     else
-        cp "$DOTFILES/local/env.zsh.example" "$DOTFILES/local/env.zsh"
-        echo "📝 Creado local/env.zsh desde el ejemplo — editalo con tus paths"
+        mkdir -p "$CORTEX_CONFIG_HOME/local"
+        cp "$DOTFILES/local/env.zsh.example" "$CORTEX_CONFIG_HOME/local/env.zsh"
+        echo "📝 Creado $CORTEX_CONFIG_HOME/local/env.zsh desde el ejemplo — editalo con tus paths"
     fi
 else
-    echo "✓ local/env.zsh ya existe"
+    echo "✓ $CORTEX_CONFIG_HOME/local/env.zsh ya existe"
 fi
 
 # --- Verificación final ---
@@ -613,11 +684,12 @@ if [[ "$DRY_RUN" == true ]]; then
     echo "✅ Dry run completado; no se aplicaron cambios."
 else
     echo "✅ Instalación completada!"
+    echo "   Log: $INSTALL_LOG"
 fi
 echo ""
 echo "  Próximos pasos:"
 echo "  1. Abrí una nueva terminal para cargar el nuevo profile"
-echo "  2. Editá local/env.zsh con tus paths personales"
+echo "  2. Editá $CORTEX_CONFIG_HOME/local/env.zsh con tus paths personales"
 if [[ "$PLATFORM" == "Darwin" ]]; then
     echo "  3. Ghostty ya usa FiraCode Nerd Font Mono Beard (reiniciá si no se ve bien)"
     echo "  4. Si macOS bloqueó servicios, habilitá Accessibility y corré los fallbacks impresos arriba"

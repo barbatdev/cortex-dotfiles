@@ -36,7 +36,7 @@ jobs:
 
           bash_files=(
             install.sh
-            claude/statusline.sh
+            bootstrap.sh
             zsh/scripts/*.sh
             scripts/*.sh
             sketchybar/**/*.sh
@@ -84,3 +84,9 @@ jobs:
           else
             printf '%s\n' 'install.sh --check not available; skipping.'
           fi
+
+      - name: Run installer integration tests
+        shell: bash
+        run: |
+          scripts/test-install.sh
+          scripts/test-install.sh --symlink

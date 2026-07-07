@@ -1,6 +1,6 @@
 # dotfiles
 
-Configuración local extraida de `cortex`: terminal, shell, prompt, helpers de AI CLI y herramientas de desarrollo para macOS.
+Configuración local extraida de `cortex`: terminal, shell, prompt y herramientas de desarrollo para macOS y Linux/agents-dev.
 
 ## CI
 
@@ -17,12 +17,21 @@ GitHub Actions ejecuta un smoke check mínimo en pull requests y pushes a `main`
 - **Keyboard remaps macOS**: [Karabiner-Elements](https://karabiner-elements.pqrs.org/) con profile `cortex`
 - **Editor terminal**: Neovim basado en LazyVim/Gentleman.Dots con overlay RefactorIA
 - **Ls**: [eza](https://github.com/eza-community/eza)
-- **AI CLI UX**: Claude Code statusline, OpenCode helpers y Herdr remoto
 - **Workflow docs**: [Herdr workflow](docs/herdr-workflow.md) y [keymaps prácticos](docs/keymaps.md)
 - **Supply-chain guardrails**: defaults globales para `uv`, `npm`, `pnpm` y `bun`
 - **Fuente**: FiraCode Nerd Font + variante custom RefactorIA
 
 ## Instalación
+
+### Bootstrap
+
+```bash
+bash -c "$(curl -fsSL https://raw.githubusercontent.com/barbatdev/cortex-dotfiles/main/bootstrap.sh)"
+```
+
+El bootstrap clona o actualiza el repo en `~/.cortex/cortex-dotfiles` y ejecuta `install.sh`. En Linux/agents-dev no asume Homebrew ni herramientas macOS.
+
+Por defecto el instalador copia los archivos hacia las rutas finales. El repo no queda requerido en runtime. Para desarrollo de estos dotfiles, usá `--symlink` y mantené links vivos al checkout.
 
 ### macOS
 
@@ -31,6 +40,12 @@ mkdir -p ~/.cortex
 git clone <repo-url> ~/.cortex/cortex-dotfiles
 cd ~/.cortex/cortex-dotfiles
 bash install.sh
+```
+
+Para desarrollo de dotfiles con symlinks al checkout:
+
+```bash
+bash install.sh --symlink
 ```
 
 Para auditar el entorno sin instalar paquetes ni modificar archivos:
@@ -48,16 +63,40 @@ bash install.sh --dry-run
 El instalador macOS:
 1. Instala dependencias via Homebrew (starship, tmux, lazygit, neovim, eza, sketchybar, yabai, skhd, Karabiner-Elements, FiraCode Nerd Font)
 2. Hace backup de configs existentes con timestamp
-3. Crea symlinks de los dotfiles y guardrails globales (`.npmrc`, `pnpm/rc`, `.bunfig.toml`, `uv.toml`)
+3. Copia los dotfiles y guardrails globales (`.npmrc`, `pnpm/rc`, `.bunfig.toml`, `uv.toml`); con `--symlink` crea symlinks
 4. Intenta seleccionar el profile `cortex` de Karabiner si `karabiner_cli` está disponible
 5. Intenta arrancar/recargar `sketchybar`, `yabai` y `skhd` sin cortar la instalación si macOS requiere permisos
-6. Crea `local/env.zsh` desde el template
+6. Crea `~/.config/cortex-dotfiles/local/env.zsh` desde el template
+
+El archivo `Brewfile` es el inventario declarativo de dependencias macOS. Para auditar o instalar manualmente:
+
+```bash
+brew bundle check --file=Brewfile
+brew bundle --file=Brewfile
+```
+
+Defaults macOS opcionales, solo para workstation local:
+
+```bash
+scripts/macos-defaults.sh
+```
+
+### Linux / agents-dev
+
+El repo también soporta Linux para `agents-dev`. En esa plataforma el instalador no usa Homebrew ni intenta configurar servicios macOS; solo verifica herramientas disponibles, instala targets compatibles por copia y deja fallbacks explícitos para instalar paquetes con el package manager del sistema.
+
+Validación de instalación en un `HOME` temporal:
+
+```bash
+scripts/test-install.sh
+scripts/test-install.sh --symlink
+```
+
 
 ## Estructura
 
 ```
 dotfiles/
-├── claude/                   # Claude Code statusline
 ├── docs/                     # Referencias operativas y keymaps
 ├── ghostty/                  # Config Ghostty, muxy legado y shaders
 ├── fonts/                    # Fuente RefactorIA y script de regeneración
@@ -84,15 +123,17 @@ dotfiles/
 ├── starship/
 │   └── starship.toml         # Prompt (~/.config/starship.toml)
 ├── local/
-│   └── env.zsh.example       # Template de config local (gitignored)
+│   └── env.zsh.example       # Template para ~/.config/cortex-dotfiles/local/env.zsh
 └── install.sh
 ```
 
 > Nota migración cmux: el path legacy `~/Library/Application Support/com.cmuxterm.app/config.ghostty` ya no está gestionado por estos dotfiles. Si todavía existe en tu máquina, podés borrarlo manualmente sin afectar la configuración actual.
 
-## Especificaciones
+## Boundary con Cortex
 
-- [Cortex Agent State v1](docs/agent-state-v1.md): contrato `cortex.agent_state.v1` para normalizar estados de agentes hacia Herdr, statuslines, SketchyBar y notificaciones.
+Este repo sigue siendo standalone: `install.sh` no requiere tener el repo `cortex` disponible y estos dotfiles deben poder instalarse por sí solos.
+
+La personalización de Claude/OpenCode, themes, statuslines, skills, agents, instrucciones y orquestación AI pertenecen al repo `cortex`, no a `cortex-dotfiles`.
 
 ## Comandos principales
 
@@ -107,7 +148,7 @@ dotfiles/
 | `ccclip <files>` | Copiar código al clipboard |
 | `tcc`, `tdev`, `ta`, `tn`, `tl`, `tk` | Helpers tmux (`tcc` abre Claude Code en tmux) |
 | `wtadd`, `wtlist`, `wtremove` | Helpers de git worktrees |
-| `cortex.agent_state.v1`, `agent-state` | Reportar/listar estado local de agentes Cortex y, dentro de Herdr, actualizar el pane actual |
+| `port`, `killport`, `devports` | Inspección y liberación segura de puertos de desarrollo |
 | `ss [n]` | Listar últimos screenshots |
 | `last [-c\|-o]` | Último screenshot |
 | `ll`, `la`, `lt` | Listar archivos (eza) |
@@ -118,12 +159,13 @@ dotfiles/
 
 ## Personalización
 
-Editá `local/env.zsh` (gitignored) para configurar:
+Editá `~/.config/cortex-dotfiles/local/env.zsh` para configurar:
 - `SCREENSHOTS_DIR` — directorio de screenshots
 - `WORKSPACE_DIR` — directorio raíz de tus proyectos
 - `CORTEX_HOME` — raíz canónica de cortex, por defecto `~/.cortex`
 - `CORTEX_ROOT` — repo principal cortex, por defecto `~/.cortex/cortex`
-- `CORTEX_DOTFILES_DIR` — repo dotfiles, por defecto `~/.cortex/cortex-dotfiles`
+- `CORTEX_CONFIG_HOME` — runtime/config local de estos dotfiles, por defecto `~/.config/cortex-dotfiles`
+- `CORTEX_DOTFILES_DIR` — ubicación activa de dotfiles/scripts, por defecto `CORTEX_CONFIG_HOME`; podés apuntarlo al checkout si trabajás en modo repo
 - `OPENCODE_DEFAULT_FLAGS` — flags por defecto para `oc`
 - `INNIT_DIR` y overrides `INNIT_*_DIR` — navegación rápida de subdirectorios
 - Aliases y paths personales

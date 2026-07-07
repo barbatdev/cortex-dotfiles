@@ -1,3 +1,4 @@
+onboarding = false
 [ui.toast]
 delivery = "terminal"
 
@@ -5,7 +6,7 @@ delivery = "terminal"
 sidebar_width = 32
 sidebar_min_width = 24
 sidebar_max_width = 42
-agent_panel_sort = "priority"
+agent_panel_sort = "spaces"
 show_agent_labels_on_pane_borders = true
 prompt_new_tab_name = true
 pane_borders = true
