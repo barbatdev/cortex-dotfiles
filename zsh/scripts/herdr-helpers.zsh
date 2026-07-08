@@ -154,6 +154,13 @@ hremote() {
 hremote-stop() {
     local target="${1:?Uso: hremote-stop <ssh-target> [session]}"
     local session="${2:-main}"
+
+    if [[ "$session" == *[^A-Za-z0-9_.-]* ]]; then
+        echo "Nombre de sesión inválido: $session"
+        echo "Usá solo letras, números, punto, guion o underscore."
+        return 1
+    fi
+
     ssh -t "$target" "PATH=\"\$HOME/.local/bin:\$HOME/.cargo/bin:/usr/local/bin:/usr/bin:/bin:\$PATH\"; herdr session stop '$session'"
 }
 
