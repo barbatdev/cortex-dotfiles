@@ -161,7 +161,6 @@ PY
             check_command herdr warn
             check_command mosh warn
             check_command tmux warn
-            check_command herdr warn
             check_command lazygit warn
             check_command sketchybar warn
             check_command yabai warn
@@ -215,7 +214,6 @@ PY
     check_symlink_target "$DOTFILES/herdr/config.toml" "$HOME/.config/herdr/config.toml"
     check_symlink_target "$DOTFILES/ghostty/config" "$HOME/.config/ghostty/config"
     check_symlink_target "$DOTFILES/ghostty/shaders" "$HOME/.config/ghostty/shaders"
-    check_symlink_target "$DOTFILES/herdr/config.toml" "$HOME/.config/herdr/config.toml"
     check_symlink_target "$DOTFILES/opencode/tui.json" "$HOME/.config/opencode/tui.json"
     check_symlink_target "$DOTFILES/opencode/themes" "$HOME/.config/opencode/themes"
     check_symlink_target "$DOTFILES/tmux/tmux.conf" "$HOME/.tmux.conf"
@@ -448,7 +446,6 @@ backup_if_exists "$HOME/.config/uv/uv.toml"
 backup_if_exists "$HOME/.config/starship.toml"
 backup_if_exists "$HOME/.config/herdr/config.toml"
 backup_if_exists "$HOME/.config/ghostty/config"
-backup_if_exists "$HOME/.config/herdr/config.toml"
 backup_if_exists "$HOME/.config/opencode/tui.json"
 backup_if_exists "$HOME/.config/opencode/themes"
 backup_if_exists "$HOME/.tmux.conf"
@@ -491,7 +488,6 @@ create_symlink "$DOTFILES/starship/starship.toml"  "$HOME/.config/starship.toml"
 create_symlink "$DOTFILES/herdr/config.toml"       "$HOME/.config/herdr/config.toml"
 create_symlink "$DOTFILES/ghostty/config"          "$HOME/.config/ghostty/config"
 create_symlink "$DOTFILES/ghostty/shaders"         "$HOME/.config/ghostty/shaders"
-create_symlink "$DOTFILES/herdr/config.toml"       "$HOME/.config/herdr/config.toml"
 create_symlink "$DOTFILES/opencode/tui.json"       "$HOME/.config/opencode/tui.json"
 create_symlink "$DOTFILES/opencode/themes"         "$HOME/.config/opencode/themes"
 create_symlink "$DOTFILES/tmux/tmux.conf"          "$HOME/.tmux.conf"
