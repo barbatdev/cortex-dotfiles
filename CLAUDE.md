@@ -41,7 +41,7 @@ dotfiles/
 └── install.sh                # Instalador
 ```
 
-**Flujo de carga del zshrc:** Las secciones están separadas por `#region`/`#endregion`. El orden importa: Brew → PATH → Zsh options → Editor → Env vars → Aliases → Source scripts → Local overrides → Starship → Welcome.
+**Flujo de carga del zshrc:** Las secciones están separadas por `#region`/`#endregion`. El orden importa: Brew → PATH → Mise → Zsh options → Editor → Env vars → Aliases → Source scripts → Local overrides → Starship → Welcome.
 
 **`local/env.zsh`** está gitignored y contiene paths personales, tokens y overrides de variables de entorno (`SCREENSHOTS_DIR`, `WORKSPACE_DIR`, `WORK_PROJECTS_DIR`). Se genera desde `env.zsh.example` en la primera instalación.
 

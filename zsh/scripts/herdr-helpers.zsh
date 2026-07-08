@@ -64,7 +64,24 @@ _herdr_open_session_for_path() {
     fi
 
     session="$(_herdr_session_name_with_suffix "$resolved" "$suffix")"
-    CORTEX_MULTIPLEXER=herdr herdr --session "$session"
+    (cd "$resolved" && CORTEX_MULTIPLEXER=herdr herdr --session "$session")
+}
+
+_herdr_validate_remote_args() {
+    local target="$1"
+    local session="$2"
+
+    if [[ "$target" == -* ]]; then
+        echo "Target SSH inválido: $target"
+        echo "Usá un host o alias SSH, no opciones de ssh."
+        return 1
+    fi
+
+    if [[ "$session" == -* || "$session" == *[^A-Za-z0-9_.-]* ]]; then
+        echo "Nombre de sesión inválido: $session"
+        echo "Usá solo letras, números, punto, guion o underscore."
+        return 1
+    fi
 }
 
 _herdr_workspace_id_by_label() {
@@ -146,7 +163,26 @@ hscratch() {
 hremote() {
     local target="${1:?Uso: hremote <ssh-target> [session]}"
     local session="${2:-main}"
+    _herdr_validate_remote_args "$target" "$session" || return
     CORTEX_MULTIPLEXER=herdr CORTEX_SSH_TARGET="$target" herdr --remote "$target" --session "$session"
+}
+
+# Parar una sesión Herdr remota nombrada cuando el bridge pide restart.
+# Uso: hremote-stop <ssh-target> [session]
+hremote-stop() {
+    local target="${1:?Uso: hremote-stop <ssh-target> [session]}"
+    local session="${2:-main}"
+    _herdr_validate_remote_args "$target" "$session" || return
+
+    ssh -t "$target" "PATH=\"\$HOME/.local/bin:\$HOME/.cargo/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:\$PATH\"; herdr session stop '$session'"
+}
+
+# Parar y re-attachar una sesión Herdr remota nombrada.
+# Uso: hremote-restart <ssh-target> [session]
+hremote-restart() {
+    local target="${1:?Uso: hremote-restart <ssh-target> [session]}"
+    local session="${2:-main}"
+    hremote-stop "$target" "$session" && hremote "$target" "$session"
 }
 
 # Renombrar el pane actual de Herdr con un label humano o uno derivado de repo/branch.
