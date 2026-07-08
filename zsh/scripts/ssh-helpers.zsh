@@ -4,11 +4,7 @@ _remote_herdr_command_for_path() {
     local remote_path="$1"
     local shell_path
 
-    if [[ "$remote_path" == "$HOME/"* ]]; then
-        shell_path="~/${remote_path#$HOME/}"
-    else
-        shell_path="${(q)remote_path}"
-    fi
+    shell_path="${(q)remote_path}"
 
     printf 'cd %s && exec ${SHELL:-zsh}' "$shell_path"
 }
