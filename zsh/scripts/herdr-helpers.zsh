@@ -161,7 +161,7 @@ hremote-stop() {
         return 1
     fi
 
-    if [[ "$session" == *[^A-Za-z0-9_.-]* ]]; then
+    if [[ "$session" == -* || "$session" == *[^A-Za-z0-9_.-]* ]]; then
         echo "Nombre de sesión inválido: $session"
         echo "Usá solo letras, números, punto, guion o underscore."
         return 1

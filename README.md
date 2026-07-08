@@ -10,7 +10,7 @@ GitHub Actions ejecuta un smoke check mínimo en pull requests y pushes a `main`
 
 - **Terminal**: [Ghostty](https://ghostty.org/) y Alacritty
 - **Shell**: Zsh nativo de macOS
-- **Prompt**: [Starship](https://starship.rs/) — tema Gruvbox Dark
+- **Prompt**: [Starship](https://starship.rs/) — paleta Cortex warm slate
 - **Multiplexor**: tmux + helpers de sesión
 - **Barra macOS**: [SketchyBar](https://github.com/FelixKratz/SketchyBar) con tema Gruvbox
 - **Window manager macOS**: [yabai](https://github.com/koekeishiya/yabai) + [skhd](https://github.com/koekeishiya/skhd) opcional y gradual
