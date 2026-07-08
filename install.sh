@@ -416,7 +416,7 @@ backup_if_exists() {
         if [[ "$DRY_RUN" == true ]]; then
             echo "  → Would backup $src to $backup"
         else
-            cp -R "$src" "$backup"
+            mv "$src" "$backup"
             echo "  → Backup: $backup"
         fi
     fi
