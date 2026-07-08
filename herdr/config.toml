@@ -10,7 +10,7 @@ show_agent_labels_on_pane_borders = true
 prompt_new_tab_name = true
 pane_borders = true
 pane_gaps = true
-accent = "#FCD34D"
+accent = "#F97316"
 
 [terminal]
 new_cwd = "follow"
@@ -22,11 +22,23 @@ resume_agents_on_restore = true
 manage_ssh_config = false
 
 [theme]
-name = "terminal"
+name = "cortex"
 auto_switch = false
 
 [theme.custom]
-panel_bg = "#171512"
-accent = "#FCD34D"
+background = "#0B0B0A"
+panel_bg = "#27231D"
+element_bg = "#39342C"
+text = "#F8F1E7"
+muted = "#B9AD9C"
+subtle = "#7D7468"
+accent = "#F97316"
+accent_hover = "#FB923C"
+blue = "#60A5FA"
 red = "#F87171"
 green = "#10B981"
+yellow = "#FBBF24"
+purple = "#A78BFA"
+cyan = "#2DD4BF"
+diff_added_bg = "#0D2A20"
+diff_removed_bg = "#2C1210"

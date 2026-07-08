@@ -3,12 +3,12 @@ font-family = FiraCode Nerd Font Mono Beard
 font-family = FiraCode Nerd Font
 font-size = 14
 
-# Paleta Cortex (barbat.dev)
+# Theme: cortex (port de claude/opencode/themes/cortex.json)
 background = #0B0B0A
 foreground = #F8F1E7
 cursor-color = #F97316
 cursor-text = #0B0B0A
-selection-background = #7A3500
+selection-background = #7C2D12
 selection-foreground = #F8F1E7
 
 # Colores ANSI normales
@@ -18,7 +18,7 @@ palette = 2=#10B981
 palette = 3=#FBBF24
 palette = 4=#60A5FA
 palette = 5=#A78BFA
-palette = 6=#38BDF8
+palette = 6=#2DD4BF
 palette = 7=#F8F1E7
 
 # Colores brillantes
@@ -28,7 +28,7 @@ palette = 10=#34D399
 palette = 11=#FCD34D
 palette = 12=#93C5FD
 palette = 13=#C4B5FD
-palette = 14=#7DD3FC
+palette = 14=#5EEAD4
 palette = 15=#FFFFFF
 
 # Transparencia
