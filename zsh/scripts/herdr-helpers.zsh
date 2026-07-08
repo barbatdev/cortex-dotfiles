@@ -155,13 +155,19 @@ hremote-stop() {
     local target="${1:?Uso: hremote-stop <ssh-target> [session]}"
     local session="${2:-main}"
 
+    if [[ "$target" == -* ]]; then
+        echo "Target SSH inválido: $target"
+        echo "Usá un host o alias SSH, no opciones de ssh."
+        return 1
+    fi
+
     if [[ "$session" == *[^A-Za-z0-9_.-]* ]]; then
         echo "Nombre de sesión inválido: $session"
         echo "Usá solo letras, números, punto, guion o underscore."
         return 1
     fi
 
-    ssh -t "$target" "PATH=\"\$HOME/.local/bin:\$HOME/.cargo/bin:/usr/local/bin:/usr/bin:/bin:\$PATH\"; herdr session stop '$session'"
+    ssh -t "$target" "PATH=\"\$HOME/.local/bin:\$HOME/.cargo/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:\$PATH\"; herdr session stop '$session'"
 }
 
 # Parar y re-attachar una sesión Herdr remota nombrada.
