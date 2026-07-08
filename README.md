@@ -127,6 +127,7 @@ Seguimiento: [cortex-dotfiles #31](https://github.com/barbatdev/cortex-dotfiles/
 | `ccclip <files>` | Copiar código al clipboard |
 | `tcc`, `tdev`, `ta`, `tn`, `tl`, `tk` | Helpers tmux (`tcc` abre Claude Code en tmux) |
 | `wtadd`, `wtlist`, `wtremove` | Helpers de git worktrees |
+| `hremote`, `hremote-stop`, `hremote-restart` | Attach/restart seguro de sesiones Herdr remotas nombradas |
 | `cortex.agent_state.v1`, `agent-state` | Reportar/listar estado local de agentes Cortex y, dentro de Herdr, actualizar el pane actual |
 | `ss [n]` | Listar últimos screenshots |
 | `last [-c\|-o]` | Último screenshot |
@@ -156,6 +157,8 @@ Usá `hremote` desde tu terminal local en macOS. No hagas `ssh` primero y despu�
 
 - Para pegar una imagen del clipboard local en la terminal remota, usá `Ctrl+V` por defecto (no `Cmd+V`).
 - `herdr --remote` puentea ese pegado copiando la imagen a un archivo temporal remoto y pegando el path resultante en la shell remota.
+- Si Herdr dice `remote herdr server must restart before this bridge can attach`, corré `hremote-stop <host> <session>` y después `hremote <host> <session>`.
+- `hremote-stop` usa `herdr session stop <session>` en el host remoto: detiene solo esa sesión nombrada, no el server default.
 - Una sesión SSH normal no puede leer el clipboard del escritorio local de macOS, así que ese flujo depende de Herdr corriendo del lado local.
 - Para archivos que no sean imágenes del clipboard, puede seguir haciendo falta un fallback separado de transferencia.
 

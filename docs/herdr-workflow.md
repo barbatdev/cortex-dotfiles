@@ -82,8 +82,12 @@ The default Herdr prefix is `Ctrl+B`. See [keymaps](keymaps.md) for the practica
 | Reattach role session | `hfocus [path]`, `hside [path]`, `hscratch [path]` |
 | Reattach explicit session | `herdr --session <name>` or `herdr session attach <name>` |
 | Reattach remote session | `hremote <host> [session]` |
+| Stop stale remote session | `hremote-stop <host> [session]` |
+| Stop and reattach remote session | `hremote-restart <host> [session]` |
 
 Before detaching long-running work, name important panes and run `whereami` if the shell context is ambiguous.
+
+If remote attach reports `remote herdr server must restart before this bridge can attach`, stop only the named remote session with `hremote-stop <host> <session>` and then reattach. This maps to `herdr session stop <session>` on the remote host; it does not stop the remote default server.
 
 ## Related Docs
 

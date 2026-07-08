@@ -149,6 +149,22 @@ hremote() {
     CORTEX_MULTIPLEXER=herdr CORTEX_SSH_TARGET="$target" herdr --remote "$target" --session "$session"
 }
 
+# Parar una sesión Herdr remota nombrada cuando el bridge pide restart.
+# Uso: hremote-stop <ssh-target> [session]
+hremote-stop() {
+    local target="${1:?Uso: hremote-stop <ssh-target> [session]}"
+    local session="${2:-main}"
+    ssh -t "$target" "PATH=\"\$HOME/.local/bin:\$HOME/.cargo/bin:/usr/local/bin:/usr/bin:/bin:\$PATH\"; herdr session stop '$session'"
+}
+
+# Parar y re-attachar una sesión Herdr remota nombrada.
+# Uso: hremote-restart <ssh-target> [session]
+hremote-restart() {
+    local target="${1:?Uso: hremote-restart <ssh-target> [session]}"
+    local session="${2:-main}"
+    hremote-stop "$target" "$session" && hremote "$target" "$session"
+}
+
 # Renombrar el pane actual de Herdr con un label humano o uno derivado de repo/branch.
 hname() {
     local label="${1:-$(_herdr_workspace_name_for_path "$PWD")}" 

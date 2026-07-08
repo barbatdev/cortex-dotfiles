@@ -326,6 +326,11 @@ help-profile() {
     echo "  ${C}ccd [sub]         ${R}Navegar al Claude workspace"
     echo "  ${C}ccclip <files>    ${R}Copiar código al clipboard"
 
+    echo "\n${T}Herdr remoto${R}"
+    echo "  ${C}hremote <host> [s]       ${R}Attach a sesión remota"
+    echo "  ${C}hremote-stop <host> [s]  ${R}Parar una sesión remota nombrada"
+    echo "  ${C}hremote-restart <h> [s]  ${R}Parar y re-attachar sesión remota"
+
     echo "\n${T}Tmux — sesiones${R}"
     echo "  ${C}tcc               ${R}Abrir Claude Code + lazygit (layout automático)"
     echo "  ${C}tdev              ${R}Sesión con nombre del directorio actual"
