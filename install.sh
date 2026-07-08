@@ -411,7 +411,7 @@ echo "💾 Haciendo backup de configs existentes..."
 
 backup_if_exists() {
     local src="$1"
-    if [[ -e "$src" && ! -L "$src" ]]; then
+    if [[ -e "$src" || -L "$src" ]]; then
         local backup="${src}.bak_${TIMESTAMP}"
         if [[ "$DRY_RUN" == true ]]; then
             echo "  → Would backup $src to $backup"
