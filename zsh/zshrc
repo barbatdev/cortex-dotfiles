@@ -18,6 +18,12 @@ fi
 export PATH="$HOME/.local/bin:$PATH"
 #endregion
 
+#region Mise
+if command -v mise &>/dev/null; then
+    eval "$(mise activate zsh)"
+fi
+#endregion
+
 #region Zsh Options
 # Historia
 HISTFILE="$HOME/.zsh_history"
