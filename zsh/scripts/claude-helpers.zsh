@@ -45,7 +45,7 @@ _cortex_run_agent() {
 cc() {
     local resolved ctxfile
     resolved=$(_cortex_resolve_target "${1:-.}") || return
-    _cortex_run_agent "$resolved" claude --enable-auto-mode --dangerously-skip-permissions
+    _cortex_run_agent "$resolved" claude --enable-auto-mode
 }
 
 # Abre OpenCode en el path indicado.
