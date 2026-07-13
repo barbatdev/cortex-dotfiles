@@ -16,9 +16,9 @@ This workflow keeps terminal state persistent across local and remote work while
 |------|-----|---------|
 | Local Herdr | Normal work on the current machine | `hhere [path]`, `hfocus [path]` |
 | Remote Herdr bridge | Persistent remote session rendered through the local client | `hremote <host> [session]` |
-| Plain SSH/Mosh first | You need a normal remote shell before deciding what to run there | `sshx <host>`, `moshx <host> [path]` |
+| Plain SSH first | You need a normal remote shell before deciding what to run there | `sshc <host>` |
 
-`hremote` is not the same thing as `ssh` followed by `herdr`. `hremote` uses `herdr --remote` and attaches to a named Herdr session on the host through Herdr's remote bridge. `sshx` or `moshx` gives you a regular remote shell; from there, `hhere` starts or attaches Herdr as a local process on that remote host.
+`hremote` is not the same thing as `ssh` followed by `herdr`. `hremote` uses `herdr --remote` and attaches to a named Herdr session on the host through Herdr's remote bridge. `sshc` gives you a regular remote shell; from there, `hhere` starts or attaches Herdr as a local process on that remote host.
 
 In `hremote`, `Ctrl+V` is reserved by Herdr for remote image paste when supported by the terminal. Use normal shell paste bindings outside remote attach.
 
