@@ -158,10 +158,8 @@ PY
             check_command starship warn
             check_command nvim warn
             check_command eza warn
-            check_command herdr warn
-            check_command mosh warn
+            check_command cmux warn
             check_command tmux warn
-            check_command herdr warn
             check_command lazygit warn
             check_command sketchybar warn
             check_command yabai warn
@@ -179,8 +177,6 @@ PY
             check_command python3 warn
             check_command starship warn
             check_command nvim warn
-            check_command herdr warn
-            check_command mosh warn
             check_command tmux warn
             check_command lazygit warn
             ;;
@@ -244,6 +240,9 @@ PY
     check_shell "$DOTFILES/zsh/zshrc" zsh
     for path in "$DOTFILES"/zsh/scripts/*.zsh; do
         check_shell "$path" zsh
+    done
+    for path in "$DOTFILES"/zsh/scripts/*.sh; do
+        check_shell "$path" bash
     done
     check_json "$DOTFILES/karabiner/karabiner.json"
     for path in "$DOTFILES"/opencode/*.json "$DOTFILES"/opencode/**/*.json "$DOTFILES"/claude/themes/*.json; do
@@ -312,6 +311,21 @@ install_formula_if_missing() {
     fi
 }
 
+install_cask_if_missing() {
+    local app_path="$1"
+    local cask="$2"
+    local tap="$3"
+
+    if [[ -d "$app_path" ]]; then
+        echo "  ✓ $cask ya instalado"
+    elif [[ "$DRY_RUN" == true ]]; then
+        echo "  → Would install $cask via Homebrew cask"
+    else
+        brew tap "$tap"
+        brew install --cask "$cask"
+    fi
+}
+
 # --- Verificar dependencias base ---
 echo "📦 Verificando herramientas ($PLATFORM)..."
 
@@ -327,7 +341,7 @@ if [[ "$PLATFORM" == "Darwin" ]]; then
 
     install_formula_if_missing starship starship "prompt"
 elif [[ "$PLATFORM" == "Linux" ]]; then
-    for tool in zsh starship nvim herdr mosh tmux lazygit; do
+    for tool in zsh starship nvim tmux lazygit; do
         if command -v "$tool" &>/dev/null; then
             echo "  ✓ $tool ya instalado"
         else
@@ -358,8 +372,7 @@ karabiner_cli_path() {
 if [[ "$PLATFORM" == "Darwin" ]]; then
     install_formula_if_missing nvim neovim "editor terminal"
     install_formula_if_missing eza eza "ls mejorado"
-    install_formula_if_missing herdr herdr "multiplexor remoto persistente"
-    install_formula_if_missing mosh mosh "SSH resiliente para workstations remotas"
+    install_cask_if_missing "/Applications/cmux.app" cmux manaflow-ai/cmux
     install_formula_if_missing tmux tmux "multiplexor de terminal"
     install_formula_if_missing lazygit lazygit "git TUI"
     install_formula_if_missing sketchybar sketchybar "barra macOS"
@@ -496,6 +509,7 @@ create_symlink "$DOTFILES/opencode/tui.json"       "$HOME/.config/opencode/tui.j
 create_symlink "$DOTFILES/opencode/themes"         "$HOME/.config/opencode/themes"
 create_symlink "$DOTFILES/tmux/tmux.conf"          "$HOME/.tmux.conf"
 run_or_plan "chmod +x $DOTFILES/claude/statusline.sh" chmod +x "$DOTFILES/claude/statusline.sh"
+run_or_plan "chmod +x cmux integration scripts" chmod +x "$DOTFILES/zsh/scripts/cmux-sidebar-refresh.sh"
 create_symlink "$DOTFILES/claude/statusline.sh"    "$HOME/.claude/statusline.sh"
 create_symlink "$DOTFILES/claude/themes"           "$HOME/.claude/themes"
 create_symlink "$DOTFILES/lazygit/config.yml"      "$HOME/.config/lazygit/config.yml"
@@ -552,6 +566,16 @@ elif command -v brew &>/dev/null && command -v sketchybar &>/dev/null; then
     fi
 else
     echo "  - sketchybar no disponible; se omite"
+fi
+
+if [[ "$PLATFORM" == "Darwin" ]]; then
+    if [[ "$DRY_RUN" == true ]]; then
+        echo "  → Would install cmux hooks for detected agents"
+    elif command -v cmux >/dev/null 2>&1; then
+        cmux hooks setup || echo "  ! cmux hooks setup no pudo completar todas las integraciones"
+    else
+        echo "  ! Abrí cmux y asegurá su CLI en PATH; después corré: cmux hooks setup"
+    fi
 fi
 
 if [[ "$PLATFORM" != "Darwin" ]]; then
@@ -623,7 +647,7 @@ if [[ "$PLATFORM" == "Darwin" ]]; then
     echo "  4. Si macOS bloqueó servicios, habilitá Accessibility y corré los fallbacks impresos arriba"
     echo "  5. Abrí Karabiner-Elements y habilitá Input Monitoring/Accessibility si macOS lo pide"
 else
-    echo "  3. Instalá zsh/starship/neovim/herdr/mosh/tmux/lazygit con el package manager del sistema si faltan"
+    echo "  3. Instalá zsh/starship/neovim/tmux/lazygit con el package manager del sistema si faltan"
 fi
 echo ""
 echo "  Para medir el load time:"

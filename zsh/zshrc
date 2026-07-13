@@ -16,6 +16,7 @@ fi
 
 #region PATH
 export PATH="$HOME/.local/bin:$PATH"
+[[ -d "/Applications/cmux.app/Contents/Resources/bin" ]] && export PATH="/Applications/cmux.app/Contents/Resources/bin:$PATH"
 #endregion
 
 #region Zsh Options
@@ -60,7 +61,7 @@ export CLAUDE_CODE_EFFORT_LEVEL=high
 export CORTEX_HOME="${CORTEX_HOME:-$HOME/.cortex}"
 export CORTEX_ROOT="${CORTEX_ROOT:-$BARBATDEV_DIR/cortex/cortex}"
 export CORTEX_DOTFILES_DIR="${CORTEX_DOTFILES_DIR:-$BARBATDEV_DIR/cortex/cortex-dotfiles}"
-export CORTEX_MULTIPLEXER="${CORTEX_MULTIPLEXER:-herdr}"
+export CORTEX_MULTIPLEXER="${CORTEX_MULTIPLEXER:-cmux}"
 
 # Proyectos de la organización
 export WORK_PROJECTS_DIR="${WORK_PROJECTS_DIR:-$BARBATDEV_DIR/innit}"

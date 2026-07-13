@@ -225,6 +225,21 @@ SDD_MODE=$(echo "$SDD_DATA" | cut -d'|' -f1)
 SDD_SPEC=$(echo "$SDD_DATA" | cut -d'|' -f2)
 SDD_TASKS=$(echo "$SDD_DATA" | cut -d'|' -f3)
 
+# cmux handles lifecycle/feed with its official hooks; publish only Cortex metadata here.
+CMUX_STATUS_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/cortex/cmux-status"
+CMUX_STATUS_KEY=$(printf '%s' "${CMUX_WORKSPACE_ID:-default}" | tr -c 'A-Za-z0-9_.-' '_')
+CMUX_STATUS_CACHE="$CMUX_STATUS_DIR/$CMUX_STATUS_KEY"
+CMUX_STATUS_NOW=$(date +%s)
+CMUX_STATUS_LAST=$(cat "$CMUX_STATUS_CACHE" 2>/dev/null || echo 0)
+if command -v cmux >/dev/null 2>&1 && [ $((CMUX_STATUS_NOW - CMUX_STATUS_LAST)) -ge 2 ] && cmux ping >/dev/null 2>&1; then
+  cmux set-status claude_model "$MODEL" >/dev/null 2>&1 || true
+  cmux set-progress "$(awk -v percent="$CTX_PERCENT" 'BEGIN { printf "%.2f", percent / 100 }')" --label "Context ${CTX_PERCENT}%" >/dev/null 2>&1 || true
+  umask 077
+  mkdir -p "$CMUX_STATUS_DIR"
+  chmod 700 "$CMUX_STATUS_DIR"
+  printf '%s\n' "$CMUX_STATUS_NOW" > "$CMUX_STATUS_CACHE.$$" && mv "$CMUX_STATUS_CACHE.$$" "$CMUX_STATUS_CACHE"
+fi
+
 # Nombre del directorio
 DIR_NAME=$(basename "$DIR")
 
