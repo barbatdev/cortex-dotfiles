@@ -123,7 +123,7 @@ Seguimiento: [cortex-dotfiles #31](https://github.com/barbatdev/cortex-dotfiles/
 | `gs`, `ga`, `gc`, `gp`, `gl` | Git shortcuts |
 | `dev`, `barbat`, `cowork`, `personal`, `tools`, `worktrees` | Navegación rápida en `~/dev` |
 | `work`, `work-apis`, `work-mobile`, `work-webs`, `work-pcsoft` | Navegación rápida de trabajo |
-| `cortex`, `dotfiles` | Navegación rápida al repo `cortex` y sus dotfiles |
+| `dotfiles` | Navegación rápida al repo de dotfiles |
 | `cc [path]` | Abrir Claude Code |
 | `oc [path]` | Abrir OpenCode |
 | `ccclip <files>` | Copiar código al clipboard |
