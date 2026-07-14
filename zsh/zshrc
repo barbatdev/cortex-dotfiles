@@ -126,7 +126,6 @@ innit-apis()  { _go_first_existing_dir "${INNIT_APIS_DIR:-$INNIT_DIR}" "$INNIT_D
 innit-mobile(){ _go_first_existing_dir "${INNIT_MOBILE_DIR:-$INNIT_DIR}" "$INNIT_DIR"; }
 innit-webs()  { _go_first_existing_dir "${INNIT_WEBS_DIR:-$INNIT_DIR}" "$INNIT_DIR"; }
 innit-pcsoft(){ _go_first_existing_dir "${INNIT_PCSOFT_DIR:-$INNIT_DIR}" "$INNIT_DIR"; }
-cortex()      { _go_dev_dir "$CORTEX_ROOT"; }
 dotfiles()    { _go_dev_dir "${_DOTFILES_DIR:-$CORTEX_DOTFILES_DIR}"; }
 #endregion
 
@@ -316,7 +315,6 @@ help-profile() {
     echo "  ${C}innit-mobile     ${R}cd ~/dev/innit/mobile"
     echo "  ${C}innit-webs       ${R}cd ~/dev/innit/webs"
     echo "  ${C}innit-pcsoft     ${R}cd ~/dev/innit/pcsoft"
-    echo "  ${C}cortex           ${R}cd ~/cortex"
     echo "  ${C}dotfiles         ${R}cd ~/dev/personal/dotfiles"
     echo "  ${C}.., ..., ....     ${R}Subir 1, 2 o 3 niveles"
 
