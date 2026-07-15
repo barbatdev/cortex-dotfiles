@@ -64,6 +64,9 @@ jobs:
       - name: Check navigation shortcuts
         run: ./scripts/check-navigation-shortcuts.sh
 
+      - name: Check installer symlink safety
+        run: ./scripts/check-install-symlinks.sh
+
       - name: Validate TOML configs
         shell: bash
         run: |

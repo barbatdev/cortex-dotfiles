@@ -95,23 +95,11 @@ dotfiles/
 
 ## Boundary con Cortex
 
-Este repo sigue siendo standalone: `install.sh` no requiere tener el repo `cortex` disponible y estos dotfiles deben poder instalarse por sí solos. El bootstrap carga primero `~/.config/cortex-dotfiles/shell/cortex-dotfiles.zsh` y, si existe, carga al final `~/.cortex/shell/cortex.zsh`, que pertenece a Cortex. Ambos fragments son opcionales y un error en uno no impide intentar cargar el otro. Cortex conserva el ownership de sus variables core; este repo solo define variables bajo el namespace `CORTEX_DOTFILES_*`.
+Este repo sigue siendo standalone: `install.sh` no requiere tener Cortex instalado. Administra el entrypoint fijo `~/.config/cortex-dotfiles/shell/cortex-dotfiles.zsh`, sus archivos enlazados y las variables `CORTEX_DOTFILES_*` documentadas acá.
 
-Algunos artefactos viven acá temporalmente porque nacieron junto al setup personal, pero conceptualmente son propios del producto Cortex y no deberían tener a `cortex-dotfiles` como source of truth permanente:
+El bootstrap carga dotfiles primero y después intenta cargar `~/.cortex/shell/cortex.zsh`. Esa segunda ruta y las variables core que exponga pertenecen a Cortex; este repo solo las consume. Ambos fragments son opcionales y un error en uno no impide intentar cargar el otro.
 
-- `opencode/themes/` — themes Cortex para OpenCode.
-- `claude/themes/` — themes Cortex para Claude Code.
-- `claude/statusline.sh` — statusline orientada a superficies Cortex.
-- `docs/agent-state-v1.md` — contrato `cortex.agent_state.v1`.
-- `scripts/check-agent-state.sh` — smoke check del contrato agent-state.
-- `zsh/scripts/agent-state.sh` — bridge local para reportar estado de agentes.
-- `zsh/scripts/postcompact-hook.sh` y `zsh/scripts/memsave-nudge.sh` — hooks ligados al workflow Cortex.
-
-La migración se coordina en tres repos independientes: `cortex` define ownership de los artefactos product-owned, `cortex-dotfiles` conserva instalación/adaptación local, y `cortex-dots` sigue siendo un snapshot OSS-safe de dotfiles sin depender de `cortex`.
-
-No borrar ni cambiar estos artefactos acá hasta que `cortex` tenga reemplazos validados y se decida qué queda como adaptación local.
-
-Seguimiento: [cortex-dotfiles #31](https://github.com/barbatdev/cortex-dotfiles/issues/31), [cortex #1038](https://github.com/barbatdev/cortex/issues/1038), [cortex-dots #14](https://github.com/barbatdev/cortex-dots/issues/14).
+La coordinación vigente del contrato shell se sigue en [cortex #1259](https://github.com/barbatdev/cortex/issues/1259). Las migraciones de artefactos actualmente versionados en este repo se tratan por separado en [cortex-dotfiles #31](https://github.com/barbatdev/cortex-dotfiles/issues/31).
 
 ## Especificaciones
 
@@ -150,7 +138,6 @@ Editá `local/env.zsh` (gitignored) para configurar:
 - `PERSONAL_PROJECTS_DIR` — repos locales, por defecto `$WORKSPACE_DIR/local`
 - `TOOLS_DIR` y `WORKTREES_DIR` — herramientas locales y worktrees
 - `CORTEX_DOTFILES_DIR` — repo fuente de dotfiles, por defecto `$BARBATDEV_DIR/cortex/cortex-dotfiles`
-- `CORTEX_DOTFILES_SHELL_ENTRYPOINT` — override del entrypoint propio, por defecto `~/.config/cortex-dotfiles/shell/cortex-dotfiles.zsh`
 - `CORTEX_DOTFILES_MULTIPLEXER` — fallback standalone para helpers, por defecto `cmux`; `CORTEX_MULTIPLEXER` de Cortex tiene precedencia
 - `OPENCODE_DEFAULT_FLAGS` — flags por defecto para `oc`
 - `INNIT_DIR` y overrides `INNIT_*_DIR` — raíz y subdirectorios `apis`, `mobile`, `webs` y `pcsoft`
