@@ -28,7 +28,7 @@ jobs:
           set -euo pipefail
           shopt -s nullglob globstar
 
-          zsh_files=(zsh/zshrc zsh/scripts/*.zsh)
+          zsh_files=(zsh/zshrc zsh/cortex-dotfiles.zsh zsh/scripts/*.zsh)
           for file in "${zsh_files[@]}"; do
             [[ -f "$file" ]] || continue
             zsh -n "$file"

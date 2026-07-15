@@ -204,6 +204,7 @@ PY
     echo ""
     echo "checking symlink targets"
     check_symlink_target "$DOTFILES/zsh/zshrc" "$HOME/.zshrc"
+    check_symlink_target "$DOTFILES/zsh/cortex-dotfiles.zsh" "$HOME/.config/cortex-dotfiles/shell/cortex-dotfiles.zsh"
     check_symlink_target "$DOTFILES/npm/npmrc" "$HOME/.npmrc"
     check_symlink_target "$DOTFILES/bun/bunfig.toml" "$HOME/.bunfig.toml"
     check_symlink_target "$DOTFILES/uv/uv.toml" "$HOME/.config/uv/uv.toml"
@@ -238,6 +239,7 @@ PY
         check_shell "$path" bash
     done
     check_shell "$DOTFILES/zsh/zshrc" zsh
+    check_shell "$DOTFILES/zsh/cortex-dotfiles.zsh" zsh
     for path in "$DOTFILES"/zsh/scripts/*.zsh; do
         check_shell "$path" zsh
     done
@@ -455,6 +457,7 @@ backup_karabiner_if_exists() {
 }
 
 backup_if_exists "$HOME/.zshrc"
+backup_if_exists "$HOME/.config/cortex-dotfiles/shell/cortex-dotfiles.zsh"
 backup_if_exists "$HOME/.npmrc"
 backup_if_exists "$HOME/.bunfig.toml"
 backup_if_exists "$HOME/.config/uv/uv.toml"
@@ -497,6 +500,7 @@ create_symlink() {
 }
 
 create_symlink "$DOTFILES/zsh/zshrc"              "$HOME/.zshrc"
+create_symlink "$DOTFILES/zsh/cortex-dotfiles.zsh" "$HOME/.config/cortex-dotfiles/shell/cortex-dotfiles.zsh"
 create_symlink "$DOTFILES/npm/npmrc"               "$HOME/.npmrc"
 create_symlink "$DOTFILES/bun/bunfig.toml"         "$HOME/.bunfig.toml"
 create_symlink "$DOTFILES/uv/uv.toml"              "$HOME/.config/uv/uv.toml"

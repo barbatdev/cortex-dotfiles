@@ -66,7 +66,8 @@ dotfiles/
 ├── bun/                      # Global bun defaults (~/.bunfig.toml)
 ├── uv/                       # Global uv defaults (~/.config/uv/uv.toml)
 ├── zsh/
-│   ├── zshrc                 # Profile principal (~/.zshrc)
+│   ├── zshrc                 # Bootstrap: dotfiles primero, Cortex al final (~/.zshrc)
+│   ├── cortex-dotfiles.zsh   # Entrypoint propio del profile de dotfiles
 │   └── scripts/
 │       ├── claude-helpers.zsh   # Integración Claude Code
 │       ├── cmux-sidebar-refresh.sh # Metadata Cortex para cmux
@@ -94,7 +95,7 @@ dotfiles/
 
 ## Boundary con Cortex
 
-Este repo sigue siendo standalone: `install.sh` no requiere tener el repo `cortex` disponible y estos dotfiles deben poder instalarse por sí solos.
+Este repo sigue siendo standalone: `install.sh` no requiere tener el repo `cortex` disponible y estos dotfiles deben poder instalarse por sí solos. El bootstrap carga primero `~/.config/cortex-dotfiles/shell/cortex-dotfiles.zsh` y, si existe, carga al final `~/.cortex/shell/cortex.zsh`, que pertenece a Cortex. Ambos fragments son opcionales y un error en uno no impide intentar cargar el otro. Cortex conserva el ownership de sus variables core; este repo solo define variables bajo el namespace `CORTEX_DOTFILES_*`.
 
 Algunos artefactos viven acá temporalmente porque nacieron junto al setup personal, pero conceptualmente son propios del producto Cortex y no deberían tener a `cortex-dotfiles` como source of truth permanente:
 
@@ -144,10 +145,9 @@ Seguimiento: [cortex-dotfiles #31](https://github.com/barbatdev/cortex-dotfiles/
 Editá `local/env.zsh` (gitignored) para configurar:
 - `SCREENSHOTS_DIR` — directorio de screenshots
 - `WORKSPACE_DIR` — directorio raíz de tus proyectos
-- `CORTEX_HOME` — raíz canónica de cortex, por defecto `~/.cortex`
-- `CORTEX_ROOT` — repo principal cortex, por defecto `~/.cortex/cortex`
-- `CORTEX_DOTFILES_DIR` — repo dotfiles, por defecto `~/.cortex/cortex-dotfiles`
-- `CORTEX_SHELL_INTEGRATION` — fragmento zsh opcional administrado por Cortex, por defecto `$CORTEX_HOME/shell/cortex.zsh`
+- `CORTEX_DOTFILES_DIR` — repo dotfiles, por defecto `$BARBATDEV_DIR/cortex/cortex-dotfiles`
+- `CORTEX_DOTFILES_SHELL_ENTRYPOINT` — override del entrypoint propio, por defecto `~/.config/cortex-dotfiles/shell/cortex-dotfiles.zsh`
+- `CORTEX_DOTFILES_MULTIPLEXER` — fallback standalone para helpers, por defecto `cmux`; `CORTEX_MULTIPLEXER` de Cortex tiene precedencia
 - `OPENCODE_DEFAULT_FLAGS` — flags por defecto para `oc`
 - `INNIT_DIR` y overrides `INNIT_*_DIR` — navegación rápida de subdirectorios
 - Aliases y paths personales
