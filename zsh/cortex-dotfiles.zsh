@@ -15,8 +15,12 @@ fi
 #endregion
 
 #region PATH
-export PATH="$HOME/.local/bin:$PATH"
-[[ -d "/Applications/cmux.app/Contents/Resources/bin" ]] && export PATH="/Applications/cmux.app/Contents/Resources/bin:$PATH"
+_cortex_dotfiles_path_prepend() {
+    [[ ":$PATH:" == *":$1:"* ]] || export PATH="$1:$PATH"
+}
+
+_cortex_dotfiles_path_prepend "$HOME/.local/bin"
+[[ -d "/Applications/cmux.app/Contents/Resources/bin" ]] && _cortex_dotfiles_path_prepend "/Applications/cmux.app/Contents/Resources/bin"
 #endregion
 
 #region Zsh Options
@@ -348,12 +352,13 @@ _welcome
 #endregion
 
 # opencode
-export PATH=$HOME/.opencode/bin:$PATH
+_cortex_dotfiles_path_prepend "$HOME/.opencode/bin"
 
 # bun
 export BUN_INSTALL="$HOME/.bun"
-export PATH="$BUN_INSTALL/bin:$PATH"
+_cortex_dotfiles_path_prepend "$BUN_INSTALL/bin"
 
 # bun completions
 [ -s "$BUN_INSTALL/_bun" ] && source "$BUN_INSTALL/_bun"
-export PATH="/opt/homebrew/opt/bc/bin:$PATH"
+_cortex_dotfiles_path_prepend "/opt/homebrew/opt/bc/bin"
+unfunction _cortex_dotfiles_path_prepend

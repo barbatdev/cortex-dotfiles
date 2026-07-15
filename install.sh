@@ -7,6 +7,9 @@ TIMESTAMP=$(date +%Y%m%d_%H%M%S)
 DRY_RUN=false
 PLATFORM="$(uname -s)"
 
+# shellcheck source=scripts/install-helpers.sh
+source "$DOTFILES/scripts/install-helpers.sh"
+
 if [[ "${1:-}" == "--dry-run" ]]; then
     DRY_RUN=true
 fi
@@ -209,7 +212,6 @@ PY
     check_symlink_target "$DOTFILES/bun/bunfig.toml" "$HOME/.bunfig.toml"
     check_symlink_target "$DOTFILES/uv/uv.toml" "$HOME/.config/uv/uv.toml"
     check_symlink_target "$DOTFILES/starship/starship.toml" "$HOME/.config/starship.toml"
-    check_symlink_target "$DOTFILES/herdr/config.toml" "$HOME/.config/herdr/config.toml"
     check_symlink_target "$DOTFILES/ghostty/config" "$HOME/.config/ghostty/config"
     check_symlink_target "$DOTFILES/ghostty/shaders" "$HOME/.config/ghostty/shaders"
     check_symlink_target "$DOTFILES/herdr/config.toml" "$HOME/.config/herdr/config.toml"
@@ -426,43 +428,12 @@ fi
 echo ""
 echo "💾 Haciendo backup de configs existentes..."
 
-backup_if_exists() {
-    local src="$1"
-    if [[ -e "$src" && ! -L "$src" ]]; then
-        local backup="${src}.bak_${TIMESTAMP}"
-        if [[ "$DRY_RUN" == true ]]; then
-            echo "  → Would backup $src to $backup"
-        else
-            cp -R "$src" "$backup"
-            echo "  → Backup: $backup"
-        fi
-    fi
-}
-
-backup_karabiner_if_exists() {
-    local src="$HOME/.config/karabiner/karabiner.json"
-    if [[ -e "$src" || -L "$src" ]]; then
-        local backup="${src}.bak_${TIMESTAMP}"
-        if [[ "$DRY_RUN" == true ]]; then
-            echo "  → Would backup $src to $backup"
-        else
-            if [[ -L "$src" ]]; then
-                cp -P "$src" "$backup"
-            else
-                cp "$src" "$backup"
-            fi
-            echo "  → Backup: $backup"
-        fi
-    fi
-}
-
 backup_if_exists "$HOME/.zshrc"
 backup_if_exists "$HOME/.config/cortex-dotfiles/shell/cortex-dotfiles.zsh"
 backup_if_exists "$HOME/.npmrc"
 backup_if_exists "$HOME/.bunfig.toml"
 backup_if_exists "$HOME/.config/uv/uv.toml"
 backup_if_exists "$HOME/.config/starship.toml"
-backup_if_exists "$HOME/.config/herdr/config.toml"
 backup_if_exists "$HOME/.config/ghostty/config"
 backup_if_exists "$HOME/.config/herdr/config.toml"
 backup_if_exists "$HOME/.config/opencode/tui.json"
@@ -478,26 +449,12 @@ if [[ "$PLATFORM" == "Darwin" ]]; then
     backup_if_exists "$HOME/.yabairc"
     backup_if_exists "$HOME/.config/skhd/skhdrc"
     backup_if_exists "$HOME/.skhdrc"
-    backup_karabiner_if_exists
+    backup_if_exists "$HOME/.config/karabiner/karabiner.json"
 fi
 
 # --- Crear symlinks ---
 echo ""
 echo "🔗 Creando symlinks..."
-
-create_symlink() {
-    local src="$1"
-    local dst="$2"
-    if [[ "$DRY_RUN" == true ]]; then
-        echo "  → Would symlink $dst → $src"
-    else
-        mkdir -p "$(dirname "$dst")"
-        # -n evita que ln dereferencie un symlink-a-directorio existente y cree
-        # un link adentro (caso ghostty/shaders → loop shaders/shaders)
-        ln -sfn "$src" "$dst"
-        echo "  ✓ $dst → $src"
-    fi
-}
 
 create_symlink "$DOTFILES/zsh/zshrc"              "$HOME/.zshrc"
 create_symlink "$DOTFILES/zsh/cortex-dotfiles.zsh" "$HOME/.config/cortex-dotfiles/shell/cortex-dotfiles.zsh"
@@ -505,7 +462,6 @@ create_symlink "$DOTFILES/npm/npmrc"               "$HOME/.npmrc"
 create_symlink "$DOTFILES/bun/bunfig.toml"         "$HOME/.bunfig.toml"
 create_symlink "$DOTFILES/uv/uv.toml"              "$HOME/.config/uv/uv.toml"
 create_symlink "$DOTFILES/starship/starship.toml"  "$HOME/.config/starship.toml"
-create_symlink "$DOTFILES/herdr/config.toml"       "$HOME/.config/herdr/config.toml"
 create_symlink "$DOTFILES/ghostty/config"          "$HOME/.config/ghostty/config"
 create_symlink "$DOTFILES/ghostty/shaders"         "$HOME/.config/ghostty/shaders"
 create_symlink "$DOTFILES/herdr/config.toml"       "$HOME/.config/herdr/config.toml"
@@ -628,10 +584,15 @@ if [[ ! -f "$DOTFILES/local/env.zsh" ]]; then
     if [[ "$DRY_RUN" == true ]]; then
         echo "📝 Would create local/env.zsh from local/env.zsh.example"
     else
-        cp "$DOTFILES/local/env.zsh.example" "$DOTFILES/local/env.zsh"
+        install -m 600 "$DOTFILES/local/env.zsh.example" "$DOTFILES/local/env.zsh"
         echo "📝 Creado local/env.zsh desde el ejemplo — editalo con tus paths"
     fi
 else
+    if [[ "$DRY_RUN" == true ]]; then
+        echo "  → Would set local/env.zsh permissions to 600"
+    else
+        chmod 600 "$DOTFILES/local/env.zsh"
+    fi
     echo "✓ local/env.zsh ya existe"
 fi
 

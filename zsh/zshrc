@@ -2,16 +2,16 @@
 
 _cortex_dotfiles_source_optional() {
     local label="$1"
-    local path="$2"
+    local fragment_path="$2"
 
-    [[ -r "$path" ]] || return 0
-    if ! source "$path"; then
-        print -u2 -- "zsh: no se pudo cargar $label: $path"
+    [[ -r "$fragment_path" ]] || return 0
+    if ! source "$fragment_path"; then
+        print -u2 -- "zsh: no se pudo cargar $label: $fragment_path"
     fi
     return 0
 }
 
-_CORTEX_DOTFILES_SHELL_PATH="${CORTEX_DOTFILES_SHELL_ENTRYPOINT:-$HOME/.config/cortex-dotfiles/shell/cortex-dotfiles.zsh}"
+_CORTEX_DOTFILES_SHELL_PATH="$HOME/.config/cortex-dotfiles/shell/cortex-dotfiles.zsh"
 _CORTEX_SHELL_PATH="${CORTEX_SHELL_INTEGRATION:-${CORTEX_HOME:-$HOME/.cortex}/shell/cortex.zsh}"
 
 _cortex_dotfiles_source_optional "cortex-dotfiles" "$_CORTEX_DOTFILES_SHELL_PATH"
