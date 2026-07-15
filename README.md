@@ -147,6 +147,7 @@ Editá `local/env.zsh` (gitignored) para configurar:
 - `CORTEX_HOME` — raíz canónica de cortex, por defecto `~/.cortex`
 - `CORTEX_ROOT` — repo principal cortex, por defecto `~/.cortex/cortex`
 - `CORTEX_DOTFILES_DIR` — repo dotfiles, por defecto `~/.cortex/cortex-dotfiles`
+- `CORTEX_SHELL_INTEGRATION` — fragmento zsh opcional administrado por Cortex, por defecto `$CORTEX_HOME/shell/cortex.zsh`
 - `OPENCODE_DEFAULT_FLAGS` — flags por defecto para `oc`
 - `INNIT_DIR` y overrides `INNIT_*_DIR` — navegación rápida de subdirectorios
 - Aliases y paths personales
