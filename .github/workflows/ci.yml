@@ -58,6 +58,9 @@ jobs:
             jq empty "$file"
           done < <(git ls-files '*.json')
 
+      - name: Check Cortex shell integration
+        run: ./scripts/check-cortex-shell-integration.sh
+
       - name: Validate TOML configs
         shell: bash
         run: |

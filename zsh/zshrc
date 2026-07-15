@@ -255,6 +255,12 @@ _LOCAL_ENV="$_DOTFILES_DIR/local/env.zsh"
 [[ -f "$_LOCAL_ENV" ]] && source "$_LOCAL_ENV"
 #endregion
 
+#region Cortex Shell Integration
+_CORTEX_SHELL_INTEGRATION_PATH="${CORTEX_SHELL_INTEGRATION:-$CORTEX_HOME/shell/cortex.zsh}"
+[[ -r "$_CORTEX_SHELL_INTEGRATION_PATH" ]] && source "$_CORTEX_SHELL_INTEGRATION_PATH"
+unset _CORTEX_SHELL_INTEGRATION_PATH
+#endregion
+
 #region Atuin
 # Historial de shell con búsqueda avanzada (reemplaza Ctrl+R)
 if command -v atuin &>/dev/null; then
