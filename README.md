@@ -123,7 +123,7 @@ Seguimiento: [cortex-dotfiles #31](https://github.com/barbatdev/cortex-dotfiles/
 |---------|-------------|
 | `gs`, `ga`, `gc`, `gp`, `gl` | Git shortcuts |
 | `dev`, `barbat`, `cowork`, `personal`, `tools`, `worktrees` | Navegación rápida en `~/dev` |
-| `work`, `work-apis`, `work-mobile`, `work-webs`, `work-pcsoft` | Navegación rápida de trabajo |
+| `work`, `innit`, `innit-apis`, `innit-mobile`, `innit-webs`, `innit-pcsoft` | Navegación rápida de trabajo |
 | `dotfiles` | Navegación rápida al repo de dotfiles |
 | `cc [path]` | Abrir Claude Code |
 | `oc [path]` | Abrir OpenCode |
@@ -145,11 +145,15 @@ Seguimiento: [cortex-dotfiles #31](https://github.com/barbatdev/cortex-dotfiles/
 Editá `local/env.zsh` (gitignored) para configurar:
 - `SCREENSHOTS_DIR` — directorio de screenshots
 - `WORKSPACE_DIR` — directorio raíz de tus proyectos
-- `CORTEX_DOTFILES_DIR` — repo dotfiles, por defecto `$BARBATDEV_DIR/cortex/cortex-dotfiles`
+- `BARBATDEV_DIR` — repos de barbatdev, por defecto `$WORKSPACE_DIR/barbatdev`
+- `WORK_PROJECTS_DIR` — repos de trabajo, por defecto `$WORKSPACE_DIR/innit-sas`
+- `PERSONAL_PROJECTS_DIR` — repos locales, por defecto `$WORKSPACE_DIR/local`
+- `TOOLS_DIR` y `WORKTREES_DIR` — herramientas locales y worktrees
+- `CORTEX_DOTFILES_DIR` — repo fuente de dotfiles, por defecto `$BARBATDEV_DIR/cortex/cortex-dotfiles`
 - `CORTEX_DOTFILES_SHELL_ENTRYPOINT` — override del entrypoint propio, por defecto `~/.config/cortex-dotfiles/shell/cortex-dotfiles.zsh`
 - `CORTEX_DOTFILES_MULTIPLEXER` — fallback standalone para helpers, por defecto `cmux`; `CORTEX_MULTIPLEXER` de Cortex tiene precedencia
 - `OPENCODE_DEFAULT_FLAGS` — flags por defecto para `oc`
-- `INNIT_DIR` y overrides `INNIT_*_DIR` — navegación rápida de subdirectorios
+- `INNIT_DIR` y overrides `INNIT_*_DIR` — raíz y subdirectorios `apis`, `mobile`, `webs` y `pcsoft`
 - Aliases y paths personales
 
 ## Herdr remoto
