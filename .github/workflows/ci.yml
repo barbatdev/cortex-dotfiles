@@ -61,6 +61,9 @@ jobs:
       - name: Check Cortex shell integration
         run: ./scripts/check-cortex-shell-integration.sh
 
+      - name: Check navigation shortcuts
+        run: ./scripts/check-navigation-shortcuts.sh
+
       - name: Validate TOML configs
         shell: bash
         run: |

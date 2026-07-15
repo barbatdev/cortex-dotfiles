@@ -53,22 +53,6 @@ fi
 export VISUAL="$EDITOR"
 #endregion
 
-#region Environment Variables
-# Workspace principal de desarrollo
-export WORKSPACE_DIR="${WORKSPACE_DIR:-$HOME/dev}"
-export BARBATDEV_DIR="${BARBATDEV_DIR:-$WORKSPACE_DIR/barbatdev}"
-export CLAUDE_CODE_EFFORT_LEVEL=high
-export CORTEX_DOTFILES_DIR="${CORTEX_DOTFILES_DIR:-$BARBATDEV_DIR/cortex/cortex-dotfiles}"
-
-# Proyectos de la organización
-export WORK_PROJECTS_DIR="${WORK_PROJECTS_DIR:-$BARBATDEV_DIR/innit}"
-export PERSONAL_PROJECTS_DIR="${PERSONAL_PROJECTS_DIR:-$BARBATDEV_DIR/products}"
-export INNIT_DIR="${INNIT_DIR:-$BARBATDEV_DIR/innit}"
-
-# Screenshots (configurable en local/env.zsh)
-export SCREENSHOTS_DIR="${SCREENSHOTS_DIR:-$HOME/Screenshots}"
-#endregion
-
 #region Git Aliases
 alias g="git"
 gs()  { git status "$@" }
@@ -111,19 +95,19 @@ _go_first_existing_dir() {
     return 1
 }
 
-dev()         { _go_dev_dir "$HOME/dev"; }
+dev()         { _go_dev_dir "$WORKSPACE_DIR"; }
 barbat()      { _go_dev_dir "$BARBATDEV_DIR"; }
-cowork()      { _go_first_existing_dir "$WORK_PROJECTS_DIR" "$BARBATDEV_DIR/innit"; }
-personal()    { _go_first_existing_dir "$PERSONAL_PROJECTS_DIR" "$BARBATDEV_DIR/products"; }
-tools()       { _go_dev_dir "$BARBATDEV_DIR/tools"; }
-worktrees()   { _go_dev_dir "$HOME/dev/worktrees"; }
-work()        { _go_first_existing_dir "$WORK_PROJECTS_DIR" "$BARBATDEV_DIR/innit"; }
-innit()       { _go_first_existing_dir "$INNIT_DIR" "$BARBATDEV_DIR/innit"; }
-innit-apis()  { _go_first_existing_dir "${INNIT_APIS_DIR:-$INNIT_DIR}" "$INNIT_DIR"; }
-innit-mobile(){ _go_first_existing_dir "${INNIT_MOBILE_DIR:-$INNIT_DIR}" "$INNIT_DIR"; }
-innit-webs()  { _go_first_existing_dir "${INNIT_WEBS_DIR:-$INNIT_DIR}" "$INNIT_DIR"; }
-innit-pcsoft(){ _go_first_existing_dir "${INNIT_PCSOFT_DIR:-$INNIT_DIR}" "$INNIT_DIR"; }
-dotfiles()    { _go_dev_dir "${_DOTFILES_DIR:-$CORTEX_DOTFILES_DIR}"; }
+cowork()      { _go_dev_dir "$WORK_PROJECTS_DIR"; }
+personal()    { _go_dev_dir "$PERSONAL_PROJECTS_DIR"; }
+tools()       { _go_dev_dir "$TOOLS_DIR"; }
+worktrees()   { _go_dev_dir "$WORKTREES_DIR"; }
+work()        { _go_dev_dir "$WORK_PROJECTS_DIR"; }
+innit()       { _go_dev_dir "$INNIT_DIR"; }
+innit-apis()  { _go_dev_dir "$INNIT_APIS_DIR"; }
+innit-mobile(){ _go_dev_dir "$INNIT_MOBILE_DIR"; }
+innit-webs()  { _go_dev_dir "$INNIT_WEBS_DIR"; }
+innit-pcsoft(){ _go_dev_dir "$INNIT_PCSOFT_DIR"; }
+dotfiles()    { _go_first_existing_dir "$CORTEX_DOTFILES_DIR" "$_DOTFILES_DIR"; }
 #endregion
 
 #region System Aliases
@@ -252,6 +236,24 @@ _LOCAL_ENV="$_DOTFILES_DIR/local/env.zsh"
 [[ -f "$_LOCAL_ENV" ]] && source "$_LOCAL_ENV"
 #endregion
 
+#region Environment Variables
+# Los overrides locales se cargan antes de calcular rutas derivadas.
+export WORKSPACE_DIR="${WORKSPACE_DIR:-$HOME/dev}"
+export BARBATDEV_DIR="${BARBATDEV_DIR:-$WORKSPACE_DIR/barbatdev}"
+export WORK_PROJECTS_DIR="${WORK_PROJECTS_DIR:-$WORKSPACE_DIR/innit-sas}"
+export PERSONAL_PROJECTS_DIR="${PERSONAL_PROJECTS_DIR:-$WORKSPACE_DIR/local}"
+export TOOLS_DIR="${TOOLS_DIR:-$PERSONAL_PROJECTS_DIR/tools}"
+export WORKTREES_DIR="${WORKTREES_DIR:-$WORKSPACE_DIR/worktrees}"
+export INNIT_DIR="${INNIT_DIR:-$WORK_PROJECTS_DIR}"
+export INNIT_APIS_DIR="${INNIT_APIS_DIR:-$INNIT_DIR/apis}"
+export INNIT_MOBILE_DIR="${INNIT_MOBILE_DIR:-$INNIT_DIR/mobile}"
+export INNIT_WEBS_DIR="${INNIT_WEBS_DIR:-$INNIT_DIR/webs}"
+export INNIT_PCSOFT_DIR="${INNIT_PCSOFT_DIR:-$INNIT_DIR/pcsoft}"
+export CORTEX_DOTFILES_DIR="${CORTEX_DOTFILES_DIR:-$BARBATDEV_DIR/cortex/cortex-dotfiles}"
+export SCREENSHOTS_DIR="${SCREENSHOTS_DIR:-$HOME/Screenshots}"
+export CLAUDE_CODE_EFFORT_LEVEL="${CLAUDE_CODE_EFFORT_LEVEL:-high}"
+#endregion
+
 #region Atuin
 # Historial de shell con búsqueda avanzada (reemplaza Ctrl+R)
 if command -v atuin &>/dev/null; then
@@ -301,18 +303,18 @@ help-profile() {
 
     echo "\n${T}Navegación${R}"
     echo "  ${C}dev               ${R}cd ~/dev"
-    echo "  ${C}barbat            ${R}cd ~/dev/barbat"
-    echo "  ${C}cowork            ${R}cd ~/dev/cowork"
-    echo "  ${C}personal          ${R}cd ~/dev/personal"
-    echo "  ${C}tools             ${R}cd ~/dev/tools"
+    echo "  ${C}barbat            ${R}cd ~/dev/barbatdev"
+    echo "  ${C}cowork            ${R}cd ~/dev/innit-sas"
+    echo "  ${C}personal          ${R}cd ~/dev/local"
+    echo "  ${C}tools             ${R}cd ~/dev/local/tools"
     echo "  ${C}worktrees         ${R}cd ~/dev/worktrees"
-    echo "  ${C}work              ${R}cd ~/dev/work"
-    echo "  ${C}innit            ${R}cd ~/dev/innit"
-    echo "  ${C}innit-apis       ${R}cd ~/dev/innit/apis"
-    echo "  ${C}innit-mobile     ${R}cd ~/dev/innit/mobile"
-    echo "  ${C}innit-webs       ${R}cd ~/dev/innit/webs"
-    echo "  ${C}innit-pcsoft     ${R}cd ~/dev/innit/pcsoft"
-    echo "  ${C}dotfiles         ${R}cd ~/dev/personal/dotfiles"
+    echo "  ${C}work              ${R}cd ~/dev/innit-sas"
+    echo "  ${C}innit            ${R}cd ~/dev/innit-sas"
+    echo "  ${C}innit-apis       ${R}cd ~/dev/innit-sas/apis"
+    echo "  ${C}innit-mobile     ${R}cd ~/dev/innit-sas/mobile"
+    echo "  ${C}innit-webs       ${R}cd ~/dev/innit-sas/webs"
+    echo "  ${C}innit-pcsoft     ${R}cd ~/dev/innit-sas/pcsoft"
+    echo "  ${C}dotfiles         ${R}cd ~/dev/barbatdev/cortex/cortex-dotfiles"
     echo "  ${C}.., ..., ....     ${R}Subir 1, 2 o 3 niveles"
 
     echo "\n${T}Claude Code${R}"
