@@ -217,6 +217,7 @@ PY
     check_symlink_target "$DOTFILES/herdr/config.toml" "$HOME/.config/herdr/config.toml"
     check_symlink_target "$DOTFILES/opencode/tui.json" "$HOME/.config/opencode/tui.json"
     check_symlink_target "$DOTFILES/opencode/themes" "$HOME/.config/opencode/themes"
+    check_symlink_target "$DOTFILES/pi/models.json" "$HOME/.pi/agent/models.json"
     check_symlink_target "$DOTFILES/tmux/tmux.conf" "$HOME/.tmux.conf"
     check_symlink_target "$DOTFILES/claude/statusline.sh" "$HOME/.claude/statusline.sh"
     check_symlink_target "$DOTFILES/claude/themes" "$HOME/.claude/themes"
@@ -249,6 +250,7 @@ PY
         check_shell "$path" bash
     done
     check_json "$DOTFILES/karabiner/karabiner.json"
+    check_json "$DOTFILES/pi/models.json"
     for path in "$DOTFILES"/opencode/*.json "$DOTFILES"/opencode/**/*.json "$DOTFILES"/claude/themes/*.json; do
         check_json "$path"
     done
@@ -438,6 +440,7 @@ backup_if_exists "$HOME/.config/ghostty/config"
 backup_if_exists "$HOME/.config/herdr/config.toml"
 backup_if_exists "$HOME/.config/opencode/tui.json"
 backup_if_exists "$HOME/.config/opencode/themes"
+backup_if_exists "$HOME/.pi/agent/models.json"
 backup_if_exists "$HOME/.tmux.conf"
 backup_if_exists "$HOME/.claude/statusline.sh"
 backup_if_exists "$HOME/.claude/themes"
@@ -467,6 +470,7 @@ create_symlink "$DOTFILES/ghostty/shaders"         "$HOME/.config/ghostty/shader
 create_symlink "$DOTFILES/herdr/config.toml"       "$HOME/.config/herdr/config.toml"
 create_symlink "$DOTFILES/opencode/tui.json"       "$HOME/.config/opencode/tui.json"
 create_symlink "$DOTFILES/opencode/themes"         "$HOME/.config/opencode/themes"
+create_symlink "$DOTFILES/pi/models.json"          "$HOME/.pi/agent/models.json"
 create_symlink "$DOTFILES/tmux/tmux.conf"          "$HOME/.tmux.conf"
 run_or_plan "chmod +x $DOTFILES/claude/statusline.sh" chmod +x "$DOTFILES/claude/statusline.sh"
 run_or_plan "chmod +x cmux integration scripts" chmod +x "$DOTFILES/zsh/scripts/cmux-sidebar-refresh.sh"
