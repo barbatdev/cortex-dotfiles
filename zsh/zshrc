@@ -364,3 +364,12 @@ export PATH="$BUN_INSTALL/bin:$PATH"
 # bun completions
 [ -s "$BUN_INSTALL/_bun" ] && source "$BUN_INSTALL/_bun"
 export PATH="/opt/homebrew/opt/bc/bin:$PATH"
+
+# >>> grok installer >>>
+export PATH="$HOME/.grok/bin:$PATH"
+fpath=(~/.grok/completions/zsh $fpath)
+autoload -Uz compinit && compinit -C
+# <<< grok installer <<<
+
+# Added by Cap
+export PATH="/Users/jbarbat/.cap/bin:$PATH"
