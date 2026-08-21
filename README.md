@@ -117,6 +117,30 @@ Para validar sin tocar configuración real:
 
 La evaluación Nix permanece diferida: esta unidad no genera `flake.lock` ni ejecuta activación.
 
+## Helpers Fish: Git, PCSoft y worktrees (W3)
+
+W3 suma helpers Fish opt-in para identidades Git, protección de archivos PCSoft y worktrees; no crea `~/.ssh/config`, no clona durante la configuración y no modifica la identidad global de Git.
+
+### Uso seguro
+
+1. Copiá `fish/conf.d/99-local.fish.example` a tu `99-local.fish` privado y definí las cuatro variables `GIT_*_NAME` y `GIT_*_EMAIL`.
+2. En un repositorio, usá `git-workdev` o `git-personaldev`; si falta un valor privado, el helper falla antes de cambiar la configuración local o el remote.
+3. Usá `clone-workdev` o `clone-personaldev` solo cuando quieras clonar: enrutan la URL mediante `github-workdev` o `github-personaldev`.
+
+| Área | Interfaz rastreada | Estado privado del host |
+| --- | --- | --- |
+| Identidades Git | `git-workdev`, `git-personaldev`, `git-whoami`, `clone-*` y aliases SSH `github-workdev` / `github-personaldev` | nombre, email, claves y `~/.ssh/config` |
+| PCSoft | `is-pcsoft-forbidden`, `is-pcsoft-editable`, `edit` | IDE Windows y estado del proyecto |
+| Worktrees | `wtadd`, `wtlist`, `wtremove`; `wtadd` bloquea repos PCSoft antes de mutar | directorios de worktree y procesos locales |
+
+`edit` rechaza extensiones PCSoft prohibidas y pide confirmación para las editables. `wtremove` elimina solamente el worktree nombrado: verificá `wtlist` antes de usarlo. Home Manager mapea cada función explícitamente; no administra el directorio completo, claves, remotes, historial ni variables privadas.
+
+Para validar sin tocar identidades reales ni la red:
+
+```bash
+/opt/homebrew/bin/fish fish/tests/w3-helpers.fish
+```
+
 ## Estructura
 
 ```
