@@ -245,6 +245,8 @@ Editá `local/env.zsh` (gitignored) para configurar:
 
 Referencia completa: [Herdr workflow](docs/herdr-workflow.md). Atajos prácticos: [keymaps](docs/keymaps.md).
 
+El profile Fish también expone `h`, `hs`, `hl`, `hhere`, `hmain`, `hrole`, `hnew`, `hfocus`, `hside`, `hscratch`, `hname`, `whereami`, `sshc`, `sshx` y `sshx-doctor`; Home Manager mapea cada función de forma explícita.
+
 Usá `hremote` desde tu terminal local en macOS. No hagas `ssh` primero y después intentes levantar `herdr` dentro de esa sesión remota.
 
 - Para pegar una imagen del clipboard local en la terminal remota, usá `Ctrl+V` por defecto (no `Cmd+V`).
