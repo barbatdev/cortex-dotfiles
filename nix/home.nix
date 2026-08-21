@@ -47,5 +47,6 @@
     "fish/functions/wtadd.fish".source = ../fish/functions/wtadd.fish;
     "fish/functions/wtlist.fish".source = ../fish/functions/wtlist.fish;
     "fish/functions/wtremove.fish".source = ../fish/functions/wtremove.fish;
+    "fish/functions/hremote.fish".source = ../fish/functions/hremote.fish;
   };
 }
