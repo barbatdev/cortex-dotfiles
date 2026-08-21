@@ -14,7 +14,10 @@
     stateVersion = "24.11";
   };
 
+  programs.home-manager.enable = true;
+
   xdg.configFile = {
+    "nix/nix.conf".text = "experimental-features = nix-command flakes\n";
     "fish/conf.d/10-core.fish".source = ../fish/conf.d/10-core.fish;
     "fish/functions/_go_dev_dir.fish".source = ../fish/functions/_go_dev_dir.fish;
     "fish/functions/_go_first_existing_dir.fish".source = ../fish/functions/_go_first_existing_dir.fish;
