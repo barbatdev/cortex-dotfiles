@@ -4,12 +4,12 @@ Configuración local extraida de `cortex`: terminal, shell, prompt, helpers de A
 
 ## CI
 
-GitHub Actions ejecuta un smoke check mínimo en pull requests y pushes a `main`: sintaxis Zsh/Bash, JSON con `jq`, TOML con `python3`/`tomllib`, y `./install.sh --check` cuando el instalador lo soporte.
+GitHub Actions ejecuta un smoke check mínimo en pull requests y pushes a `main`: sintaxis Zsh/Fish/Bash, el harness aislado de Fish, JSON con `jq`, TOML con `python3`/`tomllib`, y `./install.sh --check` cuando el instalador lo soporte.
 
 ## Stack
 
 - **Terminal**: [Ghostty](https://ghostty.org/) y Alacritty
-- **Shell**: Zsh nativo de macOS
+- **Shell**: Zsh nativo de macOS + profile Fish core opt-in (W2)
 - **Prompt**: [Starship](https://starship.rs/) — tema Gruvbox Dark
 - **Multiplexor**: tmux + helpers de sesión
 - **Barra macOS**: [SketchyBar](https://github.com/FelixKratz/SketchyBar) con tema Gruvbox
@@ -46,6 +46,7 @@ bash install.sh --dry-run
 ```
 
 El instalador macOS:
+
 1. Instala dependencias via Homebrew (cmux, starship, tmux, lazygit, neovim, eza, sketchybar, yabai, skhd, Karabiner-Elements, FiraCode Nerd Font)
 2. Hace backup de configs existentes con timestamp
 3. Crea symlinks de los dotfiles y guardrails globales (`.npmrc`, `pnpm/rc`, `.bunfig.toml`, `uv.toml`)
@@ -83,11 +84,38 @@ El bootstrap queda explícitamente diferido a un work unit revisado. Después de
 nix --extra-experimental-features 'nix-command flakes' flake lock
 ```
 
-Ese comando resuelve inputs y modifica `flake.lock`; por eso no es parte de W1. También quedan diferidos cualquier `home-manager switch`, `nix run ... switch`, instalación de paquetes, cambio de shell, `chsh`, servicios o cambios a Fish.
+Ese comando resuelve inputs y modifica `flake.lock`; por eso no es parte de W1. También quedan diferidos cualquier `home-manager switch`, `nix run ... switch`, instalación de paquetes, cambio de shell, `chsh`, servicios o extensiones Fish fuera del core W2.
 
 La configuración pura de W1 es `homeConfigurations.jbarbat`: declara `username = "jbarbat"`, `homeDirectory = "/Users/jbarbat"` y `system = "aarch64-darwin"` de forma explícita y revisable. Una futura activación debe seleccionar ese target sin derivar valores de la máquina en tiempo de evaluación.
 
 Para volver atrás de W1 basta quitar `flake.nix`, `nix/`, `scripts/nix-preflight.sh`, `scripts/test-nix-preflight.sh` y esta sección. No hay estado de host que revertir porque W1 no activó nada.
+
+## Fish core profile (W2)
+
+W2 agrega un profile Fish inerte y opt-in: no cambia el login shell, no activa Home Manager, no toca `starship.toml` ni crea `99-local.fish`.
+
+### Uso seguro
+
+1. Copiá `fish/conf.d/99-local.fish.example` a `~/.config/fish/conf.d/99-local.fish` si necesitás paths o editor locales.
+2. Mantené ese archivo fuera de Git: carga después de los defaults rastreados.
+3. Probá el profile en una sesión Fish; Zsh permanece sin cambios.
+
+| Área | Owner en W2 |
+| --- | --- |
+| `fish/conf.d/10-core.fish` y `fish/functions/*.fish` | Fuentes rastreadas de Fish |
+| `~/.config/fish/conf.d/99-local.fish` | Host; override privado no gestionado |
+| Home Manager | Mapea cada fuente Fish explícitamente; no gestiona el directorio completo, historial ni variables Fish |
+| Starship | Inicialización solo interactiva y cuando el comando existe; su TOML sigue fuera de este profile |
+
+El core incluye defaults de entorno, selección de editor, aliases Git/navegación y `dev`, `barbat`, `innit` con sus destinos relacionados (`innit-apis`, `innit-mobile`, `innit-webs`, `innit-pcsoft`), además de la navegación simple con `cowork`, `personal`, `tools`, `worktrees` y `work`. La creación, gestión y protecciones de Git worktrees siguen diferidas para W3+, junto con Git/SSH identities, PCSoft, tmux, screenshots, Herdr y helpers de agentes.
+
+Para validar sin tocar configuración real:
+
+```bash
+/opt/homebrew/bin/fish fish/tests/w2-core.fish
+```
+
+La evaluación Nix permanece diferida: esta unidad no genera `flake.lock` ni ejecuta activación.
 
 ## Estructura
 
@@ -144,7 +172,7 @@ La coordinación vigente del contrato shell se sigue en [cortex #1259](https://g
 ## Comandos principales
 
 | Comando | Descripción |
-|---------|-------------|
+| --------- | ------------- |
 | `gs`, `ga`, `gc`, `gp`, `gl` | Git shortcuts |
 | `dev`, `barbat`, `cowork`, `personal`, `tools`, `worktrees` | Navegación rápida en `~/dev` |
 | `work`, `innit`, `innit-apis`, `innit-mobile`, `innit-webs`, `innit-pcsoft` | Navegación rápida de trabajo |
@@ -167,6 +195,7 @@ La coordinación vigente del contrato shell se sigue en [cortex #1259](https://g
 ## Personalización
 
 Editá `local/env.zsh` (gitignored) para configurar:
+
 - `SCREENSHOTS_DIR` — directorio de screenshots
 - `WORKSPACE_DIR` — directorio raíz de tus proyectos
 - `BARBATDEV_DIR` — repos de barbatdev, por defecto `$WORKSPACE_DIR/barbatdev`
@@ -197,7 +226,7 @@ La config macOS enlaza `sketchybar/` en `~/.config/sketchybar`. El diseño es so
 Layout activo:
 
 | Pantalla | Uso | Layout |
-|------|-----|--------|
+| ------ | ----- | -------- |
 | Mac Retina (`display=1`) | apps generales: Discord, WhatsApp, Mail, Postman, Zen Browser | app activa + network, volumen, calendario, hora, batería |
 | ViewSonic vertical (`display=2`) | auxiliar/random, Ghostty/Herdr y Claude de formato vertical | brand + panel/spaces + app activa; derecha: RAM + CPU + hora |
 | LG Ultrawide (`display=3`) | mixto: Ghostty/Herdr, Claude, ChatGPT, Obsidian | brand + panel/spaces + app activa; derecha: RAM + CPU + hora |
@@ -208,7 +237,7 @@ El centro queda libre para evitar el notch y reducir ruido visual.
 Interacciones:
 
 | Item | Acción |
-|------|--------|
+| ------ | -------- |
 | Glyph RefactorIA | abre `~/dev` |
 | Spaces | enfocan el space si `yabai` está corriendo |
 | Volumen | mute/unmute |
@@ -252,7 +281,7 @@ El instalador crea symlinks en ambas rutas de configuración: `~/.config/yabai/y
 Decisiones:
 
 | Tema | Decisión |
-|------|----------|
+| ------ | ---------- |
 | Leader | `Option + Command` |
 | Scripting addition | No se usa |
 | Raycast | Evitar shortcuts con `Option + Command` para reducir colisiones |
@@ -289,7 +318,7 @@ Binarios a permitir:
 Atajos principales (`option + command`):
 
 | Atajo | Acción |
-|-------|--------|
+| ------- | -------- |
 | `Option + Command + Left/Down/Up/Right` | Focus izquierda/abajo/arriba/derecha |
 | `Option + Command + Shift + Left/Down/Up/Right` | Mover ventana en el layout |
 | `Option + Command + 1..9` | Ir al space |
@@ -315,7 +344,7 @@ La config enlaza `karabiner/karabiner.json` en `~/.config/karabiner/karabiner.js
 Remap incluido:
 
 | Tecla | Acción |
-|-------|--------|
+| ------- | -------- |
 | `Caps Lock` tap | `Escape` |
 | `Caps Lock` hold | `Left Control` |
 | `Right Command` | `Delete backward` |
@@ -336,7 +365,7 @@ Después de instalar o cambiar permisos, puede hacer falta abrir o reiniciar Kar
 El prompt usa una variante local de FiraCode Nerd Font Mono con el glyph de la barba de RefactorIA en el Private Use Area.
 
 | Dato | Valor |
-|------|-------|
+| ------ | ------- |
 | Family | `FiraCode Nerd Font Mono Beard` |
 | Archivo instalado | `~/Library/Fonts/FiraCodeNerdFontMonoBeard-Reg.ttf` |
 | Codepoint | `U+F0F00` |
@@ -379,6 +408,7 @@ refactoria
 ```
 
 Uso recomendado:
+
 - screenshots o demos donde conviene una marca visual sin depender de imágenes
 - intros manuales antes de grabar o compartir una terminal
 - banners puntuales en scripts propios, siempre que no tapen output útil

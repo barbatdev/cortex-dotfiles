@@ -20,7 +20,7 @@ jobs:
       - name: Install minimal tools
         run: |
           sudo apt-get update
-          sudo apt-get install -y --no-install-recommends zsh jq shellcheck
+          sudo apt-get install -y --no-install-recommends fish zsh jq shellcheck
 
       - name: Validate shell syntax
         shell: bash
@@ -33,6 +33,10 @@ jobs:
             [[ -f "$file" ]] || continue
             zsh -n "$file"
           done
+
+          while IFS= read -r -d '' file; do
+            fish --no-execute "$file"
+          done < <(find fish -type f -name '*.fish' -print0)
 
           bash_files=(
             install.sh
@@ -49,6 +53,10 @@ jobs:
           if command -v shellcheck >/dev/null 2>&1; then
             shellcheck --severity=error --shell=bash "${bash_files[@]}"
           fi
+
+      - name: Run Fish W2 harness
+        shell: bash
+        run: fish fish/tests/w2-core.fish
 
       - name: Validate JSON configs
         shell: bash
