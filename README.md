@@ -141,6 +141,16 @@ Para validar sin tocar identidades reales ni la red:
 /opt/homebrew/bin/fish fish/tests/w3-helpers.fish
 ```
 
+## Helpers Fish: screenshots (W4b)
+
+W4b agrega `ss`, `last`, `ssd` e `imgclip` sin capturar la pantalla ni leer el clipboard durante la carga. `SCREENSHOTS_DIR` usa el override solo si apunta a un directorio existente; si no, conserva el fallback de macOS: `~/Screenshots` cuando existe y luego `~/Desktop`. Home Manager mapea cada función explícitamente y no administra el directorio, screenshots ni clipboard del host.
+
+Para validar con `HOME`, `PATH` y comandos macOS falsos aislados:
+
+```bash
+/opt/homebrew/bin/fish fish/tests/w4b-screenshots.fish
+```
+
 ## Estructura
 
 ```
