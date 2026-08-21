@@ -61,6 +61,9 @@ jobs:
       - name: Check Cortex shell integration
         run: ./scripts/check-cortex-shell-integration.sh
 
+      - name: Check pure Nix preflight contract
+        run: bash scripts/test-nix-preflight.sh
+
       - name: Validate TOML configs
         shell: bash
         run: |

@@ -53,6 +53,42 @@ El instalador macOS:
 5. Intenta arrancar/recargar `sketchybar`, `yabai` y `skhd` sin cortar la instalación si macOS requiere permisos
 6. Crea `local/env.zsh` desde el template
 
+## Límite Nix + Home Manager (W1)
+
+W1 agrega solamente una base de Flake y Home Manager al repositorio. No instala Nix, no genera `flake.lock`, no activa Home Manager y no cambia ningún archivo del host.
+
+### Verificación segura ahora
+
+```bash
+bash scripts/nix-preflight.sh
+bash scripts/test-nix-preflight.sh
+bash -n scripts/nix-preflight.sh scripts/test-nix-preflight.sh
+```
+
+El preflight es de solo lectura y sin red: usa `--offline` y `--no-write-lock-file`. En una máquina sin Nix termina con estado no cero de forma esperada, pero no cambia el host. Su contrato de readiness exige macOS `arm64` o `x86_64`, un usuario y `HOME` válidos, Nix disponible y los inputs bloqueados ya disponibles localmente. Una configuración Fish existente es una advertencia, no un bloqueo: W1 no la administra.
+
+### Ownership y próximo bootstrap
+
+| Área | Owner en W1 |
+| --- | --- |
+| `/opt/homebrew/bin/fish` | Homebrew actual |
+| Symlinks, servicios y fuentes actuales | `install.sh` |
+| Zsh y Ghostty | Configuración actual, sin cambios |
+| `~/.config/fish/conf.d/99-local.fish` | Host; reservado para secretos/estado privado futuro, no creado ni gestionado por Nix |
+| `flake.nix` y `nix/home.nix` | Base inactiva de Home Manager |
+
+El bootstrap queda explícitamente diferido a un work unit revisado. Después de instalar Nix por fuera de este repositorio, ese trabajo podrá generar el lock con:
+
+```bash
+nix --extra-experimental-features 'nix-command flakes' flake lock
+```
+
+Ese comando resuelve inputs y modifica `flake.lock`; por eso no es parte de W1. También quedan diferidos cualquier `home-manager switch`, `nix run ... switch`, instalación de paquetes, cambio de shell, `chsh`, servicios o cambios a Fish.
+
+La configuración pura de W1 es `homeConfigurations.jbarbat`: declara `username = "jbarbat"`, `homeDirectory = "/Users/jbarbat"` y `system = "aarch64-darwin"` de forma explícita y revisable. Una futura activación debe seleccionar ese target sin derivar valores de la máquina en tiempo de evaluación.
+
+Para volver atrás de W1 basta quitar `flake.nix`, `nix/`, `scripts/nix-preflight.sh`, `scripts/test-nix-preflight.sh` y esta sección. No hay estado de host que revertir porque W1 no activó nada.
+
 ## Estructura
 
 ```
