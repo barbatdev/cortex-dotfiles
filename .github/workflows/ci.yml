@@ -67,6 +67,9 @@ jobs:
       - name: Check installer symlink safety
         run: ./scripts/check-install-symlinks.sh
 
+      - name: Check pure Nix preflight contract
+        run: bash scripts/test-nix-preflight.sh
+
       - name: Validate TOML configs
         shell: bash
         run: |
