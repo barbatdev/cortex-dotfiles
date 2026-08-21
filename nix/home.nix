@@ -51,5 +51,21 @@
     "fish/functions/wtlist.fish".source = ../fish/functions/wtlist.fish;
     "fish/functions/wtremove.fish".source = ../fish/functions/wtremove.fish;
     "fish/functions/hremote.fish".source = ../fish/functions/hremote.fish;
+    "fish/functions/h.fish".source = ../fish/functions/h.fish;
+    "fish/functions/hs.fish".source = ../fish/functions/hs.fish;
+    "fish/functions/hl.fish".source = ../fish/functions/hl.fish;
+    "fish/functions/hhere.fish".source = ../fish/functions/hhere.fish;
+    "fish/functions/hmain.fish".source = ../fish/functions/hmain.fish;
+    "fish/functions/hrole.fish".source = ../fish/functions/hrole.fish;
+    "fish/functions/hnew.fish".source = ../fish/functions/hnew.fish;
+    "fish/functions/hfocus.fish".source = ../fish/functions/hfocus.fish;
+    "fish/functions/hside.fish".source = ../fish/functions/hside.fish;
+    "fish/functions/hscratch.fish".source = ../fish/functions/hscratch.fish;
+    "fish/functions/hname.fish".source = ../fish/functions/hname.fish;
+    "fish/functions/herdr-orient.fish".source = ../fish/functions/herdr-orient.fish;
+    "fish/functions/whereami.fish".source = ../fish/functions/whereami.fish;
+    "fish/functions/sshc.fish".source = ../fish/functions/sshc.fish;
+    "fish/functions/sshx.fish".source = ../fish/functions/sshx.fish;
+    "fish/functions/sshx-doctor.fish".source = ../fish/functions/sshx-doctor.fish;
   };
 }
