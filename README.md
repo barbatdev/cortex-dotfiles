@@ -151,9 +151,9 @@ Para validar con `HOME`, `PATH` y comandos macOS falsos aislados:
 /opt/homebrew/bin/fish fish/tests/w4b-screenshots.fish
 ```
 
-## Helpers Fish de agentes seguros (W6)
+## Helpers Fish de agentes (W6)
 
-W6 agrega `cc`, `oc`, `ocb`, `ccx`, `ccd` y `ccclip` como helpers Fish opt-in. Ejecutan Claude Code u OpenCode únicamente en el directorio validado; `ccx` entrega el contexto por stdin y `ccclip` escribe al clipboard solo al invocarse. No incluye `ccb`, bypasses de permisos ni auto-aprobación.
+**ADVERTENCIA:** por elección explícita del owner, `cc` ejecuta Claude Code con `--dangerously-skip-permissions` y `oc`/`ocb` ejecutan OpenCode con `--auto`; estos shortcuts intencionalmente omiten o autoaprueban permisos. W6 agrega `cc`, `oc`, `ocb`, `ccx`, `ccd` y `ccclip` como helpers Fish opt-in en el directorio validado; `ccx` entrega el contexto por stdin y `ccclip` escribe al clipboard solo al invocarse. No incluye `ccb`.
 
 | Área | Owner en W6 |
 | --- | --- |

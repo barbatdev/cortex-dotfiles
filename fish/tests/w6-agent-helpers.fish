@@ -45,23 +45,23 @@ end
 
 printf '' > "$workspace/log"
 run_w6 cc; or fail 'cc must use the current directory without arguments'
-contains (string collect <"$workspace/log") "claude||cwd=$repo" 'cc default directory'
+string match -q -- "claude|--dangerously-skip-permissions|cwd=$repo|stdin=" (string collect <"$workspace/log"); or fail 'cc default command order'
 printf '' > "$workspace/log"
 run_w6 cc "$target"; or fail 'cc must succeed'
 set -l log (string collect <"$workspace/log")
-contains "$log" "claude||cwd=$target" 'cc target and arguments'
-string match -q '*enable-auto-mode*' -- "$log"; and fail 'cc must not enable auto approval'
+string match -q -- "claude|--dangerously-skip-permissions|cwd=$target|stdin=" "$log"; or fail 'cc target command order'
 
 printf '' > "$workspace/log"
 run_w6 oc "$target"; or fail 'oc must succeed without defaults'
-contains (string collect <"$workspace/log") "opencode||cwd=$target" 'oc target'
+string match -q -- "opencode|--auto|cwd=$target" (string collect <"$workspace/log"); or fail 'oc default command order'
 printf '' > "$workspace/log"
 set -gx OPENCODE_DEFAULT_FLAGS (printf '%s\t%s\n%s' --model test --plain | string collect --no-trim-newlines)
 run_w6 oc "$target"; or fail 'oc must tokenize shell whitespace in defaults'
-contains (string collect <"$workspace/log") "opencode|--model test --plain|cwd=$target" 'oc tokenizes shell whitespace without eval'
+string match -q -- "opencode|--auto --model test --plain|cwd=$target" (string collect <"$workspace/log"); or fail 'oc tokenizes defaults after one auto flag'
 set -gx OPENCODE_DEFAULT_FLAGS '--model test --plain'
+printf '' > "$workspace/log"
 run_w6 ocb "$target"; or fail 'ocb must succeed'
-contains (string collect <"$workspace/log") "opencode|--model test --plain|cwd=$target" 'ocb forwards defaults'
+string match -q -- "opencode|--auto --model test --plain|cwd=$target" (string collect <"$workspace/log"); or fail 'ocb forwards defaults after one auto flag'
 set -e OPENCODE_DEFAULT_FLAGS
 set -gx W6_OPENCODE_STATUS 24
 run_w6 oc "$target" >/dev/null 2>&1; and fail 'opencode status must propagate'
@@ -130,10 +130,9 @@ if run_w6 ccclip >"$workspace/clip.out" 2>&1
 end
 contains (string collect <"$workspace/clip.out") 'Uso: ccclip' 'ccclip usage'
 
-for file in "$functions_dir/_cortex_resolve_target.fish" "$functions_dir/_cortex_run_agent.fish" "$functions_dir/cc.fish" "$functions_dir/oc.fish" "$functions_dir/ocb.fish" "$functions_dir/ccx.fish" "$functions_dir/ccd.fish" "$functions_dir/ccclip.fish"
+for file in "$functions_dir/_cortex_resolve_target.fish" "$functions_dir/_cortex_run_agent.fish" "$functions_dir/ocb.fish" "$functions_dir/ccx.fish" "$functions_dir/ccd.fish" "$functions_dir/ccclip.fish"
     set -l source (string collect < "$file")
-    string match -rqi -- '(dangerously-skip-permissions|bypass-permissions|skip-permissions|auto-approv|--yes)' "$source"; and fail "unsafe W6 source: $file"
+    string match -rqi -- '(dangerously-skip-permissions|bypass-permissions|skip-permissions|auto-approv|--yes)' "$source"; and fail "unexpected unsafe W6 source: $file"
 end
-string match -rqi -- '(dangerously-skip-permissions|bypass-permissions|skip-permissions|auto-approv)' "$log"; and fail 'unsafe generated command'
 
 printf 'PASS: Fish W6 agent helpers\n'

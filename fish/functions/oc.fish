@@ -5,5 +5,5 @@ function oc
     if set -q OPENCODE_DEFAULT_FLAGS; and test -n "$OPENCODE_DEFAULT_FLAGS"
         set flags (string replace -ra '[[:space:]]+' \n -- "$OPENCODE_DEFAULT_FLAGS")
     end
-    _cortex_run_agent "$resolved" opencode $flags
+    _cortex_run_agent "$resolved" opencode --auto $flags
 end
