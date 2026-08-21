@@ -31,5 +31,21 @@
     "fish/functions/innit-webs.fish".source = ../fish/functions/innit-webs.fish;
     "fish/functions/innit-pcsoft.fish".source = ../fish/functions/innit-pcsoft.fish;
     "fish/functions/dotfiles.fish".source = ../fish/functions/dotfiles.fish;
+    "fish/functions/_parse_github_repo.fish".source = ../fish/functions/_parse_github_repo.fish;
+    "fish/functions/_git_config_identity.fish".source = ../fish/functions/_git_config_identity.fish;
+    "fish/functions/clone-workdev.fish".source = ../fish/functions/clone-workdev.fish;
+    "fish/functions/clone-personaldev.fish".source = ../fish/functions/clone-personaldev.fish;
+    "fish/functions/git-workdev.fish".source = ../fish/functions/git-workdev.fish;
+    "fish/functions/git-personaldev.fish".source = ../fish/functions/git-personaldev.fish;
+    "fish/functions/git-whoami.fish".source = ../fish/functions/git-whoami.fish;
+    "fish/functions/is-pcsoft-forbidden.fish".source = ../fish/functions/is-pcsoft-forbidden.fish;
+    "fish/functions/is-pcsoft-editable.fish".source = ../fish/functions/is-pcsoft-editable.fish;
+    "fish/functions/edit.fish".source = ../fish/functions/edit.fish;
+    "fish/functions/_wt_git_root.fish".source = ../fish/functions/_wt_git_root.fish;
+    "fish/functions/_wt_is_pcsoft_repo.fish".source = ../fish/functions/_wt_is_pcsoft_repo.fish;
+    "fish/functions/_wt_path_for.fish".source = ../fish/functions/_wt_path_for.fish;
+    "fish/functions/wtadd.fish".source = ../fish/functions/wtadd.fish;
+    "fish/functions/wtlist.fish".source = ../fish/functions/wtlist.fish;
+    "fish/functions/wtremove.fish".source = ../fish/functions/wtremove.fish;
   };
 }

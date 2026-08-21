@@ -54,9 +54,11 @@ jobs:
             shellcheck --severity=error --shell=bash "${bash_files[@]}"
           fi
 
-      - name: Run Fish W2 harness
+      - name: Run Fish W2 and W3 harnesses
         shell: bash
-        run: fish fish/tests/w2-core.fish
+        run: |
+          fish fish/tests/w2-core.fish
+          fish fish/tests/w3-helpers.fish
 
       - name: Validate JSON configs
         shell: bash
