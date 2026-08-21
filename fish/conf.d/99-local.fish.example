@@ -1,0 +1,5 @@
+# Copy to ~/.config/fish/conf.d/99-local.fish and keep that file untracked.
+# This loads after 10-core.fish and is for machine-specific overrides.
+# set -gx WORKSPACE_DIR "$HOME/dev"
+# set -gx INNIT_APIS_DIR "$HOME/dev/innit/apis"
+# set -gx EDITOR nvim
