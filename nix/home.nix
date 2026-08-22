@@ -67,5 +67,20 @@
     "fish/functions/sshc.fish".source = ../fish/functions/sshc.fish;
     "fish/functions/sshx.fish".source = ../fish/functions/sshx.fish;
     "fish/functions/sshx-doctor.fish".source = ../fish/functions/sshx-doctor.fish;
+    "fish/functions/_screenshots_dir.fish".source = ../fish/functions/_screenshots_dir.fish;
+    "fish/functions/_screenshot_files.fish".source = ../fish/functions/_screenshot_files.fish;
+    "fish/functions/_time_ago.fish".source = ../fish/functions/_time_ago.fish;
+    "fish/functions/ss.fish".source = ../fish/functions/ss.fish;
+    "fish/functions/last.fish".source = ../fish/functions/last.fish;
+    "fish/functions/ssd.fish".source = ../fish/functions/ssd.fish;
+    "fish/functions/imgclip.fish".source = ../fish/functions/imgclip.fish;
+    "fish/functions/_cortex_resolve_target.fish".source = ../fish/functions/_cortex_resolve_target.fish;
+    "fish/functions/_cortex_run_agent.fish".source = ../fish/functions/_cortex_run_agent.fish;
+    "fish/functions/cc.fish".source = ../fish/functions/cc.fish;
+    "fish/functions/oc.fish".source = ../fish/functions/oc.fish;
+    "fish/functions/ocb.fish".source = ../fish/functions/ocb.fish;
+    "fish/functions/ccx.fish".source = ../fish/functions/ccx.fish;
+    "fish/functions/ccd.fish".source = ../fish/functions/ccd.fish;
+    "fish/functions/ccclip.fish".source = ../fish/functions/ccclip.fish;
   };
 }

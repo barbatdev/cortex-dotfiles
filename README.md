@@ -141,6 +141,31 @@ Para validar sin tocar identidades reales ni la red:
 /opt/homebrew/bin/fish fish/tests/w3-helpers.fish
 ```
 
+## Helpers Fish: screenshots (W4b)
+
+W4b agrega `ss`, `last`, `ssd` e `imgclip` sin capturar la pantalla ni leer el clipboard durante la carga. `SCREENSHOTS_DIR` usa el override solo si apunta a un directorio existente; si no, conserva el fallback de macOS: `~/Screenshots` cuando existe y luego `~/Desktop`. Home Manager mapea cada función explícitamente y no administra el directorio, screenshots ni clipboard del host.
+
+Para validar con `HOME`, `PATH` y comandos macOS falsos aislados:
+
+```bash
+/opt/homebrew/bin/fish fish/tests/w4b-screenshots.fish
+```
+
+## Helpers Fish de agentes (W6)
+
+**ADVERTENCIA:** por elección explícita del owner, `cc` ejecuta Claude Code con `--dangerously-skip-permissions` y `oc`/`ocb` ejecutan OpenCode con `--auto`; estos shortcuts intencionalmente omiten o autoaprueban permisos. W6 agrega `cc`, `oc`, `ocb`, `ccx`, `ccd` y `ccclip` como helpers Fish opt-in en el directorio validado; `ccx` entrega el contexto por stdin y `ccclip` escribe al clipboard solo al invocarse. No incluye `ccb`.
+
+| Área | Owner en W6 |
+| --- | --- |
+| Helpers y soporte privado | `fish/functions/{_cortex_resolve_target,_cortex_run_agent,cc,oc,ocb,ccx,ccd,ccclip}.fish` |
+| Home Manager | Mapea cada una de esas funciones de forma explícita; no administra binarios de agentes, clipboard, worktrees, estado, historial ni configuración de proveedores |
+
+Para validar con agentes y clipboard falsos aislados:
+
+```bash
+/opt/homebrew/bin/fish fish/tests/w6-agent-helpers.fish
+```
+
 ## Estructura
 
 ```
