@@ -20,12 +20,13 @@ function fail
     exit 1
 end
 
+set -g fish_bin (status fish-path); and test -n "$fish_bin"; or fail 'could not resolve Fish interpreter'
 function assert_equal
     test "$argv[1]" = "$argv[2]"; or fail "$argv[3] (expected '$argv[2]', got '$argv[1]')"
 end
 
 function run_fish
-    env HOME="$home" PATH="$bin:/usr/bin:/bin" GIT_CONFIG_NOSYSTEM=1 GIT_CONFIG_GLOBAL="$workspace/global-gitconfig" /opt/homebrew/bin/fish $argv
+    env HOME="$home" PATH="$bin:/usr/bin:/bin" GIT_CONFIG_NOSYSTEM=1 GIT_CONFIG_GLOBAL="$workspace/global-gitconfig" "$fish_bin" $argv
 end
 
 printf '#!/bin/sh\nprintf "%%s\\n" "$*" >> "$W3_GIT_LOG"\n[ "$1" = clone ] && exit 0\nexec /usr/bin/git "$@"\n' >"$bin/git"
