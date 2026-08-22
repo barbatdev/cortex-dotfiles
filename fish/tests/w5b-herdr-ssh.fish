@@ -13,11 +13,12 @@ end
 function assert_equal
     test "$argv[1]" = "$argv[2]"; or fail "$argv[3] (expected '$argv[2]', got '$argv[1]')"
 end
+set -g fish_bin (status fish-path); and test -n "$fish_bin"; or fail 'could not resolve Fish interpreter'
 function run_function
     set -l bin_dir "$argv[1]"
     set -e argv[1]
     env HOME="$workspace/home" PATH="$bin_dir:/usr/bin:/bin" TMPDIR="$workspace/tmp" \
-        HERDR_TEST_LOG="$workspace/herdr.log" /opt/homebrew/bin/fish --no-config \
+        HERDR_TEST_LOG="$workspace/herdr.log" "$fish_bin" --no-config \
         -c 'set -gx fish_function_path $argv[1]; $argv[2] $argv[3..-1]' "$functions_dir" $argv
 end
 set -l empty_bin "$workspace/empty-bin"
@@ -41,17 +42,17 @@ test -z "$local_output"; or fail "hhere outer output: $local_output"
 set -l herdr_log (string collect <"$workspace/herdr.log")
 string match -q "*herdr|herdr||--session local-testhost-project*" "$herdr_log"; or fail "local session: $herdr_log"
 printf '' >"$workspace/herdr.log"
-env HOME="$workspace/home" PATH="$fake_bin:/usr/bin:/bin" TMPDIR="$workspace/tmp" HERDR_TEST_LOG="$workspace/herdr.log" /opt/homebrew/bin/fish --no-config -c 'set -gx fish_function_path $argv[1]; cd $argv[2]; hhere' "$functions_dir" "$workspace/project"
+env HOME="$workspace/home" PATH="$fake_bin:/usr/bin:/bin" TMPDIR="$workspace/tmp" HERDR_TEST_LOG="$workspace/herdr.log" "$fish_bin" --no-config -c 'set -gx fish_function_path $argv[1]; cd $argv[2]; hhere' "$functions_dir" "$workspace/project"
 set herdr_log (string collect <"$workspace/herdr.log")
 string match -q "*--session local-testhost-project*" "$herdr_log"; or fail "default hhere session: $herdr_log"
 printf '' >"$workspace/herdr.log"
-set -l focus_output (env HERDR_ENV=1 HERDR_TEST_WORKSPACE_ID=workspace-42 HOME="$workspace/home" PATH="$fake_bin:/usr/bin:/bin" TMPDIR="$workspace/tmp" HERDR_TEST_LOG="$workspace/herdr.log" /opt/homebrew/bin/fish --no-config -c 'set -gx fish_function_path $argv[1]; hfocus $argv[2]' "$functions_dir" "$workspace/project")
+set -l focus_output (env HERDR_ENV=1 HERDR_TEST_WORKSPACE_ID=workspace-42 HOME="$workspace/home" PATH="$fake_bin:/usr/bin:/bin" TMPDIR="$workspace/tmp" HERDR_TEST_LOG="$workspace/herdr.log" "$fish_bin" --no-config -c 'set -gx fish_function_path $argv[1]; hfocus $argv[2]' "$functions_dir" "$workspace/project")
 assert_equal "$focus_output" 'workspace: project-focus' 'existing workspace focus output'
 set herdr_log (string collect <"$workspace/herdr.log")
 string match -q '*workspace list*' "$herdr_log"; or fail "workspace list: $herdr_log"
 string match -q '*workspace focus workspace-42*' "$herdr_log"; or fail "workspace focus: $herdr_log"
 printf '' >"$workspace/herdr.log"
-set -l scratch_output (env HERDR_ENV=1 HOME="$workspace/home" PATH="$fake_bin:/usr/bin:/bin" TMPDIR="$workspace/tmp" HERDR_TEST_LOG="$workspace/herdr.log" /opt/homebrew/bin/fish --no-config -c 'set -gx fish_function_path $argv[1]; hscratch $argv[2]' "$functions_dir" "$workspace/project")
+set -l scratch_output (env HERDR_ENV=1 HOME="$workspace/home" PATH="$fake_bin:/usr/bin:/bin" TMPDIR="$workspace/tmp" HERDR_TEST_LOG="$workspace/herdr.log" "$fish_bin" --no-config -c 'set -gx fish_function_path $argv[1]; hscratch $argv[2]' "$functions_dir" "$workspace/project")
 assert_equal "$scratch_output" 'workspace: project-scratch' 'new workspace output'
 set herdr_log (string collect <"$workspace/herdr.log")
 string match -q "*workspace create --cwd $resolved_project --label project-scratch --focus*" "$herdr_log"; or fail "workspace create: $herdr_log"
@@ -76,7 +77,7 @@ run_function "$fake_bin" sshx-doctor agent-dev; or fail 'sshx-doctor success'
 set herdr_log (string collect <"$workspace/herdr.log")
 assert_equal "$herdr_log" 'ssh||-G agent-dev' 'sshx-doctor must only resolve config'
 printf '' >"$workspace/herdr.log"
-set -l rename_output (env HERDR_TEST_PANE_ID=pane-1 HOME="$workspace/home" PATH="$fake_bin:/usr/bin:/bin" TMPDIR="$workspace/tmp" HERDR_TEST_LOG="$workspace/herdr.log" /opt/homebrew/bin/fish --no-config -c 'set -gx fish_function_path $argv[1]; hname review' "$functions_dir")
+set -l rename_output (env HERDR_TEST_PANE_ID=pane-1 HOME="$workspace/home" PATH="$fake_bin:/usr/bin:/bin" TMPDIR="$workspace/tmp" HERDR_TEST_LOG="$workspace/herdr.log" "$fish_bin" --no-config -c 'set -gx fish_function_path $argv[1]; hname review' "$functions_dir")
 assert_equal "$rename_output" 'pane: review' 'hname output'
 set herdr_log (string collect <"$workspace/herdr.log")
 string match -q '*pane rename pane-1 review*' "$herdr_log"; or fail "hname routing: $herdr_log"
@@ -88,11 +89,11 @@ if run_function "$empty_bin" sshx agent-dev >"$workspace/missing-cmux.out" 2>&1
     fail 'missing cmux must fail'
 end
 string match -q '*cmux no está disponible*' (string collect <"$workspace/missing-cmux.out"); or fail 'missing cmux error'
-if env HOME="$workspace/home" PATH="$empty_bin" TMPDIR="$workspace/tmp" /opt/homebrew/bin/fish --no-config -c 'set -gx fish_function_path $argv[1]; sshc agent-dev' "$functions_dir" >"$workspace/missing-ssh.out" 2>&1
+if env HOME="$workspace/home" PATH="$empty_bin" TMPDIR="$workspace/tmp" "$fish_bin" --no-config -c 'set -gx fish_function_path $argv[1]; sshc agent-dev' "$functions_dir" >"$workspace/missing-ssh.out" 2>&1
     fail 'missing ssh must fail'
 end
 string match -q '*sshc: ssh is not available*' (string collect <"$workspace/missing-ssh.out"); or fail 'missing ssh error'
-if env HOME="$workspace/home" PATH="$empty_bin" TMPDIR="$workspace/tmp" /opt/homebrew/bin/fish --no-config -c 'set -gx fish_function_path $argv[1]; sshx-doctor agent-dev' "$functions_dir" >"$workspace/doctor-missing.out" 2>&1
+if env HOME="$workspace/home" PATH="$empty_bin" TMPDIR="$workspace/tmp" "$fish_bin" --no-config -c 'set -gx fish_function_path $argv[1]; sshx-doctor agent-dev' "$functions_dir" >"$workspace/doctor-missing.out" 2>&1
     fail 'doctor without tools must fail'
 end
 set -l doctor_missing (string collect <"$workspace/doctor-missing.out")
