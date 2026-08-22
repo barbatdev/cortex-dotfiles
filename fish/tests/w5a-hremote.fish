@@ -1,4 +1,4 @@
-#!/opt/homebrew/bin/fish
+#!/usr/bin/env fish
 
 set -l repo_root (cd (dirname (dirname (status filename))); and pwd)
 set -g function_file "$repo_root/functions/hremote.fish"
@@ -17,10 +17,11 @@ function fail
     exit 1
 end
 
+set -g fish_bin (status fish-path); and test -n "$fish_bin"; or fail 'could not resolve Fish interpreter'
 function run_hremote
     set -l bin_dir "$argv[1]"
     set -e argv[1]
-    env HOME="$workspace/home" PATH="$bin_dir:/usr/bin:/bin" /opt/homebrew/bin/fish --no-config \
+    env HOME="$workspace/home" PATH="$bin_dir:/usr/bin:/bin" "$fish_bin" --no-config \
         -c 'source $argv[1]; hremote $argv[2..-1]' "$function_file" $argv
 end
 
