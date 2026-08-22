@@ -15,12 +15,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
 
       - name: Install minimal tools
         run: |
           sudo apt-get update
-          sudo apt-get install -y --no-install-recommends zsh jq shellcheck
+          sudo apt-get install -y --no-install-recommends fish zsh jq shellcheck
 
       - name: Validate shell syntax
         shell: bash
@@ -33,6 +35,10 @@ jobs:
             [[ -f "$file" ]] || continue
             zsh -n "$file"
           done
+
+          while IFS= read -r -d '' file; do
+            fish --no-execute "$file"
+          done < <(find fish -type f -name '*.fish' -print0)
 
           bash_files=(
             install.sh
@@ -50,6 +56,16 @@ jobs:
             shellcheck --severity=error --shell=bash "${bash_files[@]}"
           fi
 
+      - name: Run Fish migration harnesses
+        shell: bash
+        run: |
+          fish fish/tests/w2-core.fish
+          fish fish/tests/w3-helpers.fish
+          fish fish/tests/w4b-screenshots.fish
+          fish fish/tests/w5a-hremote.fish
+          fish fish/tests/w5b-herdr-ssh.fish
+          fish fish/tests/w6-agent-helpers.fish
+
       - name: Validate JSON configs
         shell: bash
         run: |
@@ -66,6 +82,9 @@ jobs:
 
       - name: Check installer symlink safety
         run: ./scripts/check-install-symlinks.sh
+
+      - name: Check pure Nix preflight contract
+        run: bash scripts/test-nix-preflight.sh
 
       - name: Validate TOML configs
         shell: bash
