@@ -11,6 +11,7 @@ function fail
     printf 'FAIL: %s\n' "$argv" >&2
     exit 1
 end
+set -g fish_bin (status fish-path); and test -n "$fish_bin"; or fail 'could not resolve Fish interpreter'
 function contains
     string match -q "*$argv[2]*" -- "$argv[1]"; or fail "$argv[3]"
 end
@@ -34,11 +35,11 @@ printf '' > "$target/empty.txt"
 function run_w6
     env -i HOME="$home" PATH="$bin:/usr/bin:/bin" W6_LOG="$workspace/log" \
         W6_CLAUDE_STATUS="$W6_CLAUDE_STATUS" W6_OPENCODE_STATUS="$W6_OPENCODE_STATUS" W6_PBCOPY_STATUS="$W6_PBCOPY_STATUS" OPENCODE_DEFAULT_FLAGS="$OPENCODE_DEFAULT_FLAGS" WORKSPACE_DIR="$WORKSPACE_DIR" \
-        /opt/homebrew/bin/fish --no-config -c 'set -gx fish_function_path $argv[1] $fish_function_path; cd "$argv[2]"; and $argv[3] $argv[4..-1]' \
+        "$fish_bin" --no-config -c 'set -gx fish_function_path $argv[1] $fish_function_path; cd "$argv[2]"; and $argv[3] $argv[4..-1]' \
         "$functions_dir" "$repo" $argv
 end
 function run_w6_unavailable
-    env -i HOME="$home" PATH="/usr/bin:/bin" /opt/homebrew/bin/fish --no-config \
+    env -i HOME="$home" PATH="/usr/bin:/bin" "$fish_bin" --no-config \
         -c 'set -gx fish_function_path $argv[1] $fish_function_path; cd "$argv[2]"; and $argv[3] $argv[4..-1]' \
         "$functions_dir" "$repo" $argv
 end
