@@ -61,7 +61,10 @@ jobs:
         run: |
           fish fish/tests/w2-core.fish
           fish fish/tests/w3-helpers.fish
+          fish fish/tests/w4b-screenshots.fish
           fish fish/tests/w5a-hremote.fish
+          fish fish/tests/w5b-herdr-ssh.fish
+          fish fish/tests/w6-agent-helpers.fish
 
       - name: Validate JSON configs
         shell: bash
