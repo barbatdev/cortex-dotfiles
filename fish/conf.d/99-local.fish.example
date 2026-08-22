@@ -3,3 +3,8 @@
 # set -gx WORKSPACE_DIR "$HOME/dev"
 # set -gx INNIT_APIS_DIR "$HOME/dev/innit/apis"
 # set -gx EDITOR nvim
+# Private Git identities: both values are required before git-workdev or git-personaldev can change a repository.
+# set -gx GIT_WORKDEV_NAME "Your work name"
+# set -gx GIT_WORKDEV_EMAIL "you@company.invalid"
+# set -gx GIT_PERSONALDEV_NAME "Your personal name"
+# set -gx GIT_PERSONALDEV_EMAIL "you@personal.invalid"

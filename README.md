@@ -117,6 +117,55 @@ Para validar sin tocar configuración real:
 
 La evaluación Nix permanece diferida: esta unidad no genera `flake.lock` ni ejecuta activación.
 
+## Helpers Fish: Git, PCSoft y worktrees (W3)
+
+W3 suma helpers Fish opt-in para identidades Git, protección de archivos PCSoft y worktrees; no crea `~/.ssh/config`, no clona durante la configuración y no modifica la identidad global de Git.
+
+### Uso seguro
+
+1. Copiá `fish/conf.d/99-local.fish.example` a tu `99-local.fish` privado y definí las cuatro variables `GIT_*_NAME` y `GIT_*_EMAIL`.
+2. En un repositorio, usá `git-workdev` o `git-personaldev`; si falta un valor privado, el helper falla antes de cambiar la configuración local o el remote.
+3. Usá `clone-workdev` o `clone-personaldev` solo cuando quieras clonar: enrutan la URL mediante `github-workdev` o `github-personaldev`.
+
+| Área | Interfaz rastreada | Estado privado del host |
+| --- | --- | --- |
+| Identidades Git | `git-workdev`, `git-personaldev`, `git-whoami`, `clone-*` y aliases SSH `github-workdev` / `github-personaldev` | nombre, email, claves y `~/.ssh/config` |
+| PCSoft | `is-pcsoft-forbidden`, `is-pcsoft-editable`, `edit` | IDE Windows y estado del proyecto |
+| Worktrees | `wtadd`, `wtlist`, `wtremove`; `wtadd` bloquea repos PCSoft antes de mutar | directorios de worktree y procesos locales |
+
+`edit` rechaza extensiones PCSoft prohibidas y pide confirmación para las editables. `wtremove` elimina solamente el worktree nombrado: verificá `wtlist` antes de usarlo. Home Manager mapea cada función explícitamente; no administra el directorio completo, claves, remotes, historial ni variables privadas.
+
+Para validar sin tocar identidades reales ni la red:
+
+```bash
+/opt/homebrew/bin/fish fish/tests/w3-helpers.fish
+```
+
+## Helpers Fish: screenshots (W4b)
+
+W4b agrega `ss`, `last`, `ssd` e `imgclip` sin capturar la pantalla ni leer el clipboard durante la carga. `SCREENSHOTS_DIR` usa el override solo si apunta a un directorio existente; si no, conserva el fallback de macOS: `~/Screenshots` cuando existe y luego `~/Desktop`. Home Manager mapea cada función explícitamente y no administra el directorio, screenshots ni clipboard del host.
+
+Para validar con `HOME`, `PATH` y comandos macOS falsos aislados:
+
+```bash
+/opt/homebrew/bin/fish fish/tests/w4b-screenshots.fish
+```
+
+## Helpers Fish de agentes (W6)
+
+**ADVERTENCIA:** por elección explícita del owner, `cc` ejecuta Claude Code con `--dangerously-skip-permissions` y `oc`/`ocb` ejecutan OpenCode con `--auto`; estos shortcuts intencionalmente omiten o autoaprueban permisos. W6 agrega `cc`, `oc`, `ocb`, `ccx`, `ccd` y `ccclip` como helpers Fish opt-in en el directorio validado; `ccx` entrega el contexto por stdin y `ccclip` escribe al clipboard solo al invocarse. No incluye `ccb`.
+
+| Área | Owner en W6 |
+| --- | --- |
+| Helpers y soporte privado | `fish/functions/{_cortex_resolve_target,_cortex_run_agent,cc,oc,ocb,ccx,ccd,ccclip}.fish` |
+| Home Manager | Mapea cada una de esas funciones de forma explícita; no administra binarios de agentes, clipboard, worktrees, estado, historial ni configuración de proveedores |
+
+Para validar con agentes y clipboard falsos aislados:
+
+```bash
+/opt/homebrew/bin/fish fish/tests/w6-agent-helpers.fish
+```
+
 ## Estructura
 
 ```
@@ -211,6 +260,8 @@ Editá `local/env.zsh` (gitignored) para configurar:
 ## Herdr remoto
 
 Referencia completa: [Herdr workflow](docs/herdr-workflow.md). Atajos prácticos: [keymaps](docs/keymaps.md).
+
+El profile Fish también expone `h`, `hs`, `hl`, `hhere`, `hmain`, `hrole`, `hnew`, `hfocus`, `hside`, `hscratch`, `hname`, `whereami`, `sshc`, `sshx` y `sshx-doctor`; Home Manager mapea cada función de forma explícita.
 
 Usá `hremote` desde tu terminal local en macOS. No hagas `ssh` primero y después intentes levantar `herdr` dentro de esa sesión remota.
 
