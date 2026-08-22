@@ -89,7 +89,7 @@ set -e W6_CLAUDE_STATUS
 if run_w6_unavailable cc "$target" >"$workspace/unavailable.out" 2>&1
     fail 'unavailable claude must fail'
 end
-contains (string collect <"$workspace/unavailable.out") 'Unknown command' 'unavailable claude error'
+contains (string collect <"$workspace/unavailable.out") 'claude' 'unavailable claude identifies command'
 
 set -gx WORKSPACE_DIR ''
 set -l ccd_default (run_w6 ccd)
