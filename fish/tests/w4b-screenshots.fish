@@ -14,6 +14,7 @@ function fail
     exit 1
 end
 
+set -g fish_bin (status fish-path); and test -n "$fish_bin"; or fail 'could not resolve Fish interpreter'
 function assert_equal
     test "$argv[1]" = "$argv[2]"; or fail "$argv[3] (expected '$argv[2]', got '$argv[1]')"
 end
@@ -32,7 +33,7 @@ function run_function
         W4B_SCREENSHOTS_DIR="$W4B_SCREENSHOTS_DIR" \
         W4B_OSASCRIPT_FAIL_FIRST="$W4B_OSASCRIPT_FAIL_FIRST" \
         W4B_OSASCRIPT_SEEN="$workspace/osascript.seen" \
-        /opt/homebrew/bin/fish --no-config \
+        "$fish_bin" --no-config \
         -c 'set -gx fish_function_path $argv[1] $fish_function_path; if test -n "$W4B_SCREENSHOTS_DIR"; set -gx SCREENSHOTS_DIR "$W4B_SCREENSHOTS_DIR"; else; set -e SCREENSHOTS_DIR; end; $argv[2] $argv[3..-1]' \
         "$functions_dir" $argv
 end
