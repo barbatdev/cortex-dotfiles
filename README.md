@@ -4,12 +4,12 @@ Configuración local extraida de `cortex`: terminal, shell, prompt, helpers de A
 
 ## CI
 
-GitHub Actions ejecuta un smoke check mínimo en pull requests y pushes a `main`: sintaxis Zsh/Bash, JSON con `jq`, TOML con `python3`/`tomllib`, y `./install.sh --check` cuando el instalador lo soporte.
+GitHub Actions ejecuta un smoke check mínimo en pull requests y pushes a `main`: sintaxis Zsh/Fish/Bash, el harness aislado de Fish, JSON con `jq`, TOML con `python3`/`tomllib`, y `./install.sh --check` cuando el instalador lo soporte.
 
 ## Stack
 
 - **Terminal**: [Ghostty](https://ghostty.org/) y Alacritty
-- **Shell**: Zsh nativo de macOS
+- **Shell**: Zsh nativo de macOS + profile Fish core opt-in (W2)
 - **Prompt**: [Starship](https://starship.rs/) — tema Gruvbox Dark
 - **Multiplexor**: tmux + helpers de sesión
 - **Barra macOS**: [SketchyBar](https://github.com/FelixKratz/SketchyBar) con tema Gruvbox
@@ -46,12 +46,125 @@ bash install.sh --dry-run
 ```
 
 El instalador macOS:
+
 1. Instala dependencias via Homebrew (cmux, starship, tmux, lazygit, neovim, eza, sketchybar, yabai, skhd, Karabiner-Elements, FiraCode Nerd Font)
 2. Hace backup de configs existentes con timestamp
 3. Crea symlinks de los dotfiles y guardrails globales (`.npmrc`, `pnpm/rc`, `.bunfig.toml`, `uv.toml`)
 4. Intenta seleccionar el profile `cortex` de Karabiner si `karabiner_cli` está disponible
 5. Intenta arrancar/recargar `sketchybar`, `yabai` y `skhd` sin cortar la instalación si macOS requiere permisos
 6. Crea `local/env.zsh` desde el template
+
+## Límite Nix + Home Manager (W1)
+
+W1 agrega solamente una base de Flake y Home Manager al repositorio. No instala Nix, no genera `flake.lock`, no activa Home Manager y no cambia ningún archivo del host.
+
+### Verificación segura ahora
+
+```bash
+bash scripts/nix-preflight.sh
+bash scripts/test-nix-preflight.sh
+bash -n scripts/nix-preflight.sh scripts/test-nix-preflight.sh
+```
+
+El preflight es de solo lectura y sin red: usa `--offline` y `--no-write-lock-file`. En una máquina sin Nix termina con estado no cero de forma esperada, pero no cambia el host. Su contrato de readiness exige macOS `arm64` o `x86_64`, un usuario y `HOME` válidos, Nix disponible y los inputs bloqueados ya disponibles localmente. Una configuración Fish existente es una advertencia, no un bloqueo: W1 no la administra.
+
+### Ownership y próximo bootstrap
+
+| Área | Owner en W1 |
+| --- | --- |
+| `/opt/homebrew/bin/fish` | Homebrew actual |
+| Symlinks, servicios y fuentes actuales | `install.sh` |
+| Zsh y Ghostty | Configuración actual, sin cambios |
+| `~/.config/fish/conf.d/99-local.fish` | Host; reservado para secretos/estado privado futuro, no creado ni gestionado por Nix |
+| `flake.nix` y `nix/home.nix` | Base inactiva de Home Manager |
+
+El bootstrap queda explícitamente diferido a un work unit revisado. Después de instalar Nix por fuera de este repositorio, ese trabajo podrá generar el lock con:
+
+```bash
+nix --extra-experimental-features 'nix-command flakes' flake lock
+```
+
+Ese comando resuelve inputs y modifica `flake.lock`; por eso no es parte de W1. También quedan diferidos cualquier `home-manager switch`, `nix run ... switch`, instalación de paquetes, cambio de shell, `chsh`, servicios o extensiones Fish fuera del core W2.
+
+La configuración pura de W1 es `homeConfigurations.jbarbat`: declara `username = "jbarbat"`, `homeDirectory = "/Users/jbarbat"` y `system = "aarch64-darwin"` de forma explícita y revisable. Una futura activación debe seleccionar ese target sin derivar valores de la máquina en tiempo de evaluación.
+
+Para volver atrás de W1 basta quitar `flake.nix`, `nix/`, `scripts/nix-preflight.sh`, `scripts/test-nix-preflight.sh` y esta sección. No hay estado de host que revertir porque W1 no activó nada.
+
+## Fish core profile (W2)
+
+W2 agrega un profile Fish inerte y opt-in: no cambia el login shell, no activa Home Manager, no toca `starship.toml` ni crea `99-local.fish`.
+
+### Uso seguro
+
+1. Copiá `fish/conf.d/99-local.fish.example` a `~/.config/fish/conf.d/99-local.fish` si necesitás paths o editor locales.
+2. Mantené ese archivo fuera de Git: carga después de los defaults rastreados.
+3. Probá el profile en una sesión Fish; Zsh permanece sin cambios.
+
+| Área | Owner en W2 |
+| --- | --- |
+| `fish/conf.d/10-core.fish` y `fish/functions/*.fish` | Fuentes rastreadas de Fish |
+| `~/.config/fish/conf.d/99-local.fish` | Host; override privado no gestionado |
+| Home Manager | Mapea cada fuente Fish explícitamente; no gestiona el directorio completo, historial ni variables Fish |
+| Starship | Inicialización solo interactiva y cuando el comando existe; su TOML sigue fuera de este profile |
+
+El core incluye defaults de entorno, selección de editor, aliases Git/navegación y `dev`, `barbat`, `innit` con sus destinos relacionados (`innit-apis`, `innit-mobile`, `innit-webs`, `innit-pcsoft`), además de la navegación simple con `cowork`, `personal`, `tools`, `worktrees` y `work`. La creación, gestión y protecciones de Git worktrees siguen diferidas para W3+, junto con Git/SSH identities, PCSoft, tmux, screenshots, Herdr y helpers de agentes.
+
+Para validar sin tocar configuración real:
+
+```bash
+/opt/homebrew/bin/fish fish/tests/w2-core.fish
+```
+
+La evaluación Nix permanece diferida: esta unidad no genera `flake.lock` ni ejecuta activación.
+
+## Helpers Fish: Git, PCSoft y worktrees (W3)
+
+W3 suma helpers Fish opt-in para identidades Git, protección de archivos PCSoft y worktrees; no crea `~/.ssh/config`, no clona durante la configuración y no modifica la identidad global de Git.
+
+### Uso seguro
+
+1. Copiá `fish/conf.d/99-local.fish.example` a tu `99-local.fish` privado y definí las cuatro variables `GIT_*_NAME` y `GIT_*_EMAIL`.
+2. En un repositorio, usá `git-workdev` o `git-personaldev`; si falta un valor privado, el helper falla antes de cambiar la configuración local o el remote.
+3. Usá `clone-workdev` o `clone-personaldev` solo cuando quieras clonar: enrutan la URL mediante `github-workdev` o `github-personaldev`.
+
+| Área | Interfaz rastreada | Estado privado del host |
+| --- | --- | --- |
+| Identidades Git | `git-workdev`, `git-personaldev`, `git-whoami`, `clone-*` y aliases SSH `github-workdev` / `github-personaldev` | nombre, email, claves y `~/.ssh/config` |
+| PCSoft | `is-pcsoft-forbidden`, `is-pcsoft-editable`, `edit` | IDE Windows y estado del proyecto |
+| Worktrees | `wtadd`, `wtlist`, `wtremove`; `wtadd` bloquea repos PCSoft antes de mutar | directorios de worktree y procesos locales |
+
+`edit` rechaza extensiones PCSoft prohibidas y pide confirmación para las editables. `wtremove` elimina solamente el worktree nombrado: verificá `wtlist` antes de usarlo. Home Manager mapea cada función explícitamente; no administra el directorio completo, claves, remotes, historial ni variables privadas.
+
+Para validar sin tocar identidades reales ni la red:
+
+```bash
+/opt/homebrew/bin/fish fish/tests/w3-helpers.fish
+```
+
+## Helpers Fish: screenshots (W4b)
+
+W4b agrega `ss`, `last`, `ssd` e `imgclip` sin capturar la pantalla ni leer el clipboard durante la carga. `SCREENSHOTS_DIR` usa el override solo si apunta a un directorio existente; si no, conserva el fallback de macOS: `~/Screenshots` cuando existe y luego `~/Desktop`. Home Manager mapea cada función explícitamente y no administra el directorio, screenshots ni clipboard del host.
+
+Para validar con `HOME`, `PATH` y comandos macOS falsos aislados:
+
+```bash
+/opt/homebrew/bin/fish fish/tests/w4b-screenshots.fish
+```
+
+## Helpers Fish de agentes (W6)
+
+**ADVERTENCIA:** por elección explícita del owner, `cc` ejecuta Claude Code con `--dangerously-skip-permissions` y `oc`/`ocb` ejecutan OpenCode con `--auto`; estos shortcuts intencionalmente omiten o autoaprueban permisos. W6 agrega `cc`, `oc`, `ocb`, `ccx`, `ccd` y `ccclip` como helpers Fish opt-in en el directorio validado; `ccx` entrega el contexto por stdin y `ccclip` escribe al clipboard solo al invocarse. No incluye `ccb`.
+
+| Área | Owner en W6 |
+| --- | --- |
+| Helpers y soporte privado | `fish/functions/{_cortex_resolve_target,_cortex_run_agent,cc,oc,ocb,ccx,ccd,ccclip}.fish` |
+| Home Manager | Mapea cada una de esas funciones de forma explícita; no administra binarios de agentes, clipboard, worktrees, estado, historial ni configuración de proveedores |
+
+Para validar con agentes y clipboard falsos aislados:
+
+```bash
+/opt/homebrew/bin/fish fish/tests/w6-agent-helpers.fish
+```
 
 ## Estructura
 
@@ -108,7 +221,7 @@ La coordinación vigente del contrato shell se sigue en [cortex #1259](https://g
 ## Comandos principales
 
 | Comando | Descripción |
-|---------|-------------|
+| --------- | ------------- |
 | `gs`, `ga`, `gc`, `gp`, `gl` | Git shortcuts |
 | `dev`, `barbat`, `cowork`, `personal`, `tools`, `worktrees` | Navegación rápida en `~/dev` |
 | `work`, `innit`, `innit-apis`, `innit-mobile`, `innit-webs`, `innit-pcsoft` | Navegación rápida de trabajo |
@@ -131,6 +244,7 @@ La coordinación vigente del contrato shell se sigue en [cortex #1259](https://g
 ## Personalización
 
 Editá `local/env.zsh` (gitignored) para configurar:
+
 - `SCREENSHOTS_DIR` — directorio de screenshots
 - `WORKSPACE_DIR` — directorio raíz de tus proyectos
 - `BARBATDEV_DIR` — repos de barbatdev, por defecto `$WORKSPACE_DIR/barbatdev`
@@ -147,6 +261,8 @@ Editá `local/env.zsh` (gitignored) para configurar:
 
 Referencia completa: [Herdr workflow](docs/herdr-workflow.md). Atajos prácticos: [keymaps](docs/keymaps.md).
 
+El profile Fish también expone `h`, `hs`, `hl`, `hhere`, `hmain`, `hrole`, `hnew`, `hfocus`, `hside`, `hscratch`, `hname`, `whereami`, `sshc`, `sshx` y `sshx-doctor`; Home Manager mapea cada función de forma explícita.
+
 Usá `hremote` desde tu terminal local en macOS. No hagas `ssh` primero y después intentes levantar `herdr` dentro de esa sesión remota.
 
 - Para pegar una imagen del clipboard local en la terminal remota, usá `Ctrl+V` por defecto (no `Cmd+V`).
@@ -161,7 +277,7 @@ La config macOS enlaza `sketchybar/` en `~/.config/sketchybar`. El diseño es so
 Layout activo:
 
 | Pantalla | Uso | Layout |
-|------|-----|--------|
+| ------ | ----- | -------- |
 | Mac Retina (`display=1`) | apps generales: Discord, WhatsApp, Mail, Postman, Zen Browser | app activa + network, volumen, calendario, hora, batería |
 | ViewSonic vertical (`display=2`) | auxiliar/random, Ghostty/Herdr y Claude de formato vertical | brand + panel/spaces + app activa; derecha: RAM + CPU + hora |
 | LG Ultrawide (`display=3`) | mixto: Ghostty/Herdr, Claude, ChatGPT, Obsidian | brand + panel/spaces + app activa; derecha: RAM + CPU + hora |
@@ -172,7 +288,7 @@ El centro queda libre para evitar el notch y reducir ruido visual.
 Interacciones:
 
 | Item | Acción |
-|------|--------|
+| ------ | -------- |
 | Glyph RefactorIA | abre `~/dev` |
 | Spaces | enfocan el space si `yabai` está corriendo |
 | Volumen | mute/unmute |
@@ -216,7 +332,7 @@ El instalador crea symlinks en ambas rutas de configuración: `~/.config/yabai/y
 Decisiones:
 
 | Tema | Decisión |
-|------|----------|
+| ------ | ---------- |
 | Leader | `Option + Command` |
 | Scripting addition | No se usa |
 | Raycast | Evitar shortcuts con `Option + Command` para reducir colisiones |
@@ -253,7 +369,7 @@ Binarios a permitir:
 Atajos principales (`option + command`):
 
 | Atajo | Acción |
-|-------|--------|
+| ------- | -------- |
 | `Option + Command + Left/Down/Up/Right` | Focus izquierda/abajo/arriba/derecha |
 | `Option + Command + Shift + Left/Down/Up/Right` | Mover ventana en el layout |
 | `Option + Command + 1..9` | Ir al space |
@@ -279,7 +395,7 @@ La config enlaza `karabiner/karabiner.json` en `~/.config/karabiner/karabiner.js
 Remap incluido:
 
 | Tecla | Acción |
-|-------|--------|
+| ------- | -------- |
 | `Caps Lock` tap | `Escape` |
 | `Caps Lock` hold | `Left Control` |
 | `Right Command` | `Delete backward` |
@@ -300,7 +416,7 @@ Después de instalar o cambiar permisos, puede hacer falta abrir o reiniciar Kar
 El prompt usa una variante local de FiraCode Nerd Font Mono con el glyph de la barba de RefactorIA en el Private Use Area.
 
 | Dato | Valor |
-|------|-------|
+| ------ | ------- |
 | Family | `FiraCode Nerd Font Mono Beard` |
 | Archivo instalado | `~/Library/Fonts/FiraCodeNerdFontMonoBeard-Reg.ttf` |
 | Codepoint | `U+F0F00` |
@@ -343,6 +459,7 @@ refactoria
 ```
 
 Uso recomendado:
+
 - screenshots o demos donde conviene una marca visual sin depender de imágenes
 - intros manuales antes de grabar o compartir una terminal
 - banners puntuales en scripts propios, siempre que no tapen output útil
