@@ -1,23 +1,7 @@
-{ username, homeDirectory, system, ... }:
+{ username, homeDirectory, system, pkgs, lib, ... }:
 
-{
-  assertions = [
-    {
-      assertion = username != "" && homeDirectory != "";
-      message = "homeConfigurations.jbarbat must provide explicit non-empty username and homeDirectory values.";
-    }
-  ];
-
-  home = {
-    username = username;
-    homeDirectory = homeDirectory;
-    stateVersion = "24.11";
-  };
-
-  programs.home-manager.enable = true;
-
-  xdg.configFile = {
-    "nix/nix.conf".text = "experimental-features = nix-command flakes\n";
+let
+  sharedFishFiles = {
     "fish/conf.d/10-core.fish".source = ../fish/conf.d/10-core.fish;
     "fish/functions/_go_dev_dir.fish".source = ../fish/functions/_go_dev_dir.fish;
     "fish/functions/_go_first_existing_dir.fish".source = ../fish/functions/_go_first_existing_dir.fish;
@@ -67,13 +51,6 @@
     "fish/functions/sshc.fish".source = ../fish/functions/sshc.fish;
     "fish/functions/sshx.fish".source = ../fish/functions/sshx.fish;
     "fish/functions/sshx-doctor.fish".source = ../fish/functions/sshx-doctor.fish;
-    "fish/functions/_screenshots_dir.fish".source = ../fish/functions/_screenshots_dir.fish;
-    "fish/functions/_screenshot_files.fish".source = ../fish/functions/_screenshot_files.fish;
-    "fish/functions/_time_ago.fish".source = ../fish/functions/_time_ago.fish;
-    "fish/functions/ss.fish".source = ../fish/functions/ss.fish;
-    "fish/functions/last.fish".source = ../fish/functions/last.fish;
-    "fish/functions/ssd.fish".source = ../fish/functions/ssd.fish;
-    "fish/functions/imgclip.fish".source = ../fish/functions/imgclip.fish;
     "fish/functions/_cortex_resolve_target.fish".source = ../fish/functions/_cortex_resolve_target.fish;
     "fish/functions/_cortex_run_agent.fish".source = ../fish/functions/_cortex_run_agent.fish;
     "fish/functions/cc.fish".source = ../fish/functions/cc.fish;
@@ -81,6 +58,42 @@
     "fish/functions/ocb.fish".source = ../fish/functions/ocb.fish;
     "fish/functions/ccx.fish".source = ../fish/functions/ccx.fish;
     "fish/functions/ccd.fish".source = ../fish/functions/ccd.fish;
+  };
+
+  darwinFishFiles = {
+    "fish/functions/_screenshots_dir.fish".source = ../fish/functions/_screenshots_dir.fish;
+    "fish/functions/_screenshot_files.fish".source = ../fish/functions/_screenshot_files.fish;
+    "fish/functions/_time_ago.fish".source = ../fish/functions/_time_ago.fish;
+    "fish/functions/ss.fish".source = ../fish/functions/ss.fish;
+    "fish/functions/last.fish".source = ../fish/functions/last.fish;
+    "fish/functions/ssd.fish".source = ../fish/functions/ssd.fish;
+    "fish/functions/imgclip.fish".source = ../fish/functions/imgclip.fish;
     "fish/functions/ccclip.fish".source = ../fish/functions/ccclip.fish;
   };
+in
+{
+  assertions = [
+    {
+      assertion = username != "" && homeDirectory != "";
+      message = "Home Manager configurations must provide explicit non-empty username and homeDirectory values.";
+    }
+    {
+      assertion = system == "aarch64-darwin" || system == "x86_64-linux";
+      message = "Only aarch64-darwin and x86_64-linux Home Manager configurations are supported.";
+    }
+  ];
+
+  home = {
+    username = username;
+    homeDirectory = homeDirectory;
+    stateVersion = "24.11";
+    packages = lib.optionals pkgs.stdenv.isLinux [ pkgs.fish pkgs.starship ];
+  };
+
+  programs.home-manager.enable = true;
+
+  xdg.configFile = {
+    "nix/nix.conf".text = "experimental-features = nix-command flakes\n";
+  }
+    // sharedFishFiles // lib.optionalAttrs (!pkgs.stdenv.isLinux) darwinFishFiles;
 }

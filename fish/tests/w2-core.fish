@@ -82,6 +82,11 @@ set -l aliases (run_fish -c 'functions gs; functions gpl' | string collect)
 string match -q '*git status*' "$aliases"; or fail 'gs alias'
 string match -q '*git pull*' "$aliases"; or fail 'gpl alias'
 
+printf '#!/bin/sh\nprintf "%s\\n" Linux\n' >"$bin/uname"
+chmod +x "$bin/uname"
+set -l linux_open_alias (run_fish -c 'functions -q o; and echo defined; or echo absent')
+assert_equal "$linux_open_alias" absent 'Linux Fish startup excludes the macOS open alias'
+
 printf '#!/bin/sh\n[ "$1" = init ] && printf "set -gx W2_STARSHIP_READY 1\\n"\n' >"$bin/starship"
 chmod +x "$bin/starship"
 set -l noninteractive (run_fish -c 'set -q W2_STARSHIP_READY; and echo ready; or echo skipped')

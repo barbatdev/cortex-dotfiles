@@ -26,5 +26,11 @@
         homeDirectory = "/Users/jbarbat";
         system = "aarch64-darwin";
       };
+
+      homeConfigurations.jbarbat-linux = mkHomeConfiguration {
+        username = "jbarbat";
+        homeDirectory = "/home/jbarbat";
+        system = "x86_64-linux";
+      };
     };
 }

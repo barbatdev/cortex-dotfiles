@@ -27,31 +27,53 @@ assert_not_contains() {
 	fi
 }
 
-assert_pure_w1_configuration() {
+assert_pure_home_manager_configurations() {
 	assert_contains '      mkHomeConfiguration = { username, homeDirectory, system }:' "$repo_root/flake.nix"
 	assert_contains '      homeConfigurations.jbarbat = mkHomeConfiguration {' "$repo_root/flake.nix"
 	assert_contains '        username = "jbarbat";' "$repo_root/flake.nix"
 	assert_contains '        homeDirectory = "/Users/jbarbat";' "$repo_root/flake.nix"
 	assert_contains '        system = "aarch64-darwin";' "$repo_root/flake.nix"
-	assert_contains '{ username, homeDirectory, system, ... }:' "$repo_root/nix/home.nix"
-	assert_contains '      - name: Check pure Nix preflight contract' "$repo_root/.github/workflows/ci.yml"
-	grep -Fq 'La configuración pura de W1 es `homeConfigurations.jbarbat`:' "$repo_root/README.md" ||
-		fail 'README does not document the pure W1 configuration'
+	assert_contains '      homeConfigurations.jbarbat-linux = mkHomeConfiguration {' "$repo_root/flake.nix"
+	assert_contains '        homeDirectory = "/home/jbarbat";' "$repo_root/flake.nix"
+	assert_contains '        system = "x86_64-linux";' "$repo_root/flake.nix"
+	assert_contains '{ username, homeDirectory, system, pkgs, lib, ... }:' "$repo_root/nix/home.nix"
+	assert_contains '  sharedFishFiles = {' "$repo_root/nix/home.nix"
+	assert_contains '  darwinFishFiles = {' "$repo_root/nix/home.nix"
+	assert_contains '    packages = lib.optionals pkgs.stdenv.isLinux [ pkgs.fish pkgs.starship ];' "$repo_root/nix/home.nix"
+	assert_contains '    // sharedFishFiles // lib.optionalAttrs (!pkgs.stdenv.isLinux) darwinFishFiles;' "$repo_root/nix/home.nix"
+	assert_contains '      - name: Check Nix Home Manager preflight contracts' "$repo_root/.github/workflows/ci.yml"
+	grep -Fq 'La configuración pura para Linux es `homeConfigurations.jbarbat-linux`:' "$repo_root/README.md" ||
+		fail 'README does not document the Linux Home Manager configuration'
 
-	for forbidden in 'home.packages' 'programs.fish' 'services.' 'home.activation'; do
-		assert_not_contains "$forbidden" "$repo_root/nix/home.nix"
+	for forbidden in 'builtins.currentSystem' 'builtins.getEnv'; do
+		assert_not_contains "$forbidden" "$repo_root/flake.nix"
 	done
-
-	assert_not_contains 'builtins.currentSystem' "$repo_root/flake.nix"
-	assert_not_contains 'builtins.getEnv' "$repo_root/flake.nix"
 
 	for file in "$repo_root/scripts/nix-preflight.sh" "$repo_root/.github/workflows/ci.yml" "$repo_root/README.md"; do
 		assert_not_contains '--impure' "$file"
 	done
 }
 
+assert_linux_fish_exclusions() {
+	local shared_sources
+	local darwin_sources
+
+	shared_sources="$(sed -n '/  sharedFishFiles = {/,/  };/p' "$repo_root/nix/home.nix")"
+	darwin_sources="$(sed -n '/  darwinFishFiles = {/,/  };/p' "$repo_root/nix/home.nix")"
+
+	for source in '_screenshots_dir.fish' '_screenshot_files.fish' '_time_ago.fish' 'ss.fish' 'last.fish' 'ssd.fish' 'imgclip.fish' 'ccclip.fish'; do
+		if grep -Fq -- "$source" <<<"$shared_sources"; then
+			fail "Linux Fish ownership must exclude $source"
+		fi
+		grep -Fq -- "$source" <<<"$darwin_sources" ||
+			fail "Darwin Fish ownership must retain $source"
+	done
+}
+
 make_fake_commands() {
 	local bin_dir="$1"
+	local fake_os="$2"
+	local fake_architecture="$3"
 
 	mkdir -p "$bin_dir"
 
@@ -62,11 +84,11 @@ if [ "$1" = "-un" ]; then
 fi
 EOF
 
-	cat >"$bin_dir/uname" <<'EOF'
+	cat >"$bin_dir/uname" <<EOF
 #!/bin/sh
-case "$1" in
-    -s) printf '%s\n' 'Darwin' ;;
-    -m) printf '%s\n' 'arm64' ;;
+case "\$1" in
+    -s) printf '%s\\n' '$fake_os' ;;
+    -m) printf '%s\\n' '$fake_architecture' ;;
 esac
 EOF
 
@@ -81,13 +103,14 @@ run_preflight() {
 	HOME="$home_dir" PATH="$bin_dir:/usr/bin:/bin" bash "$preflight" >"$output" 2>&1
 }
 
-assert_pure_w1_configuration
+assert_pure_home_manager_configurations
+assert_linux_fish_exclusions
 
 missing_nix_home="$tmp_dir/missing-nix-home"
 missing_nix_bin="$tmp_dir/missing-nix-bin"
 missing_nix_output="$tmp_dir/missing-nix.out"
 mkdir -p "$missing_nix_home" "$missing_nix_bin"
-make_fake_commands "$missing_nix_bin"
+make_fake_commands "$missing_nix_bin" Darwin arm64
 
 if run_preflight "$missing_nix_home" "$missing_nix_bin" "$missing_nix_output"; then
 	fail 'preflight unexpectedly passed without nix'
@@ -99,7 +122,7 @@ ready_home="$tmp_dir/ready-home"
 ready_bin="$tmp_dir/ready-bin"
 ready_output="$tmp_dir/ready.out"
 mkdir -p "$ready_home" "$ready_bin"
-make_fake_commands "$ready_bin"
+make_fake_commands "$ready_bin" Darwin arm64
 cat >"$ready_bin/nix" <<'EOF'
 #!/bin/sh
 printf '%s\n' "$*" >>"$NIX_FAKE_LOG"
@@ -117,6 +140,27 @@ grep -F -- '#homeConfigurations.jbarbat.activationPackage.drvPath' "$tmp_dir/nix
 if grep -F -- '--impure' "$tmp_dir/nix.log" >/dev/null; then
 	fail 'preflight evaluated the configuration impurely'
 fi
+
+linux_home="$tmp_dir/linux-home"
+linux_bin="$tmp_dir/linux-bin"
+linux_output="$tmp_dir/linux.out"
+mkdir -p "$linux_home" "$linux_bin"
+make_fake_commands "$linux_bin" Linux x86_64
+cp "$ready_bin/nix" "$linux_bin/nix"
+NIX_FAKE_LOG="$tmp_dir/linux-nix.log" run_preflight "$linux_home" "$linux_bin" "$linux_output"
+assert_contains 'PASS Host platform: Linux x86_64 (homeConfigurations.jbarbat-linux).' "$linux_output"
+assert_contains 'PASS Pure Home Manager configuration jbarbat-linux is available through the flake input.' "$linux_output"
+grep -F -- '#homeConfigurations.jbarbat-linux.activationPackage.drvPath' "$tmp_dir/linux-nix.log" >/dev/null || fail 'preflight did not evaluate the Linux configuration'
+
+unsupported_home="$tmp_dir/unsupported-home"
+unsupported_bin="$tmp_dir/unsupported-bin"
+unsupported_output="$tmp_dir/unsupported.out"
+mkdir -p "$unsupported_home" "$unsupported_bin"
+make_fake_commands "$unsupported_bin" Linux aarch64
+if run_preflight "$unsupported_home" "$unsupported_bin" "$unsupported_output"; then
+	fail 'preflight unexpectedly passed on an unsupported Linux architecture'
+fi
+assert_contains 'FAIL Unsupported platform: Linux aarch64. Supported targets are Darwin arm64 and Linux x86_64.' "$unsupported_output"
 
 mkdir -p "$ready_home/.config/fish/conf.d"
 printf '%s\n' '# host-owned local configuration' >"$ready_home/.config/fish/conf.d/99-local.fish"
