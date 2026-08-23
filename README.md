@@ -325,7 +325,22 @@ sketchybar --reload
 
 Atajos resumidos junto al resto del stack: [keymaps](docs/keymaps.md).
 
-La config incluida es gradual y no usa scripting addition: no requiere desactivar SIP. Sirve para acostumbrarse al tiling y navegación por teclado sin cambiar partes sensibles de macOS.
+La configuración base es gradual: mantiene el tiling y la navegación por teclado sin scripting addition ni preparación parcial de SIP. La integración avanzada mediante scripting addition es opcional; si no está disponible, yabai conserva su configuración normal.
+
+### Scripting addition opcional
+
+Cuando la preparación previa está disponible, `yabai/yabairc` intenta cargar la scripting addition con `sudo -n`. La preparación parcial de SIP, NVRAM y `sudoers` es manual y este repositorio deliberadamente no la automatiza ni solicita credenciales. Consulte las [instrucciones oficiales de SIP de yabai](https://github.com/koekeishiya/yabai/wiki/Disabling-System-Integrity-Protection) para los requisitos y comandos vigentes.
+
+Si la carga protegida falla —por ejemplo, porque falta la autorización no interactiva— yabai continúa con la configuración base y no registra la señal de Dock. Solo una carga inicial satisfactoria registra una señal `dock_did_restart`; cada reinicio posterior de Dock ejecuta una única recarga no interactiva.
+
+Verificación acotada después de cargar yabai:
+
+```bash
+test -S "/tmp/yabai-sa_${USER}.socket"
+yabai -m signal --list | grep 'dock_did_restart'
+```
+
+El socket debe existir y la lista debe incluir una sola señal `dock_did_restart` con una acción `sudo -n` de carga. Después de un único reinicio manual de Dock, confirme que la señal sigue siendo única y pruebe una capacidad avanzada reversible dependiente de la scripting addition; restaure inmediatamente el estado previo de esa prueba. Para revertir la integración, restaure la versión anterior de `yabai/yabairc`, reinicie el servicio de yabai y revierta la preparación manual del sistema siguiendo la documentación oficial.
 
 El instalador crea symlinks en ambas rutas de configuración: `~/.config/yabai/yabairc` y `~/.yabairc` para yabai, `~/.config/skhd/skhdrc` y `~/.skhdrc` para skhd. Se mantienen las rutas legacy porque los launch services de yabai/skhd leen esas ubicaciones por defecto.
 
@@ -334,7 +349,7 @@ Decisiones:
 | Tema | Decisión |
 | ------ | ---------- |
 | Leader | `Option + Command` |
-| Scripting addition | No se usa |
+| Scripting addition | Opcional; usa autorización no interactiva ya preparada |
 | Raycast | Evitar shortcuts con `Option + Command` para reducir colisiones |
 | Apps flotantes | System Settings, Calculator, Activity Monitor y diálogos de Finder |
 | SketchyBar | Los spaces de la barra usan `yabai` si está disponible |
