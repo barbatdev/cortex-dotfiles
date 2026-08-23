@@ -34,18 +34,18 @@ else
 	fail "HOME must be an existing absolute directory; received: $home_directory"
 fi
 
-if [[ "$host_os" == "Darwin" ]]; then
-	pass 'Host platform: Darwin.'
-else
-	fail "W1 currently targets macOS; detected platform: $host_os"
-fi
-
-case "$host_architecture" in
-arm64 | x86_64)
-	pass "Supported macOS architecture: $host_architecture"
+home_configuration=''
+case "$host_os:$host_architecture" in
+Darwin:arm64)
+	home_configuration='jbarbat'
+	pass 'Host platform: Darwin arm64 (homeConfigurations.jbarbat).'
+	;;
+Linux:x86_64)
+	home_configuration='jbarbat-linux'
+	pass 'Host platform: Linux x86_64 (homeConfigurations.jbarbat-linux).'
 	;;
 *)
-	fail "Unsupported macOS architecture for W1: $host_architecture"
+	fail "Unsupported platform: $host_os $host_architecture. Supported targets are Darwin arm64 and Linux x86_64."
 	;;
 esac
 
@@ -63,10 +63,12 @@ else
 	if nix --extra-experimental-features 'nix-command flakes' flake metadata --no-write-lock-file --offline "$repo_root" >/dev/null 2>&1; then
 		pass 'Flake features and the local lock/input metadata are ready for read-only evaluation.'
 
-		if nix --extra-experimental-features 'nix-command flakes' eval --no-write-lock-file --offline --raw "$repo_root#homeConfigurations.jbarbat.activationPackage.drvPath" >/dev/null 2>&1; then
-			pass 'Pure Home Manager configuration jbarbat is available through the flake input.'
-		else
-			fail 'Pure Home Manager configuration jbarbat cannot be evaluated locally; generate flake.lock during the future bootstrap, then retry.'
+		if [[ -n "$home_configuration" ]]; then
+			if nix --extra-experimental-features 'nix-command flakes' eval --no-write-lock-file --offline --raw "$repo_root#homeConfigurations.$home_configuration.activationPackage.drvPath" >/dev/null 2>&1; then
+				pass "Pure Home Manager configuration $home_configuration is available through the flake input."
+			else
+				fail "Pure Home Manager configuration $home_configuration cannot be evaluated locally; generate flake.lock during the future bootstrap, then retry."
+			fi
 		fi
 	else
 		fail 'Flake metadata is not available offline; generate flake.lock during the future bootstrap, then retry.'

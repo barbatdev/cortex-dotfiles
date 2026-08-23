@@ -83,7 +83,7 @@ jobs:
       - name: Check installer symlink safety
         run: ./scripts/check-install-symlinks.sh
 
-      - name: Check pure Nix preflight contract
+      - name: Check Nix Home Manager preflight contracts
         run: bash scripts/test-nix-preflight.sh
 
       - name: Validate TOML configs

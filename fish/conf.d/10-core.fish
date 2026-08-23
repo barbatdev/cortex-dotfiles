@@ -57,7 +57,10 @@ alias .. 'cd ..'
 alias ... 'cd ../..'
 alias .... 'cd ../../..'
 alias c clear
-alias o open
+
+if test (uname) = Darwin
+    alias o open
+end
 
 if command -q eza
     alias ll 'eza -la --icons --git'

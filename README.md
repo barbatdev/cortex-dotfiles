@@ -1,6 +1,6 @@
 # dotfiles
 
-Configuración local extraida de `cortex`: terminal, shell, prompt, helpers de AI CLI y herramientas de desarrollo para macOS.
+Configuración local extraída de `cortex`: terminal, shell, prompt, helpers de AI CLI y herramientas de desarrollo para macOS, con un primer perfil Home Manager para Linux headless.
 
 ## CI
 
@@ -54,41 +54,44 @@ El instalador macOS:
 5. Intenta arrancar/recargar `sketchybar`, `yabai` y `skhd` sin cortar la instalación si macOS requiere permisos
 6. Crea `local/env.zsh` desde el template
 
-## Límite Nix + Home Manager (W1)
+## Home Manager: límites y validación
 
-W1 agrega solamente una base de Flake y Home Manager al repositorio. No instala Nix, no genera `flake.lock`, no activa Home Manager y no cambia ningún archivo del host.
+La Flake declara configuraciones puras para macOS y Linux como parte de [cortex-dotfiles #58](https://github.com/barbatdev/cortex-dotfiles/issues/58). Esta unidad no instala Nix, no activa Home Manager, no cambia el login shell y no modifica archivos del host. `flake.lock` ya está versionado y las comprobaciones no lo escriben.
 
-### Verificación segura ahora
+### Camino rápido para Linux headless
 
-```bash
-bash scripts/nix-preflight.sh
-bash scripts/test-nix-preflight.sh
-bash -n scripts/nix-preflight.sh scripts/test-nix-preflight.sh
-```
+Objetivo: Ubuntu 24.04 `x86_64` con el perfil `homeConfigurations.jbarbat-linux`.
 
-El preflight es de solo lectura y sin red: usa `--offline` y `--no-write-lock-file`. En una máquina sin Nix termina con estado no cero de forma esperada, pero no cambia el host. Su contrato de readiness exige macOS `arm64` o `x86_64`, un usuario y `HOME` válidos, Nix disponible y los inputs bloqueados ya disponibles localmente. Una configuración Fish existente es una advertencia, no un bloqueo: W1 no la administra.
+1. Use un checkout limpio; no actualice un checkout remoto existente en el lugar.
+2. Instale Nix fuera de este repositorio y verifique sus inputs ya bloqueados localmente.
+3. Ejecute las comprobaciones de solo lectura:
 
-### Ownership y próximo bootstrap
+   ```bash
+   bash scripts/nix-preflight.sh
+   bash scripts/test-nix-preflight.sh
+   bash -n scripts/nix-preflight.sh scripts/test-nix-preflight.sh
+   ```
 
-| Área | Owner en W1 |
+4. Espere la verificación independiente antes de cualquier activación. La instalación, `home-manager switch`, `nix run ... switch`, `chsh` y servicios quedan fuera de esta entrega.
+
+El preflight selecciona solamente `Darwin arm64` o `Linux x86_64`, usa `--offline` y `--no-write-lock-file`. En una máquina sin Nix termina con estado no cero de forma esperada y sin cambios. Rechaza sistemas o arquitecturas no soportados.
+
+### Configuraciones y ownership
+
+| Área | Decisión |
 | --- | --- |
-| `/opt/homebrew/bin/fish` | Homebrew actual |
-| Symlinks, servicios y fuentes actuales | `install.sh` |
-| Zsh y Ghostty | Configuración actual, sin cambios |
-| `~/.config/fish/conf.d/99-local.fish` | Host; reservado para secretos/estado privado futuro, no creado ni gestionado por Nix |
-| `flake.nix` y `nix/home.nix` | Base inactiva de Home Manager |
+| macOS | `homeConfigurations.jbarbat` conserva `aarch64-darwin`, `/Users/jbarbat` y la compatibilidad existente. |
+| Linux | La configuración pura para Linux es `homeConfigurations.jbarbat-linux`: usa `x86_64-linux`, `/home/jbarbat` y declara solo `fish` y `starship` como runtime mínimo. |
+| Fish compartido | Home Manager mapea cada archivo declarado de forma explícita; no gestiona el directorio completo, historial ni variables Fish. |
+| Override privado | `~/.config/fish/conf.d/99-local.fish` sigue siendo del host, queda fuera del store y no se lee ni crea. |
+| Links no declarados | Los links o archivos previos sin declarar permanecen bajo ownership del host; esta entrega no elimina nada. |
+| Zsh | Permanece disponible como rollback; no se cambia el shell de login. |
 
-El bootstrap queda explícitamente diferido a un work unit revisado. Después de instalar Nix por fuera de este repositorio, ese trabajo podrá generar el lock con:
+Linux excluye screenshots y clipboard (`_screenshots_*`, `_time_ago`, `ss`, `last`, `ssd`, `imgclip` y `ccclip`). No instala backends gráficos ni gestiona funciones macOS. También están fuera de alcance Yabai, scripting addition/SIP/Dock, skhd, SketchyBar, Karabiner, tmux, Ghostty, herramientas X11/Wayland y flujos de permisos o servicios macOS.
 
-```bash
-nix --extra-experimental-features 'nix-command flakes' flake lock
-```
+### Rollback
 
-Ese comando resuelve inputs y modifica `flake.lock`; por eso no es parte de W1. También quedan diferidos cualquier `home-manager switch`, `nix run ... switch`, instalación de paquetes, cambio de shell, `chsh`, servicios o extensiones Fish fuera del core W2.
-
-La configuración pura de W1 es `homeConfigurations.jbarbat`: declara `username = "jbarbat"`, `homeDirectory = "/Users/jbarbat"` y `system = "aarch64-darwin"` de forma explícita y revisable. Una futura activación debe seleccionar ese target sin derivar valores de la máquina en tiempo de evaluación.
-
-Para volver atrás de W1 basta quitar `flake.nix`, `nix/`, `scripts/nix-preflight.sh`, `scripts/test-nix-preflight.sh` y esta sección. No hay estado de host que revertir porque W1 no activó nada.
+Antes de una activación no existe estado de host que revertir. Después de una futura activación, el límite de rollback es el perfil `homeConfigurations.jbarbat-linux` y los archivos Fish explícitamente declarados; Zsh y `99-local.fish` permanecen fuera de ese límite. No elimine overrides privados ni links no declarados.
 
 ## Fish core profile (W2)
 
