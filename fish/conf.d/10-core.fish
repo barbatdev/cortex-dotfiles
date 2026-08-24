@@ -41,6 +41,14 @@ else
 end
 set -gx VISUAL "$EDITOR"
 
+if test (uname) = Linux
+    for nix_profile_bin in /nix/var/nix/profiles/default/bin "$HOME/.nix-profile/bin"
+        if test -d "$nix_profile_bin"
+            fish_add_path --path --move "$nix_profile_bin"
+        end
+    end
+end
+
 alias g git
 alias gs 'git status'
 alias ga 'git add'

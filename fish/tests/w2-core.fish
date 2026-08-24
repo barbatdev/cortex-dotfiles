@@ -34,6 +34,10 @@ function run_fish
     env -i HOME="$home" USER=test-user LOGNAME=test-user XDG_CONFIG_HOME="$xdg" PATH="$bin:/usr/bin:/bin" TERM=xterm-256color LANG=C "$fish_bin" $argv
 end
 
+function run_clean_fish
+    env -i HOME="$home" USER=test-user LOGNAME=test-user XDG_CONFIG_HOME="$xdg" PATH="$bin:/usr/bin:/bin" TERM=xterm-256color LANG=C "$fish_bin" --no-config $argv
+end
+
 function assert_navigation_error
     set -l command "$argv[1]"
     set -l expected "$argv[2]"
@@ -82,10 +86,16 @@ set -l aliases (run_fish -c 'functions gs; functions gpl' | string collect)
 string match -q '*git status*' "$aliases"; or fail 'gs alias'
 string match -q '*git pull*' "$aliases"; or fail 'gpl alias'
 
-printf '#!/bin/sh\nprintf "%s\\n" Linux\n' >"$bin/uname"
+printf '#!/bin/sh\necho Linux\n' >"$bin/uname"
 chmod +x "$bin/uname"
 set -l linux_open_alias (run_fish -c 'functions -q o; and echo defined; or echo absent')
 assert_equal "$linux_open_alias" absent 'Linux Fish startup excludes the macOS open alias'
+
+mkdir -p "$home/.nix-profile/bin"
+printf '#!/bin/sh\n' >"$home/.nix-profile/bin/w2-profile-command"
+chmod +x "$home/.nix-profile/bin/w2-profile-command"
+set -l linux_profile_command (run_clean_fish -c "source '$xdg/fish/conf.d/10-core.fish'; command -s w2-profile-command")
+assert_equal "$linux_profile_command" "$home/.nix-profile/bin/w2-profile-command" 'Linux Fish startup resolves commands from the user Nix profile'
 
 printf '#!/bin/sh\n[ "$1" = init ] && printf "set -gx W2_STARSHIP_READY 1\\n"\n' >"$bin/starship"
 chmod +x "$bin/starship"
