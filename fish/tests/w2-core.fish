@@ -91,11 +91,17 @@ chmod +x "$bin/uname"
 set -l linux_open_alias (run_fish -c 'functions -q o; and echo defined; or echo absent')
 assert_equal "$linux_open_alias" absent 'Linux Fish startup excludes the macOS open alias'
 
-mkdir -p "$home/.nix-profile/bin"
+mkdir -p "$home/.local/bin" "$home/.nix-profile/bin"
+printf '#!/bin/sh\n' >"$home/.local/bin/w2-local-command"
+chmod +x "$home/.local/bin/w2-local-command"
 printf '#!/bin/sh\n' >"$home/.nix-profile/bin/w2-profile-command"
 chmod +x "$home/.nix-profile/bin/w2-profile-command"
+set -l linux_local_command (run_clean_fish -c "source '$xdg/fish/conf.d/10-core.fish'; command -s w2-local-command")
+assert_equal "$linux_local_command" "$home/.local/bin/w2-local-command" 'Linux Fish startup resolves commands from the user-local bin directory'
 set -l linux_profile_command (run_clean_fish -c "source '$xdg/fish/conf.d/10-core.fish'; command -s w2-profile-command")
 assert_equal "$linux_profile_command" "$home/.nix-profile/bin/w2-profile-command" 'Linux Fish startup resolves commands from the user Nix profile'
+set -l linux_path (run_clean_fish -c "source '$xdg/fish/conf.d/10-core.fish'; string join '|' \$PATH")
+string match -q "$home/.local/bin|$home/.nix-profile/bin|*" "$linux_path"; or fail 'Linux Fish startup orders user-local bin before the user Nix profile'
 
 printf '#!/bin/sh\n[ "$1" = init ] && printf "set -gx W2_STARSHIP_READY 1\\n"\n' >"$bin/starship"
 chmod +x "$bin/starship"
