@@ -507,3 +507,9 @@ Además, la política operativa recomendada es:
 - preferir versiones pinneadas y lockfiles cuando el proyecto lo justifique
 - evitar `latest` y ejecuciones runtime no revisadas salvo necesidad explícita
 - hacer upgrades de dependencias en cambios/PRs dedicados, no mezclados con features
+
+
+---
+
+
+![Built with GENTLE-AI](assets/built-with-gentle-ai.png)
