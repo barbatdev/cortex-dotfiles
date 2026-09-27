@@ -42,7 +42,6 @@ end
 set -gx VISUAL "$EDITOR"
 
 alias g git
-alias gs 'git status'
 alias ga 'git add'
 alias gc 'git commit -m'
 alias gp 'git push'

@@ -78,9 +78,9 @@ assert_navigation_error "set -gx BARBATDEV_DIR '$workspace/missing-barbat'; tool
 assert_navigation_error "set -gx HOME '$workspace/missing-home'; worktrees" "$workspace/missing-home/dev/worktrees" 'worktrees missing directory'
 assert_navigation_error "set -gx WORK_PROJECTS_DIR '$workspace/missing-work'; set -gx BARBATDEV_DIR '$workspace/missing-barbat'; work" "$workspace/missing-work" 'work missing directories'
 
-set -l aliases (run_fish -c 'functions gs; functions gpl' | string collect)
-string match -q '*git status*' "$aliases"; or fail 'gs alias'
+set -l aliases (run_fish -c 'functions gpl' | string collect)
 string match -q '*git pull*' "$aliases"; or fail 'gpl alias'
+run_fish -c 'functions -q gs; and exit 1; or exit 0'; or fail 'gs alias should not exist'
 
 printf '#!/bin/sh\n[ "$1" = init ] && printf "set -gx W2_STARSHIP_READY 1\\n"\n' >"$bin/starship"
 chmod +x "$bin/starship"
