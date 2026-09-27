@@ -225,7 +225,7 @@ La coordinación vigente del contrato shell se sigue en [cortex #1259](https://g
 
 | Comando | Descripción |
 | --------- | ------------- |
-| `gs`, `ga`, `gc`, `gp`, `gl` | Git shortcuts |
+| `ga`, `gc`, `gp`, `gl` | Git shortcuts |
 | `dev`, `barbat`, `cowork`, `personal`, `tools`, `worktrees` | Navegación rápida en `~/dev` |
 | `work`, `innit`, `innit-apis`, `innit-mobile`, `innit-webs`, `innit-pcsoft` | Navegación rápida de trabajo |
 | `dotfiles` | Navegación rápida al repo de dotfiles |
