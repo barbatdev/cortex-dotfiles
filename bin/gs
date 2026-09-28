@@ -37,8 +37,8 @@ gs - gentle-shell on main, plus one disposable worktree per PR
   [repo] is optional inside a clone or worktree of that repo.
 
 Fastest start:
-  gs pr shell 1503                 ->  review a PR: Pi opens on it, ready to test
-  gs issue ai 1234                 ->  take an issue: branch ready, nothing claimed
+  gs pr shell 1503                 ->  review a PR: Pi opens on it with a review kickoff
+  gs issue ai 1234                 ->  take an issue: branch ready, kickoff prompt, nothing claimed
   gs done                          ->  inside the worktree, after the merge
   (claim, comment, label, push and merge stay yours)
   Each session: one worktree, Pi loads the package from it, /reload picks up edits.
@@ -126,10 +126,19 @@ repo_and_number() {
   case "$NUM" in ''|*[!0-9]*) die "'$NUM' is not a number" ;; esac
 }
 
-# Opens Pi on a gentle-shell worktree; other repos only print where to go.
+# Opens Pi on a gentle-shell worktree with the kickoff prompt $2; other repos
+# only print where to go and the prompt to paste.
 open_or_finish() {
-  if [ "$REPO" = gentle-shell ]; then cd "$1" && cmd_run
-  else finish "$1"; fi
+  if [ "$REPO" = gentle-shell ]; then cd "$1" && cmd_run "$2"
+  else finish "$1"; printf '  kickoff: %s\n' "$2"; fi
+}
+
+pr_prompt() {
+  printf 'Review Gentleman-Programming/%s PR #%s using the maintainer-delivery skill: read the PR, its linked issue, CI status and diff; run the preflight and race check; then report scope, risks, and what to test. Do not comment, push, or merge.' "$1" "$2"
+}
+
+issue_prompt() {
+  printf 'Take Gentleman-Programming/%s issue #%s using the maintainer-delivery skill: run the preflight, read the issue and repo conventions, draft the kickoff (expected behavior, out of scope, branch %s), then work test-first. Claiming, commenting, pushing, and opening the PR stay mine.' "$1" "$2" "$3"
 }
 
 cmd_pr() {
@@ -142,7 +151,7 @@ cmd_pr() {
   else
     cmd_review "$REPO" "$NUM"
   fi
-  open_or_finish "$path"
+  open_or_finish "$path" "$(pr_prompt "$REPO" "$NUM")"
 }
 
 cmd_issue() {
@@ -155,7 +164,7 @@ cmd_issue() {
   path="$TREES/$REPO-issue-$NUM"
   if [ -e "$path" ]; then
     printf 'gs: reusing %s\n' "$path" >&2
-    open_or_finish "$path"; return
+    open_or_finish "$path" "$(issue_prompt "$REPO" "$NUM" "$(git -C "$path" branch --show-current)")"; return
   fi
   if [ "${GS_FORCE:-}" != 1 ]; then
     [ "$state" = OPEN ] || die "$gh_repo#$NUM is $state (GS_FORCE=1 to continue)"
@@ -178,7 +187,7 @@ $prs"
   git -C "$CLONES/$REPO" worktree add -q -b "$branch" "$path" origin/main
   install_deps "$path"
   printf 'gs: %s#%s "%s" on branch %s\n' "$gh_repo" "$NUM" "$title" "$branch" >&2
-  open_or_finish "$path"
+  open_or_finish "$path" "$(issue_prompt "$REPO" "$NUM" "$branch")"
 }
 
 cmd_base() {
