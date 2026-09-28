@@ -54,6 +54,14 @@ El instalador macOS:
 5. Intenta arrancar/recargar `sketchybar`, `yabai` y `skhd` sin cortar la instalación si macOS requiere permisos
 6. Crea `local/env.zsh` desde el template
 
+`install.sh` todavía no gestiona `bin/`. Para habilitar `gs`, enlazalo manualmente una vez:
+
+```bash
+ln -sfn "$(pwd)/bin/gs" ~/.local/bin/gs
+```
+
+`~/.local/bin` ya está en el `PATH` (ver `zsh/cortex-dotfiles.zsh` y `fish/conf.d/10-core.fish`).
+
 ## Home Manager: límites y validación
 
 La Flake declara configuraciones puras para macOS y Linux como parte de [cortex-dotfiles #58](https://github.com/barbatdev/cortex-dotfiles/issues/58). Esta unidad no instala Nix, no activa Home Manager, no cambia el login shell y no modifica archivos del host. `flake.lock` ya está versionado y las comprobaciones no lo escriben.
@@ -173,6 +181,8 @@ Para validar con agentes y clipboard falsos aislados:
 
 ```
 dotfiles/
+├── bin/
+│   └── gs                    # gentle-shell launcher + worktrees por PR (enlazar manualmente a ~/.local/bin/gs)
 ├── claude/                   # Claude Code statusline
 ├── docs/                     # Referencias operativas y keymaps
 ├── ghostty/                  # Config Ghostty, muxy legado y shaders
@@ -243,6 +253,7 @@ La coordinación vigente del contrato shell se sigue en [cortex #1259](https://g
 | `reload` | Recargar zsh |
 | `refactoria` | Mostrar el logo RefactorIA en Braille Unicode |
 | `help-profile` | Ver todos los comandos |
+| `gs` | gentle-shell launcher + worktree desechable por PR (`bin/gs`, enlazar manualmente; ver Instalación) |
 
 ## Personalización
 
