@@ -1,0 +1,331 @@
+#!/usr/bin/env bash
+# gs - gentle-shell launcher plus one disposable worktree per PR for gentle-ai, gentle-shell and engram.
+# Never pushes, merges, force-deletes, or edits settings.
+set -euo pipefail
+
+CLONES="$HOME/dev/gentle"
+TREES="$HOME/dev/worktrees"
+REPOS="gentle-ai gentle-shell engram"
+
+die() { printf 'gs: %s\n' "$*" >&2; exit 1; }
+
+usage() {
+  cat <<'EOF'
+gs - gentle-shell on main, plus one disposable worktree per PR
+
+  gs [pi args...]          Open gentle-shell (--link) in the current directory
+
+  gs pr [repo] <n>         One step to review PR <n>: worktree (reused and
+                           updated if it exists), then Pi on it for shell PRs
+  gs issue [repo] <n>      One step to start issue <n>: race check (stops if the
+                           issue is closed, assigned, or referenced by a PR; GS_FORCE=1
+                           skips it), branch <type>/<n>-<slug> from origin/main,
+                           then Pi on it for shell issues
+
+  gs new <repo> <name>     New branch <name> from fresh origin/main
+  gs review <repo> <pr>    Check out someone else's PR to test or review it
+  gs base <repo>           Clean origin/main worktree, to compare failures
+  gs run [pi args...]      Run gentle-shell --link with this worktree as --package-root
+  gs sync                  Bring gentle-shell, gentle-ai and engram to main and check
+                           compatibility (workshop: local clones; elsewhere: GitHub)
+  gs ls                    List open worktrees
+  gs done                  Remove the current worktree and its merged local branch
+                           (drops odd/tasks records; refuses if real work would be lost)
+  gs help                  Show this help
+
+  <repo>: ai | shell | engram   (or the full name)
+  [repo] is optional inside a clone or worktree of that repo.
+
+Fastest start:
+  gs pr shell 1503                 ->  review a PR: Pi opens on it with a review kickoff
+  gs issue ai 1234                 ->  take an issue: branch ready, kickoff prompt, nothing claimed
+  gs done                          ->  inside the worktree, after the merge
+  (claim, comment, label, push and merge stay yours)
+  Each session: one worktree, Pi loads the package from it, /reload picks up edits.
+  Sessions share ~/.pi/agent (--link) and subagents use the main clone.
+  gs sync is separate: run it with no other session open.
+
+Machines (gs sync detects the mode):
+  agent-gentle  workshop: clean clones in ~/dev/gentle; pr, issue, new, review, run, done
+  Mac, agent-dev  consumer: daily innit/barbatdev/refactoria work on gentle main, no clones;
+                  only gs sync (then restart Pi) and plain gs in the repo you work on
+
+Daily flow (agent-gentle):
+  gs sync                  ->  morning, with no session open
+  gs issue shell 1503      ->  one terminal per issue or PR (gs pr shell <n>); Pi opens there
+    claim the issue yourself; edit; /reload to see it live in that session only
+    fails? gs base shell in another terminal: same on main means not yours
+    commit, push, PR: yours
+  waiting on CI or review  ->  next gs issue ... in another terminal; gs ls shows them all
+  after the merge          ->  gs done inside the worktree
+  session closed?          ->  same gs issue/pr again reuses the worktree and reopens Pi
+EOF
+}
+
+repo_name() {
+  case "${1:-}" in
+    ai|gentle-ai) echo gentle-ai ;;
+    shell|gentle-shell) echo gentle-shell ;;
+    engram) echo engram ;;
+    *) die "unknown repo '${1:-}' (use: ai, shell, engram)" ;;
+  esac
+}
+
+clone_of() {
+  local repo=$1
+  [ -d "$CLONES/$repo/.git" ] || die "missing clean clone $CLONES/$repo"
+  git -C "$CLONES/$repo" fetch -q --prune origin
+  echo "$CLONES/$repo"
+}
+
+install_deps() {
+  if [ -f "$1/pnpm-lock.yaml" ]; then (cd "$1" && pnpm install --frozen-lockfile); fi
+}
+
+finish() {
+  printf '\nready: %s\n  cd %s\n' "$1" "$1"
+}
+
+cmd_new() {
+  [ $# -eq 2 ] || die "usage: gs new <repo> <name>"
+  local repo clone path
+  repo=$(repo_name "$1"); clone=$(clone_of "$repo"); path="$TREES/$repo-$2"
+  [ -e "$path" ] && die "$path already exists"
+  git -C "$clone" worktree add -q -b "$2" "$path" origin/main
+  install_deps "$path"; finish "$path"
+}
+
+cmd_review() {
+  [ $# -eq 2 ] || die "usage: gs review <repo> <pr-number>"
+  local repo clone path
+  repo=$(repo_name "$1"); clone=$(clone_of "$repo"); path="$TREES/$repo-pr-$2"
+  [ -e "$path" ] && die "$path already exists (gs done inside it first)"
+  git -C "$clone" worktree add -q --detach "$path" origin/main
+  (cd "$path" && gh pr checkout "$2" -R "Gentleman-Programming/$repo" -b "pr-$2")
+  install_deps "$path"; finish "$path"
+}
+
+# Repo from the current directory's origin, for the optional [repo] argument.
+repo_here() {
+  local url; url=$(git remote get-url origin 2>/dev/null) || die "give the repo (ai, shell, engram) or run it inside one"
+  case "$url" in
+    */gentle-ai|*/gentle-ai.git) echo gentle-ai ;;
+    */gentle-shell|*/gentle-shell.git|*/gentle-pi|*/gentle-pi.git) echo gentle-shell ;;
+    */engram|*/engram.git) echo engram ;;
+    *) die "cannot tell the repo from $url; give it: ai, shell, engram" ;;
+  esac
+}
+
+# Sets REPO and NUM from "[repo] <n>".
+repo_and_number() {
+  case $# in
+    1) REPO=$(repo_here); NUM=$1 ;;
+    2) REPO=$(repo_name "$1"); NUM=$2 ;;
+    *) die "usage: gs $CMD [repo] <number>" ;;
+  esac
+  case "$NUM" in ''|*[!0-9]*) die "'$NUM' is not a number" ;; esac
+}
+
+# Opens Pi on a gentle-shell worktree with the kickoff prompt $2; other repos
+# only print where to go and the prompt to paste.
+open_or_finish() {
+  if [ "$REPO" = gentle-shell ]; then cd "$1" && cmd_run "$2"
+  else finish "$1"; printf '  kickoff: %s\n' "$2"; fi
+}
+
+pr_prompt() {
+  printf 'Review Gentleman-Programming/%s PR #%s using the maintainer-delivery skill: read the PR, its linked issue, CI status and diff; run the preflight and race check; then report scope, risks, and what to test. Do not comment, push, or merge.' "$1" "$2"
+}
+
+issue_prompt() {
+  printf 'Take Gentleman-Programming/%s issue #%s using the maintainer-delivery skill: run the preflight, read the issue and repo conventions, draft the kickoff (expected behavior, out of scope, branch %s), then work test-first. Claiming, commenting, pushing, and opening the PR stay mine.' "$1" "$2" "$3"
+}
+
+cmd_pr() {
+  CMD="pr"; repo_and_number "$@"
+  local path="$TREES/$REPO-pr-$NUM"
+  if [ -e "$path" ]; then
+    [ -z "$(git -C "$path" status --porcelain)" ] || die "$path has local changes; commit, drop, or gs done first"
+    (cd "$path" && gh pr checkout "$NUM" -R "Gentleman-Programming/$REPO" -b "pr-$NUM")
+    install_deps "$path"
+  else
+    cmd_review "$REPO" "$NUM"
+  fi
+  open_or_finish "$path" "$(pr_prompt "$REPO" "$NUM")"
+}
+
+cmd_issue() {
+  CMD="issue"; repo_and_number "$@"
+  local gh_repo="Gentleman-Programming/$REPO" info state assignees title labels prs prefix slug branch path
+  info=$(gh issue view "$NUM" -R "$gh_repo" --json state,assignees,title,labels \
+    --jq '[.state, ([.assignees[].login]|join(",")), .title, ([.labels[].name]|join(","))]|join("\t")') \
+    || die "cannot read $gh_repo#$NUM"
+  IFS=$'\t' read -r state assignees title labels <<<"$info"
+  path="$TREES/$REPO-issue-$NUM"
+  if [ -e "$path" ]; then
+    printf 'gs: reusing %s\n' "$path" >&2
+    open_or_finish "$path" "$(issue_prompt "$REPO" "$NUM" "$(git -C "$path" branch --show-current)")"; return
+  fi
+  if [ "${GS_FORCE:-}" != 1 ]; then
+    [ "$state" = OPEN ] || die "$gh_repo#$NUM is $state (GS_FORCE=1 to continue)"
+    [ -z "$assignees" ] || die "$gh_repo#$NUM is assigned to $assignees (GS_FORCE=1 to continue)"
+    prs=$(gh pr list -R "$gh_repo" --state all --search "$NUM in:title,body" --json number,state,title \
+      --jq '.[] | "  #\(.number) \(.state) \(.title)"')
+    [ -z "$prs" ] || die "PRs may already reference #$NUM (GS_FORCE=1 to continue):
+$prs"
+  fi
+  case ",$labels," in
+    *,type:feature,*) prefix=feat ;;
+    *,type:docs,*) prefix=docs ;;
+    *,type:refactor,*) prefix=refactor ;;
+    *,type:chore,*) prefix=chore ;;
+    *) prefix=fix ;;
+  esac
+  slug=$(printf '%s' "$title" | sed -E 's/^[A-Za-z]+( [a-z]+)?: *//' | tr '[:upper:]' '[:lower:]' \
+    | sed -E 's/[^a-z0-9]+/-/g; s/^-+//; s/-+$//' | cut -c1-40 | sed -E 's/-+$//')
+  branch="$prefix/$NUM-${slug:-issue}"
+  git -C "$CLONES/$REPO" worktree add -q -b "$branch" "$path" origin/main
+  install_deps "$path"
+  printf 'gs: %s#%s "%s" on branch %s\n' "$gh_repo" "$NUM" "$title" "$branch" >&2
+  open_or_finish "$path" "$(issue_prompt "$REPO" "$NUM" "$branch")"
+}
+
+cmd_base() {
+  [ $# -eq 1 ] || die "usage: gs base <repo>"
+  local repo clone path
+  repo=$(repo_name "$1"); clone=$(clone_of "$repo"); path="$TREES/$repo-base"
+  if [ -e "$path" ]; then
+    [ -z "$(git -C "$path" status --porcelain)" ] || die "$path has local changes; base must stay clean"
+    git -C "$path" checkout -q --detach origin/main
+  else
+    git -C "$clone" worktree add -q --detach "$path" origin/main
+  fi
+  install_deps "$path"; finish "$path"
+}
+
+cmd_run() {
+  local root
+  root=$(git rev-parse --show-toplevel 2>/dev/null) || die "run it inside a gentle-shell worktree"
+  grep -q '"name": *"gentle-pi"' "$root/package.json" 2>/dev/null || die "$root is not gentle-shell"
+  [ -d "$root/node_modules" ] || die "no node_modules in $root (pnpm install --frozen-lockfile)"
+  printf 'gs: gentle-shell @ %s (%s); subagents use main\n' "$(git -C "$root" rev-parse --short HEAD)" "$root" >&2
+  cd "$root" && exec node "$root/bin/gentle-shell.mjs" --link --package-root "$root" "$@"
+}
+
+# Workshop (agent-gentle): clean clones in ~/dev/gentle, Pi loads the gentle-shell clone.
+# Consumer (Mac, agent-dev): no clones; Pi uses git:gentle-pi@main, binaries built from GitHub main.
+is_workshop() {
+  git -C "$CLONES/gentle-shell" remote get-url origin 2>/dev/null | grep -q 'Gentleman-Programming/gentle-shell'
+}
+
+cmd_sync() {
+  local repo shell bin="$HOME/.local/share/gentle-ai/main" reg="$HOME/.pi/gentle-ai/dev-binary.json" name
+  mkdir -p "$bin" "$HOME/.local/bin" "$(dirname "$reg")"
+  if is_workshop; then
+    for repo in $REPOS; do
+      [ -d "$CLONES/$repo/.git" ] || die "missing clean clone $CLONES/$repo"
+      [ -z "$(git -C "$CLONES/$repo" status --porcelain)" ] || die "$CLONES/$repo has local changes; clean clones only"
+      git -C "$CLONES/$repo" checkout -q main
+      git -C "$CLONES/$repo" pull -q --ff-only origin main
+      printf '%-13s %s\n' "$repo" "$(git -C "$CLONES/$repo" log -1 --format='%h %cs %s')"
+    done
+    (cd "$CLONES/gentle-ai" && GOBIN="$bin" go install ./cmd/gentle-ai)
+    (cd "$CLONES/engram" && GOBIN="$bin" go install ./cmd/engram)
+    (cd "$CLONES/gentle-shell" && pnpm install --frozen-lockfile --silent)
+    (cd "$CLONES/engram/plugin/pi" && npm install --no-save --no-audit --no-fund --omit=peer --silent)
+    shell="$CLONES/gentle-shell"
+  else
+    printf 'mode: consumer (no workshop clones; everything from GitHub main)\n'
+    pi update --extension git:github.com/Gentleman-Programming/gentle-pi@main
+    pi update --extension git:github.com/Gentleman-Programming/engram@main
+    GOPROXY=direct GOBIN="$bin" go install github.com/gentleman-programming/gentle-ai/v3/cmd/gentle-ai@main
+    GOPROXY=direct GOBIN="$bin" go install github.com/Gentleman-Programming/engram/v2/cmd/engram@main
+    shell="$HOME/.pi/agent/git/github.com/Gentleman-Programming/gentle-pi"
+    printf 'gentle-shell  %s\n' "$(git -C "$shell" log -1 --format='%h %cs %s' 2>/dev/null || echo '?')"
+  fi
+  for name in gentle-ai engram; do
+    if [ -e "$HOME/.local/bin/$name" ] && [ ! -L "$HOME/.local/bin/$name" ]; then
+      mv "$HOME/.local/bin/$name" "$HOME/.local/bin/$name.pre-gw"
+      printf 'kept old %s as ~/.local/bin/%s.pre-gw\n' "$name" "$name"
+    fi
+    ln -sfn "$bin/$name" "$HOME/.local/bin/$name"
+  done
+  local tmp; tmp=$(mktemp "$(dirname "$reg")/.dev-binary.XXXXXX")
+  printf '{"schema":"gentle-pi.dev-binary/v1","path":"%s"}\n' "$bin/gentle-ai" > "$tmp"
+  chmod 600 "$tmp"; mv -f "$tmp" "$reg"
+
+  printf '\ngentle-ai:  %s\nengram:     %s\n' "$("$bin/gentle-ai" --version 2>&1)" "$("$bin/engram" version 2>&1)"
+  for name in gentle-ai engram; do
+    [ "$(command -v "$name")" = "$HOME/.local/bin/$name" ] || printf 'WARN: %s on PATH is %s, not the main build\n' "$name" "$(command -v "$name")"
+  done
+  local emits reads
+  emits=$("$bin/gentle-ai" review status --cwd "$shell" --contract gentle-ai.review-integration/v2 \
+    --agent claude-code --next-transition 2>/dev/null | grep -o 'review-integration\.status/v[0-9]*' | head -1 | sed 's#.*/##')
+  reads=$(grep -rhoE 'review-integration\.status/v[0-9]+' "$shell/lib" "$shell/extensions" 2>/dev/null \
+    | sed 's#.*/##' | sort -uV | tr '\n' ' ')
+  if [ -z "$emits" ] || [ -z "$reads" ]; then
+    printf 'compat:     UNVERIFIED (emits=%s reads=%s)\n' "${emits:-?}" "${reads:-?}"
+  elif printf '%s' "$reads" | tr ' ' '\n' | grep -qx "$emits"; then
+    printf 'compat:     OK (gentle-ai emits %s, gentle-shell reads %s)\n' "$emits" "$reads"
+  else
+    printf 'compat:     INCOMPATIBLE (gentle-ai emits %s, gentle-shell reads %s)\n' "$emits" "$reads"
+  fi
+  if is_workshop && grep -qE 'npm:gentle-(pi|engram)|git:github.com/Gentleman-Programming/gentle-(pi|shell)' "$HOME/.pi/agent/settings.json" 2>/dev/null; then
+    printf 'WARN: ~/.pi/agent/settings.json lists a published gentle-pi/gentle-engram again; remove it\n'
+  fi
+  printf '\nRestart Pi to pick up the new versions.\n'
+}
+
+cmd_ls() {
+  local repo
+  for repo in $REPOS; do
+    [ -d "$CLONES/$repo/.git" ] && git -C "$CLONES/$repo" worktree list | grep -v "^$CLONES/$repo " || true
+  done
+}
+
+cmd_done() {
+  local root; root=$(git rev-parse --show-toplevel 2>/dev/null) || die "run it inside a worktree"
+  case "$root" in "$TREES"/*) ;; *) die "$root is not a gs worktree" ;; esac
+  # Harness task records (odd/tasks/*) never ship; drop them if they are the only leftovers.
+  local other; other=$(git -C "$root" status --porcelain | grep -v '^?? odd/tasks/' || true)
+  [ -z "$other" ] || die "uncommitted changes in $root:
+$other"
+  git -C "$root" status --porcelain | sed -n 's/^?? //p' | while read -r f; do rm -rf "${root:?}/$f"; done
+  git -C "$root" fetch -q --prune origin
+  if [ -n "$(git -C "$root" log --oneline HEAD --not --remotes)" ] &&
+    ! git -C "$root" ls-remote origin 'refs/pull/*/head' | grep -q "^$(git -C "$root" rev-parse HEAD)"; then
+    die "commits not on any remote in $root; push or drop them yourself first"
+  fi
+  local main branch; main=$(git -C "$root" worktree list --porcelain | sed -n '1s/^worktree //p')
+  branch=$(git -C "$root" branch --show-current)
+  git -C "$main" worktree remove "$root"
+  printf 'removed %s\n' "$root"
+  if [ -n "$branch" ]; then
+    if git -C "$main" merge-base --is-ancestor "$branch" origin/main 2>/dev/null && git -C "$main" branch -D "$branch" >/dev/null 2>&1; then
+      printf 'deleted local branch %s (already in origin/main)\n' "$branch"
+    else printf 'kept local branch %s (not fully in main; delete it yourself if the PR was squash-merged)\n' "$branch"; fi
+  fi
+  printf 'now run: cd %s\n' "$main"
+}
+
+cmd_launch() {
+  local root
+  if is_workshop; then root="$CLONES/gentle-shell"
+  else root="$HOME/.pi/agent/git/github.com/Gentleman-Programming/gentle-pi"; fi
+  [ -f "$root/bin/gentle-shell.mjs" ] || die "gentle-shell not found at $root (run: gs sync)"
+  exec node "$root/bin/gentle-shell.mjs" --link "$@"
+}
+
+case "${1:-}" in
+  pr) shift; cmd_pr "$@" ;;
+  issue) shift; cmd_issue "$@" ;;
+  new) shift; cmd_new "$@" ;;
+  review) shift; cmd_review "$@" ;;
+  base) shift; cmd_base "$@" ;;
+  run) shift; cmd_run "$@" ;;
+  sync) cmd_sync ;;
+  ls) cmd_ls ;;
+  done) cmd_done ;;
+  help|-h|--help) usage ;;
+  *) cmd_launch "$@" ;;
+esac
