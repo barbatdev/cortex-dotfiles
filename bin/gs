@@ -204,12 +204,20 @@ cmd_base() {
 }
 
 cmd_run() {
-  local root
+  local root launcher main
   root=$(git rev-parse --show-toplevel 2>/dev/null) || die "run it inside a gentle-shell worktree"
   grep -q '"name": *"gentle-pi"' "$root/package.json" 2>/dev/null || die "$root is not gentle-shell"
   [ -d "$root/node_modules" ] || die "no node_modules in $root (pnpm install --frozen-lockfile)"
+  launcher="$root/bin/gentle-shell.mjs"
+  if [ ! -f "$launcher" ]; then
+    if is_workshop; then main="$CLONES/gentle-shell"
+    else main="$HOME/.pi/agent/git/github.com/Gentleman-Programming/gentle-pi"; fi
+    launcher="$main/bin/gentle-shell.mjs"
+    [ -f "$launcher" ] || die "no launcher at $root/bin/gentle-shell.mjs or $launcher; run gs sync to update main to a launcher supporting --link --package-root takeover"
+    printf 'gs: fallback launcher from main %s; target worktree root %s\n' "$launcher" "$root" >&2
+  fi
   printf 'gs: gentle-shell @ %s (%s); subagents use main\n' "$(git -C "$root" rev-parse --short HEAD)" "$root" >&2
-  cd "$root" && exec node "$root/bin/gentle-shell.mjs" --link --package-root "$root" "$@"
+  cd "$root" && exec node "$launcher" --link --package-root "$root" "$@"
 }
 
 # Workshop (agent-gentle): clean clones in ~/dev/gentle, Pi loads the gentle-shell clone.
@@ -238,7 +246,7 @@ cmd_sync() {
     printf 'mode: consumer (no workshop clones; everything from GitHub main)\n'
     pi update --extension git:github.com/Gentleman-Programming/gentle-pi@main
     pi update --extension git:github.com/Gentleman-Programming/engram@main
-    GOPROXY=direct GOBIN="$bin" go install github.com/gentleman-programming/gentle-ai/v3/cmd/gentle-ai@main
+    GOPROXY=direct GOBIN="$bin" go install github.com/gentleman-programming/gentle-ai/v4/cmd/gentle-ai@main
     GOPROXY=direct GOBIN="$bin" go install github.com/Gentleman-Programming/engram/v2/cmd/engram@main
     shell="$HOME/.pi/agent/git/github.com/Gentleman-Programming/gentle-pi"
     printf 'gentle-shell  %s\n' "$(git -C "$shell" log -1 --format='%h %cs %s' 2>/dev/null || echo '?')"
