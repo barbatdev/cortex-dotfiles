@@ -18,6 +18,8 @@ let
     "fish/functions/innit-webs.fish".source = ../fish/functions/innit-webs.fish;
     "fish/functions/innit-pcsoft.fish".source = ../fish/functions/innit-pcsoft.fish;
     "fish/functions/dotfiles.fish".source = ../fish/functions/dotfiles.fish;
+    "fish/functions/refactoria.fish".source = ../fish/functions/refactoria.fish;
+    "fish/functions/gentle.fish".source = ../fish/functions/gentle.fish;
     "fish/functions/_parse_github_repo.fish".source = ../fish/functions/_parse_github_repo.fish;
     "fish/functions/_git_config_identity.fish".source = ../fish/functions/_git_config_identity.fish;
     "fish/functions/clone-workdev.fish".source = ../fish/functions/clone-workdev.fish;
