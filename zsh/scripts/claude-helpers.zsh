@@ -26,7 +26,7 @@ _cortex_run_agent() {
     local command_string=""
     local arg created workspace
 
-    if [[ "${CORTEX_MULTIPLEXER:-cmux}" == "cmux" && -n "${CMUX_WORKSPACE_ID:-}" && "$target" != "$PWD" ]]; then
+    if [[ "${CORTEX_MULTIPLEXER:-${CORTEX_DOTFILES_MULTIPLEXER:-cmux}}" == "cmux" && -n "${CMUX_WORKSPACE_ID:-}" && "$target" != "$PWD" ]]; then
         for arg in "${agent_command[@]}"; do
             command_string+="${(q)arg} "
         done

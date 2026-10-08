@@ -82,7 +82,7 @@ wtadd() {
 
     echo "✓ Worktree creado: $wt_path"
 
-    if [[ "${CORTEX_MULTIPLEXER:-cmux}" == "cmux" ]]; then
+    if [[ "${CORTEX_MULTIPLEXER:-${CORTEX_DOTFILES_MULTIPLEXER:-cmux}}" == "cmux" ]]; then
         echo "→ Abriendo agente para el worktree..."
         cc "$wt_path"
     fi

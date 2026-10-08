@@ -15,7 +15,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
 
       - name: Install minimal tools
         run: |
@@ -28,7 +30,7 @@ jobs:
           set -euo pipefail
           shopt -s nullglob globstar
 
-          zsh_files=(zsh/zshrc zsh/scripts/*.zsh)
+          zsh_files=(zsh/zshrc zsh/cortex-dotfiles.zsh zsh/scripts/*.zsh)
           for file in "${zsh_files[@]}"; do
             [[ -f "$file" ]] || continue
             zsh -n "$file"
@@ -75,7 +77,13 @@ jobs:
       - name: Check Cortex shell integration
         run: ./scripts/check-cortex-shell-integration.sh
 
-      - name: Check pure Nix preflight contract
+      - name: Check navigation shortcuts
+        run: ./scripts/check-navigation-shortcuts.sh
+
+      - name: Check installer symlink safety
+        run: ./scripts/check-install-symlinks.sh
+
+      - name: Check Nix Home Manager preflight contracts
         run: bash scripts/test-nix-preflight.sh
 
       - name: Validate TOML configs
