@@ -239,7 +239,7 @@ cmd_sync() {
     pi update --extension git:github.com/Gentleman-Programming/gentle-pi@main
     pi update --extension git:github.com/Gentleman-Programming/engram@main
     GOPROXY=direct GOBIN="$bin" go install github.com/gentleman-programming/gentle-ai/v3/cmd/gentle-ai@main
-    GOPROXY=direct GOBIN="$bin" go install github.com/Gentleman-Programming/engram/v2/cmd/engram@main
+    GOPROXY=direct GOBIN="$bin" go install github.com/Gentleman-Programming/engram/v3/cmd/engram@main
     shell="$HOME/.pi/agent/git/github.com/Gentleman-Programming/gentle-pi"
     printf 'gentle-shell  %s\n' "$(git -C "$shell" log -1 --format='%h %cs %s' 2>/dev/null || echo '?')"
   fi
