@@ -59,7 +59,6 @@ export VISUAL="$EDITOR"
 
 #region Git Aliases
 alias g="git"
-gs()  { git status "$@" }
 ga()  { git add "$@" }
 gc()  { git commit -m "$@" }
 gp()  { git push "$@" }
@@ -82,19 +81,30 @@ _go_dev_dir() {
     if [[ -d "$target" ]]; then
         cd "$target"
     else
-        echo "❌ Directorio no encontrado: $target"
-        return 1
+        _go_first_existing_dir "$target"
     fi
 }
 
 _go_first_existing_dir() {
-    local target
+    local target probe
     for target in "$@"; do
         if [[ -d "$target" ]]; then
             cd "$target"
             return
         fi
     done
+    # No candidate exists: walk up to the nearest existing ancestor of the
+    # first target so navigation commands degrade gracefully on hosts that
+    # do not have this part of the workspace layout.
+    probe="$1"
+    while [[ -n "$probe" && ! -d "$probe" ]]; do
+        probe="${probe:h}"
+    done
+    if [[ -n "$probe" && -d "$probe" ]]; then
+        echo "⚠️  Directorio no encontrado: $1 — usando el ancestro más cercano: $probe"
+        cd "$probe"
+        return
+    fi
     echo "❌ Directorio no encontrado: $1"
     return 1
 }
@@ -107,6 +117,8 @@ tools()       { _go_dev_dir "$TOOLS_DIR"; }
 worktrees()   { _go_dev_dir "$WORKTREES_DIR"; }
 work()        { _go_dev_dir "$WORK_PROJECTS_DIR"; }
 innit()       { _go_dev_dir "$INNIT_DIR"; }
+refactoria()  { _go_dev_dir "${REFACTORIA_DIR:-$WORKSPACE_DIR/refactoria}"; }
+gentle()      { _go_dev_dir "${GENTLE_DIR:-$WORKSPACE_DIR/gentle}"; }
 innit-apis()  { _go_dev_dir "$INNIT_APIS_DIR"; }
 innit-mobile(){ _go_dev_dir "$INNIT_MOBILE_DIR"; }
 innit-webs()  { _go_dev_dir "$INNIT_WEBS_DIR"; }
@@ -165,7 +177,7 @@ myip() {
 }
 
 # Mostrar el logo de RefactorIA en Braille Unicode bajo demanda.
-refactoria() {
+refactoria-logo() {
     local logo="${_DOTFILES_DIR:-$HOME/dev/personal/cortex-dotfiles}/assets/refactoria-braille.txt"
     if [[ -f "$logo" ]]; then
         cat "$logo"
@@ -280,17 +292,17 @@ _welcome() {
     echo "  ╔══════════════════════════════════════╗"
     echo "  ║      Dev Environment                 ║"
     echo "  ╠══════════════════════════════════════╣"
-    printf "  ║  ⚡ Cargado en \033[1;32m%sms\033[0m\n" "$ms"
-    printf "  ║  🕐 \033[1;34m%s\033[0m\n" "$(date '+%H:%M:%S')"
+    printf "  ║  ⚡ Cargado en \033[1;38;2;88;230;168m%sms\033[0m\n" "$ms"
+    printf "  ║  🕐 \033[1;38;2;140;200;255m%s\033[0m\n" "$(date '+%H:%M:%S')"
     echo "  ╚══════════════════════════════════════╝"
     echo ""
-    echo "  \033[90mescribí\033[0m \033[1;33mhelp-profile\033[0m \033[90mpara ver comandos disponibles\033[0m"
+    echo "  \033[38;2;235;235;235mescribí\033[0m \033[1;38;2;140;200;255mhelp-profile\033[0m \033[38;2;235;235;235mpara ver comandos disponibles\033[0m"
     echo ""
 }
 
 help-profile() {
-    local T="\033[1;33m"  # título (amarillo)
-    local C="\033[1;36m"  # comando (cyan)
+    local T="\033[1;38;2;164;119;255m"  # título/acción (violeta)
+    local C="\033[1;38;2;140;200;255m"  # comando (azul claro)
     local R="\033[0m"     # reset
 
     echo ""
