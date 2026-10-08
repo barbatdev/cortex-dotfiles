@@ -20,13 +20,21 @@ if not set -q CORTEX_MULTIPLEXER; or test -z "$CORTEX_MULTIPLEXER"
 end
 set -gx CLAUDE_CODE_EFFORT_LEVEL high
 if not set -q WORK_PROJECTS_DIR; or test -z "$WORK_PROJECTS_DIR"
-    set -gx WORK_PROJECTS_DIR "$BARBATDEV_DIR/innit"
+    set -gx WORK_PROJECTS_DIR "$WORKSPACE_DIR/innit-sas"
 end
 if not set -q PERSONAL_PROJECTS_DIR; or test -z "$PERSONAL_PROJECTS_DIR"
     set -gx PERSONAL_PROJECTS_DIR "$BARBATDEV_DIR/products"
 end
 if not set -q INNIT_DIR; or test -z "$INNIT_DIR"
-    set -gx INNIT_DIR "$BARBATDEV_DIR/innit"
+    set -gx INNIT_DIR "$WORKSPACE_DIR/innit-sas"
+end
+
+if not set -q REFACTORIA_DIR; or test -z "$REFACTORIA_DIR"
+    set -gx REFACTORIA_DIR "$WORKSPACE_DIR/refactoria"
+end
+
+if not set -q GENTLE_DIR; or test -z "$GENTLE_DIR"
+    set -gx GENTLE_DIR "$WORKSPACE_DIR/gentle"
 end
 if not set -q SCREENSHOTS_DIR; or test -z "$SCREENSHOTS_DIR"
     set -gx SCREENSHOTS_DIR "$HOME/Screenshots"
