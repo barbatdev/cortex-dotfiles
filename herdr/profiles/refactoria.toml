@@ -1,25 +1,4 @@
-[ui.toast]
-delivery = "terminal"
-
-[ui]
-sidebar_width = 32
-sidebar_min_width = 24
-sidebar_max_width = 42
-agent_panel_sort = "priority"
-show_agent_labels_on_pane_borders = true
-prompt_new_tab_name = true
-pane_borders = true
-pane_gaps = true
-accent = "#7127FF"
-
-[terminal]
-new_cwd = "follow"
-
-[session]
-resume_agents_on_restore = true
-
-[remote]
-manage_ssh_config = false
+# RefactorIA Herdr profile. Loaded after the shared default config.
 
 [theme]
 # One Dark supplies structural defaults; every visible custom role is RefactorIA.
@@ -46,3 +25,10 @@ yellow = "#FFC857"
 mauve = "#C7A6FF"
 teal = "#66E6E6"
 peach = "#FFC857"
+
+[ui]
+accent = "#7127FF"
+show_agent_labels_on_pane_borders = true
+
+[ui.toast]
+delivery = "herdr"

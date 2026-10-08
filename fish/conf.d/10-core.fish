@@ -20,13 +20,21 @@ if not set -q CORTEX_MULTIPLEXER; or test -z "$CORTEX_MULTIPLEXER"
 end
 set -gx CLAUDE_CODE_EFFORT_LEVEL high
 if not set -q WORK_PROJECTS_DIR; or test -z "$WORK_PROJECTS_DIR"
-    set -gx WORK_PROJECTS_DIR "$BARBATDEV_DIR/innit"
+    set -gx WORK_PROJECTS_DIR "$WORKSPACE_DIR/innit-sas"
 end
 if not set -q PERSONAL_PROJECTS_DIR; or test -z "$PERSONAL_PROJECTS_DIR"
     set -gx PERSONAL_PROJECTS_DIR "$BARBATDEV_DIR/products"
 end
 if not set -q INNIT_DIR; or test -z "$INNIT_DIR"
-    set -gx INNIT_DIR "$BARBATDEV_DIR/innit"
+    set -gx INNIT_DIR "$WORKSPACE_DIR/innit-sas"
+end
+
+if not set -q REFACTORIA_DIR; or test -z "$REFACTORIA_DIR"
+    set -gx REFACTORIA_DIR "$WORKSPACE_DIR/refactoria"
+end
+
+if not set -q GENTLE_DIR; or test -z "$GENTLE_DIR"
+    set -gx GENTLE_DIR "$WORKSPACE_DIR/gentle"
 end
 if not set -q SCREENSHOTS_DIR; or test -z "$SCREENSHOTS_DIR"
     set -gx SCREENSHOTS_DIR "$HOME/Screenshots"
@@ -40,14 +48,6 @@ else
     set -gx EDITOR nano
 end
 set -gx VISUAL "$EDITOR"
-
-if test (uname) = Linux
-    for nix_profile_bin in /nix/var/nix/profiles/default/bin "$HOME/.nix-profile/bin" "$HOME/.local/share/mise/shims" "$HOME/.opencode/bin" "$HOME/.local/bin"
-        if test -d "$nix_profile_bin"
-            fish_add_path --path --move "$nix_profile_bin"
-        end
-    end
-end
 
 alias g git
 alias ga 'git add'
@@ -64,10 +64,7 @@ alias .. 'cd ..'
 alias ... 'cd ../..'
 alias .... 'cd ../../..'
 alias c clear
-
-if test (uname) = Darwin
-    alias o open
-end
+alias o open
 
 if command -q eza
     alias ll 'eza -la --icons --git'

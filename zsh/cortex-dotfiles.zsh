@@ -82,19 +82,30 @@ _go_dev_dir() {
     if [[ -d "$target" ]]; then
         cd "$target"
     else
-        echo "❌ Directorio no encontrado: $target"
-        return 1
+        _go_first_existing_dir "$target"
     fi
 }
 
 _go_first_existing_dir() {
-    local target
+    local target probe
     for target in "$@"; do
         if [[ -d "$target" ]]; then
             cd "$target"
             return
         fi
     done
+    # No candidate exists: walk up to the nearest existing ancestor of the
+    # first target so navigation commands degrade gracefully on hosts that
+    # do not have this part of the workspace layout.
+    probe="$1"
+    while [[ -n "$probe" && ! -d "$probe" ]]; do
+        probe="${probe:h}"
+    done
+    if [[ -n "$probe" && -d "$probe" ]]; then
+        echo "⚠️  Directorio no encontrado: $1 — usando el ancestro más cercano: $probe"
+        cd "$probe"
+        return
+    fi
     echo "❌ Directorio no encontrado: $1"
     return 1
 }
@@ -107,6 +118,8 @@ tools()       { _go_dev_dir "$TOOLS_DIR"; }
 worktrees()   { _go_dev_dir "$WORKTREES_DIR"; }
 work()        { _go_dev_dir "$WORK_PROJECTS_DIR"; }
 innit()       { _go_dev_dir "$INNIT_DIR"; }
+refactoria()  { _go_dev_dir "${REFACTORIA_DIR:-$WORKSPACE_DIR/refactoria}"; }
+gentle()      { _go_dev_dir "${GENTLE_DIR:-$WORKSPACE_DIR/gentle}"; }
 innit-apis()  { _go_dev_dir "$INNIT_APIS_DIR"; }
 innit-mobile(){ _go_dev_dir "$INNIT_MOBILE_DIR"; }
 innit-webs()  { _go_dev_dir "$INNIT_WEBS_DIR"; }
@@ -165,7 +178,7 @@ myip() {
 }
 
 # Mostrar el logo de RefactorIA en Braille Unicode bajo demanda.
-refactoria() {
+refactoria-logo() {
     local logo="${_DOTFILES_DIR:-$HOME/dev/personal/cortex-dotfiles}/assets/refactoria-braille.txt"
     if [[ -f "$logo" ]]; then
         cat "$logo"
@@ -249,6 +262,8 @@ export PERSONAL_PROJECTS_DIR="${PERSONAL_PROJECTS_DIR:-$WORKSPACE_DIR/local}"
 export TOOLS_DIR="${TOOLS_DIR:-$PERSONAL_PROJECTS_DIR/tools}"
 export WORKTREES_DIR="${WORKTREES_DIR:-$WORKSPACE_DIR/worktrees}"
 export INNIT_DIR="${INNIT_DIR:-$WORK_PROJECTS_DIR}"
+export REFACTORIA_DIR="${REFACTORIA_DIR:-$WORKSPACE_DIR/refactoria}"
+export GENTLE_DIR="${GENTLE_DIR:-$WORKSPACE_DIR/gentle}"
 export INNIT_APIS_DIR="${INNIT_APIS_DIR:-$INNIT_DIR/apis}"
 export INNIT_MOBILE_DIR="${INNIT_MOBILE_DIR:-$INNIT_DIR/mobile}"
 export INNIT_WEBS_DIR="${INNIT_WEBS_DIR:-$INNIT_DIR/webs}"
