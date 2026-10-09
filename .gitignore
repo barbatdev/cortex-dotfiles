@@ -8,3 +8,5 @@ local/env.zsh
 # Backups
 *.bak
 *.backup
+# Local Pi runtime state
+.atl/

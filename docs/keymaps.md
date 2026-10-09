@@ -6,33 +6,46 @@ This table favors the shortcuts used by these dotfiles and Herdr defaults. It is
 
 | Tool | Shortcut | Action |
 |------|----------|--------|
-| Ghostty | `Command+Shift+D` | New split down. |
-| Ghostty | `Command+Shift+Z` | Toggle split zoom. |
-| Ghostty | `Ctrl+Option+Left/Right/Up/Down` | Resize Ghostty split. |
-| Ghostty | `Ctrl+Option+=` | Equalize Ghostty splits. |
+| Ghostty | `Command+Shift+,` | Reload the active configuration. |
+| Ghostty | `Command+K` | Clear the terminal screen. |
+| Ghostty | `Shift+Enter` | Send an escaped newline for compatible TUIs. |
+| Ghostty | `Option+Left/Right` | Pass word navigation through to the shell. |
+| Ghostty | `Option+S` | Write the visible screen to a file and paste its path. |
+| Ghostty | `Ctrl+Shift+S` | Write full scrollback to a file and paste its path. |
+| Ghostty | `Command+Shift+D` | New outer split down. |
+| Ghostty | `Command+Shift+Z` | Toggle outer split zoom. |
+| Ghostty | `Ctrl+Option+Left/Right/Up/Down` | Resize outer Ghostty split. |
+| Ghostty | `Ctrl+Option+=` | Equalize outer Ghostty splits. |
 | Ghostty | select text | Copy selection to clipboard. |
 | Ghostty | right click | Paste. |
-| Herdr | `Ctrl+B ?` | Help. |
-| Herdr | `Ctrl+B q` | Detach client. |
-| Herdr | `Ctrl+B w` | Workspace picker. |
-| Herdr | `Ctrl+B Shift+N` | New workspace. |
-| Herdr | `Ctrl+B Shift+W` | Rename workspace. |
-| Herdr | `Ctrl+B Shift+D` | Close workspace. |
-| Herdr | `Ctrl+B c` | New tab. |
-| Herdr | `Ctrl+B Shift+T` | Rename tab. |
-| Herdr | `Ctrl+B p` / `Ctrl+B n` | Previous / next tab. |
-| Herdr | `Ctrl+B 1..9` | Switch tab. |
-| Herdr | `Ctrl+B Shift+X` | Close tab. |
-| Herdr | `Ctrl+B h/j/k/l` | Focus pane left/down/up/right. |
-| Herdr | `Ctrl+B Tab` | Cycle pane next. |
-| Herdr | `Ctrl+B Shift+Tab` | Cycle pane previous. |
-| Herdr | `Ctrl+B v` | Split pane vertically. |
-| Herdr | `Ctrl+B -` | Split pane horizontally. |
-| Herdr | `Ctrl+B x` | Close pane. |
-| Herdr | `Ctrl+B z` | Zoom pane. |
-| Herdr | `Ctrl+B Shift+P` | Rename pane. |
-| Herdr | `Ctrl+B r` | Resize mode. |
-| Herdr | `Ctrl+B b` | Toggle sidebar. |
+| tmux (fallback) | `Ctrl+A \|` | New split right. |
+| tmux (fallback) | `Ctrl+A -` | New split down. |
+| tmux | `Ctrl+A h/j/k/l` | Focus pane left/down/up/right. |
+| tmux | `Ctrl+A H/J/K/L` | Resize pane left/down/up/right. |
+| tmux | `Option+G` | Toggle scratch popup. |
+| Herdr | `Ctrl+A ?` | Help. |
+| Herdr | `Ctrl+A Option+K/J` | Focus the previous / next agent. |
+| Herdr | `Ctrl+A Ctrl+1..9` | Focus agent 1–9. |
+| Herdr | `Ctrl+A q` | Detach client. |
+| Herdr | `Ctrl+A w` | Workspace picker. |
+| Herdr | `Ctrl+A Shift+N` | New workspace. |
+| Herdr | `Ctrl+A Shift+W` | Rename workspace. |
+| Herdr | `Ctrl+A Shift+D` | Close workspace. |
+| Herdr | `Ctrl+A c` | New tab. |
+| Herdr | `Ctrl+A Shift+T` | Rename tab. |
+| Herdr | `Ctrl+A p` / `Ctrl+A n` | Previous / next tab. |
+| Herdr | `Ctrl+A 1..9` | Switch tab. |
+| Herdr | `Ctrl+A Shift+X` | Close tab. |
+| Herdr | `Ctrl+A h/j/k/l` | Focus pane left/down/up/right. |
+| Herdr | `Ctrl+A Tab` | Cycle pane next. |
+| Herdr | `Ctrl+A Shift+Tab` | Cycle pane previous. |
+| Herdr | `Ctrl+A v` | Split pane vertically. |
+| Herdr | `Ctrl+A -` | Split pane horizontally. |
+| Herdr | `Ctrl+A x` | Close pane. |
+| Herdr | `Ctrl+A z` | Zoom pane. |
+| Herdr | `Ctrl+A Shift+P` | Rename pane. |
+| Herdr | `Ctrl+A r` | Resize mode. |
+| Herdr | `Ctrl+A b` | Toggle sidebar. |
 | Herdr remote | `Ctrl+V` | Remote image paste. |
 
 ## AI CLIs
@@ -52,12 +65,17 @@ Claude Code and OpenCode keybindings are mostly app-native. This repo adds launc
 
 | Tool | Shortcut | Action |
 |------|----------|--------|
-| skhd/yabai | `Option+Command+Left/Down/Up/Right` | Focus window west/south/north/east. |
-| skhd/yabai | `Option+Command+Shift+Left/Down/Up/Right` | Warp or swap window in that direction. |
+| skhd/yabai | `Option+Command+H/J/K/L` or arrows | Focus window west/south/north/east. |
+| skhd/yabai | `Option+Command+Shift+H/J/K/L` or arrows | Warp or swap window in that direction. |
 | skhd/yabai | `Option+Command+1..9` | Focus space. |
 | skhd/yabai | `Option+Command+Shift+1..9` | Move window to space and follow it. |
 | skhd/yabai | `Option+Command+F` | Toggle float. |
+| skhd/yabai | `Option+Command+Shift+F` | Toggle zoom fullscreen. |
 | skhd/yabai | `Option+Command+B` | Balance layout. |
+| skhd/yabai | `Option+Command+O` | Rotate layout 90 degrees. |
+| skhd/yabai | `Option+Command+X/Y` | Mirror layout horizontally/vertically. |
+| skhd/yabai | `Option+Command+E` | Toggle focused-window split direction. |
+| skhd/yabai | `Option+Command+Tab` | Focus the recent space. |
 | skhd/yabai | `Option+Command+R` | Reset zero gap, balance, and reload SketchyBar. |
 | skhd/yabai | `Option+Command+/` | Show shortcuts help. |
 | skhd/yabai | `Option+Command+Shift+R` | Reload yabai, skhd, and SketchyBar. |
@@ -71,9 +89,10 @@ Claude Code and OpenCode keybindings are mostly app-native. This repo adds launc
 
 | Area | Note |
 |------|------|
-| Herdr prefix | `Ctrl+B` avoids most shell and app shortcuts while staying tmux-like. |
+| Multiplexer prefix | tmux and Herdr intentionally share `Ctrl+A`; only the foreground multiplexer receives it. |
 | macOS leader | `Option+Command` is reserved for windowing in this setup; avoid assigning it in Raycast. |
-| Ghostty vs Herdr splits | Use Herdr splits for persistent work inside a session; use Ghostty splits for outer-terminal layout. |
+| Ghostty vs multiplexer splits | Use Herdr/tmux splits for persistent work; use Ghostty splits only for outer-terminal layout. |
+| Adapted parity | Alan's HJKL actions are aliases under the existing leader; arrow shortcuts and spaces 1–9 remain available. |
 | Mouse | Herdr captures mouse by default; prefix keys are more reliable over remote sessions. |
 
 ## Related Docs

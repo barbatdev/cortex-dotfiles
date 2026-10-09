@@ -1,3 +1,10 @@
+onboarding = false
+[keys]
+prefix = "ctrl+a"
+previous_agent = "prefix+alt+k"
+next_agent = "prefix+alt+j"
+focus_agent = "prefix+ctrl+1..9"
+
 [ui.toast]
 delivery = "terminal"
 
@@ -12,6 +19,7 @@ pane_borders = true
 pane_gaps = true
 accent = "#7127FF"
 
+status_indicators = "symbols"
 [terminal]
 new_cwd = "follow"
 
@@ -46,3 +54,6 @@ yellow = "#FFC857"
 mauve = "#C7A6FF"
 teal = "#66E6E6"
 peach = "#FFC857"
+
+[ui.sound]
+enabled = true

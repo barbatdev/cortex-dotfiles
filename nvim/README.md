@@ -1,87 +1,103 @@
 # Neovim
 
-Estado documentado el 2026-06-19. La configuración activa vive por ahora en
-`~/.config/nvim` y parte de una copia directa de `Gentleman.Dots`.
+> **Estado actual observado (2026-09-24):** La configuración activa vive en
+> `~/.config/nvim`. Es un directorio regular administrado por el host, no un
+> symlink de este repo. Esta nota documenta esa observación; no convierte la
+> configuración del host en source of truth versionado.
 
-## Base
+## Estado visual auditado
 
-- Repo upstream: `https://github.com/Gentleman-Programming/Gentleman.Dots`
-- Subdirectorio usado: `GentlemanNvim/nvim`
-- Config local activa: `~/.config/nvim`
+- El plugin spec del host selecciona/configura `gentleman-kanagawa-blur`
+  (Gentleman Kanagawa Blur); no se verificó `:colorscheme` en runtime.
+- El plugin spec de Lualine referencia el mismo theme en
+  `~/.config/nvim/lua/plugins/ui.lua`.
+- La selección del colorscheme está en
+  `~/.config/nvim/lua/plugins/colorscheme.lua`.
+- En la configuración auditada del host no se encontró un overlay de highlights
+  RefactorIA; no se confirmó su activación en runtime.
+- Esta revisión no verificó diagnostics, floats, statusline ni todos los
+  plugins o grupos de highlights. Una captura legible no prueba esos detalles.
+
+### Muestra de paleta del default instalado
+
+| Rol | Valor observado | Nota |
+|-----|------------------|------|
+| Fondo base | Transparente, dark | El fondo real depende del terminal y de la ventana; no se afirma un fondo opaco. |
+| Texto principal | `#F3F6F9` | Foreground claro del default. |
+| Texto muted | `#5C6170` | Texto secundario/apagado. |
+| Surface 1 | `#191E28` | Superficie oscura. |
+| Surface 2 | `#232A40` | Superficie elevada. |
+| Surface 3 | `#313342` | Superficie de mayor contraste. |
+| Surface 4 | `#27345C` | Superficie/acento profundo. |
+| Acento gold | `#E0C15A` | Acento del theme, no token oficial de RefactorIA. |
+| Acento green | `#B7CC85` | Acento semántico del theme. |
+| Acento blue | `#7FB4CA` | Acento semántico del theme. |
+| Acento magenta | `#FF8DD7` | Acento sintáctico del theme. |
+
+Estos valores son una muestra del default instalado, no un inventario de cada
+highlight. La transparencia puede cambiar la apariencia percibida sin que el
+theme cambie.
+
+## Origen y backups
+
+- Origen histórico: `https://github.com/Gentleman-Programming/Gentleman.Dots`
+- Subdirectorio usado en esa migración: `GentlemanNvim/nvim`
 - Backup previo a la migración: `~/.config/nvim.backup-before-gentleman-20260619-183411`
 - Backup LazyVim anterior: `~/.config/nvim.lazyvim-backup-20260619`
 
-## Decisiones
+## Assets relacionados con la migración histórica
 
-- Mantener la config de Gentleman como base estable, evitando mezclar piezas sueltas.
+- Logo dashboard: `assets/refactoria-braille.txt`
+- Fuente custom: `fonts/FiraCodeNerdFontMonoBeard-Reg.ttf`
+- Script de regeneración: `fonts/patch_beard.py`
+
+Estos assets pertenecen al trabajo de branding local. Su presencia no implica
+que Neovim los use hoy ni que exista un overlay RefactorIA activo.
+
+## Notas históricas no revalidadas
+
+La siguiente información se conserva como contexto de una migración previa. No
+debe leerse como estado actual del host ni como evidencia contra el theme
+observado arriba:
+
+- Mantener la configuración de Gentleman como base estable, evitando mezclar
+  piezas sueltas.
 - Mantener Oil como explorer principal en `-`.
 - Mantener Neo-tree como explorer lateral en `<leader>e`.
 - Mantener Oil flotante en `<leader>E`.
 - Desactivar `mini.files` para evitar un tercer modelo de explorer.
-- Usar el logo RefactorIA real del repo, no el mostacho upstream.
-- Aplicar un overlay visual InnIT/RefactorIA sobre el theme upstream, en vez de reemplazar todo el colorscheme.
-- Usar como fuente cromática canónica los tokens de un proyecto web local configurado por el usuario.
-- Usar `FiraCode Nerd Font Mono Beard` como fuente GUI.
-- Hacer que `<leader>bq` cierre el buffer actual con `Snacks.bufdelete()`; no usar `edit #` porque puede saltar a buffers temporales en `/private/var/folders`.
-- Pintar explícitamente `render-markdown.nvim` con la paleta InnIT; los grupos base no alcanzan porque Markdown usa highlights propios.
-- Desactivar reglas ruidosas de markdownlint (`MD013`, `MD060`) para docs/runbooks largos.
-- Habilitar ayudas de aprendizaje como `precognition.nvim`; todo lo que muestre movimientos/contexto útil es deseable en esta etapa.
+- Hacer que `<leader>bq` cierre el buffer actual con `Snacks.bufdelete()`;
+  evitar `edit #` porque puede saltar a buffers temporales en
+  `/private/var/folders`.
+- Pintar explícitamente `render-markdown.nvim` y desactivar `MD013`/`MD060`
+  para documentación extensa.
+- Habilitar ayudas de aprendizaje como `precognition.nvim`.
+- Usar el logo RefactorIA y `FiraCode Nerd Font Mono Beard` en la GUI era una
+  intención de esa migración; no se afirma como aplicada al estado actual.
 
-## Assets
+## Archivos mencionados por la nota histórica
 
-- Logo dashboard: `dotfiles/assets/refactoria-braille.txt`
-- Fuente custom: `dotfiles/fonts/FiraCodeNerdFontMonoBeard-Reg.ttf`
-- Script de regeneración: `dotfiles/fonts/patch_beard.py`
+Los paths siguientes se conservan como referencias de trabajo anteriores; su
+contenido actual no fue revalidado en esta corrección documental:
 
-## Paleta usada para el overlay
+| Path | Nota histórica |
+|------|----------------|
+| `lua/plugins/ui.lua` | Header del dashboard con el Braille de RefactorIA. |
+| `lua/plugins/markdown.lua` | Configuración de `render-markdown.nvim` y `markdownlint-cli2`. |
+| `lua/plugins/precognition.lua` | Hints de movimientos Vim y sus keymaps. |
+| `markdownlint-cli2.yaml` | Desactivación de `MD013` y `MD060`. |
+| `lua/config/autocmds.lua` | Sin lógica custom de highlights. |
+| `lua/config/options.lua` | Fuente GUI `FiraCode Nerd Font Mono Beard`. |
+| `lua/config/lazy.lua` | Desactivación de `lazyvim.plugins.extras.editor.mini-files`. |
+| `lua/config/keymaps.lua` | Alias `<leader>bq` para `Snacks.bufdelete()`. |
 
-Derivada de los tokens CSS del proyecto web local configurado por el usuario.
+No se documenta ningún plugin local de theme no verificado: la referencia
+anterior a un nombre-placeholder no correspondía a un archivo observado.
 
-| Uso | Color |
-|-----|-------|
-| Fondo base | `#0F1419` |
-| Surface | `#1C2128` |
-| Surface elevada / cursor line | `#2D333B` |
-| Texto principal | `#F6F8FA` |
-| Texto secundario | `#8B949E` |
-| Texto muted/comment | `#57606A` |
-| CTA azul InnIT | `#0054ff` |
-| Azul hover | `#1a68ff` |
-| Azul informativo | `#58A6FF` |
-| Verde engineering | `#3FB950` |
-| Verde hover | `#4CC55E` |
-| Warning | `#D29922` |
-| Error | `#F85149` |
-| Purple sintaxis | `#A371F7` |
+## Keymaps relevantes históricos (no revalidados)
 
-## Archivos modificados en `~/.config/nvim`
-
-- `lua/plugins/ui.lua`
-  - Header del dashboard reemplazado por `assets/refactoria-braille.txt`.
-- `lua/plugins/<local-theme>.lua`
-  - Overlay de highlights InnIT/RefactorIA cargado como plugin spec de Lazy.
-  - Incluye grupos base, diagnostics y grupos `RenderMarkdown*`.
-- `lua/plugins/markdown.lua`
-  - Config de `render-markdown.nvim` y override de `markdownlint-cli2`.
-- `lua/plugins/precognition.lua`
-  - Hints de movimientos Vim activos por defecto.
-  - `<leader>up` alterna hints automáticos.
-  - `<leader>uP` muestra hints puntuales con `peek`.
-- `markdownlint-cli2.yaml`
-  - Desactiva `MD013` y `MD060`.
-- `lua/config/autocmds.lua`
-  - Queda sin lógica custom; el overlay vive en un plugin local para asegurar orden de carga.
-- `lua/config/options.lua`
-  - `vim.opt.guifont = "FiraCode Nerd Font Mono Beard:h14"`.
-- `lua/config/lazy.lua`
-  - `lazyvim.plugins.extras.editor.mini-files` comentado/desactivado.
-- `lua/config/keymaps.lua`
-  - `<leader>bq` como alias seguro de `Snacks.bufdelete()`.
-
-## Estado de keymaps relevantes
-
-| Keymap | Acción |
-|--------|--------|
+| Keymap | Acción documentada históricamente |
+|--------|-----------------------------------|
 | `-` | Abrir Oil normal |
 | `<leader>E` | Abrir Oil flotante |
 | `<leader>e` | Abrir Neo-tree |
@@ -92,15 +108,23 @@ Derivada de los tokens CSS del proyecto web local configurado por el usuario.
 | `<leader>up` | Alternar Precognition hints |
 | `<leader>uP` | Mostrar Precognition hints puntuales |
 
-## Validación manual
+## Validación acotada y límites
+
+Esta corrección es documental y no modificó el host. La evidencia disponible
+incluye un arranque headless limpio, ejecutado por separado, y la apertura de un
+buffer real por el usuario; esos checks sólo cubren carga y uso básico.
+
+Para repetir el chequeo acotado de carga:
 
 ```bash
 nvim --headless +'lua vim.defer_fn(function() print(vim.api.nvim_exec2("messages", { output = true }).output); vim.cmd("qa") end, 1500)'
 ```
 
-Resultado esperado: sin errores en `:messages`.
+No se hizo una auditoría completa de diagnostics, floats, statusline, plugins ni
+todos los highlights. Esos estados siguen sin quedar afirmados por esta nota.
 
 ## Pendiente opcional
 
-Versionar la config completa en `dotfiles/nvim/` y hacer que `install.sh` cree el symlink a
-`~/.config/nvim`, siguiendo el patrón del resto de herramientas.
+Versionar la configuración completa en `dotfiles/nvim/` y decidir si debe
+crearse un symlink a `~/.config/nvim` sigue siendo un trabajo separado. Este
+work unit no cambia el host ni `install.sh`.

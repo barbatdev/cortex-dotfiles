@@ -8,7 +8,7 @@ This workflow keeps terminal state persistent across local and remote work while
 2. Split work by Herdr workspace, tab, and pane instead of opening anonymous terminal windows.
 3. Run `cc` or `oc` inside the relevant pane; Herdr provides persistence and reattach.
 4. Use `whereami` when context is unclear.
-5. Detach with `Ctrl+B q` and reattach with the same helper or `herdr --session <name>`.
+5. Detach with `Ctrl+A q` and reattach with the same helper or `herdr --session <name>`.
 
 ## Local And Remote Modes
 
@@ -71,13 +71,13 @@ Herdr captures mouse input by default, which is useful for focusing panes, using
 | Pane splits, close, zoom, rename | Prefix keys |
 | App-specific mouse inside lazygit/btop/etc. | Let the app request mouse support |
 
-The default Herdr prefix is `Ctrl+B`. See [keymaps](keymaps.md) for the practical table.
+The configured Herdr prefix is `Ctrl+A`, matching tmux. Only the foreground multiplexer receives it. See [keymaps](keymaps.md) for the practical table.
 
 ## Detach And Reattach
 
 | Action | Command |
 |--------|---------|
-| Detach current Herdr client | `Ctrl+B q` |
+| Detach current Herdr client | `Ctrl+A q` |
 | Reattach main local repo session | `hhere [path]` |
 | Reattach role session | `hfocus [path]`, `hside [path]`, `hscratch [path]` |
 | Reattach explicit session | `herdr --session <name>` or `herdr session attach <name>` |

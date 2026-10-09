@@ -42,15 +42,20 @@ if [ "$DISPLAY_COUNT" -ge 4 ]; then
     LG_DRAWING=on
     FOUR_K_DISPLAY=4
 fi
-BG=0xcc0b1118
-PILL=0xdd101820
-PILL_SOFT=0xaa18222c
-TEXT=0xfff8fafc
-MUTED=0xff94a3b8
-INNIT_GREEN=0xff3fb950
-INNIT_BLUE=0xff38bdf8
-WARN=0xfff59e0b
-DANGER=0xffef4444
+# RefactorIA official dark surfaces and brand accent.
+BG=0xff0b0714
+PILL=0xdd17102a
+PILL_SOFT=0xaa2c2144
+TEXT=0xffffffff
+MUTED=0xffebebeb
+BRAND=0xffffde70
+BRAND_TILE=0x00000000
+SPACE_BORDER=0xffa477ff
+NORMAL=0xfff2effa
+INFO=0xff8cc8ff
+RESOURCE=0xff8cc8ff
+WARN=0xffffc857
+DANGER=0xffff6b8a
 
 sketchybar --remove '/.*/'
 sketchybar --add event workspace_change
@@ -90,10 +95,11 @@ sketchybar --add item brand left \
     --set brand \
         display="$MAC_DISPLAY" \
         icon="󰼀" \
-        icon.font="$FONT:Regular:18.0" \
-        icon.color="$INNIT_GREEN" \
+        icon.font="$FONT:Regular:24.0" \
+        icon.color="$BRAND" \
         label.drawing=off \
-        background.color="$PILL" \
+        background.color="$BRAND_TILE" \
+        background.height=28 \
         click_script="open '$HOME/dev'"
 
 sketchybar --add item brand.lg left \
@@ -101,10 +107,11 @@ sketchybar --add item brand.lg left \
         display="$LG_DISPLAY" \
         drawing="$LG_DRAWING" \
         icon="󰼀" \
-        icon.font="$FONT:Regular:18.0" \
-        icon.color="$INNIT_GREEN" \
+        icon.font="$FONT:Regular:24.0" \
+        icon.color="$BRAND" \
         label.drawing=off \
-        background.color="$PILL" \
+        background.color="$BRAND_TILE" \
+        background.height=28 \
         click_script="open '$HOME/dev'"
 
 sketchybar --add item brand.vertical left \
@@ -112,10 +119,11 @@ sketchybar --add item brand.vertical left \
         display="$VIEWSONIC_DISPLAY" \
         drawing="$VIEWSONIC_DRAWING" \
         icon="󰼀" \
-        icon.font="$FONT:Regular:18.0" \
-        icon.color="$INNIT_GREEN" \
+        icon.font="$FONT:Regular:24.0" \
+        icon.color="$BRAND" \
         label.drawing=off \
-        background.color="$PILL" \
+        background.color="$BRAND_TILE" \
+        background.height=28 \
         click_script="open '$HOME/dev'"
 
 sketchybar --add item brand.4k left \
@@ -123,10 +131,11 @@ sketchybar --add item brand.4k left \
         display="$FOUR_K_DISPLAY" \
         drawing="$FOUR_K_DRAWING" \
         icon="󰼀" \
-        icon.font="$FONT:Regular:18.0" \
-        icon.color="$INNIT_GREEN" \
+        icon.font="$FONT:Regular:24.0" \
+        icon.color="$BRAND" \
         label.drawing=off \
-        background.color="$PILL" \
+        background.color="$BRAND_TILE" \
+        background.height=28 \
         click_script="open '$HOME/dev'"
 
 for sid in 1 2 3 4 5 6 7 8 9 10; do
@@ -138,6 +147,8 @@ for sid in 1 2 3 4 5 6 7 8 9 10; do
             icon.font="$FONT:Bold:12.0" \
             icon.color="$MUTED" \
             background.color="$PILL_SOFT" \
+            background.border_color="$SPACE_BORDER" \
+            background.border_width=0 \
             background.height=24 \
             background.corner_radius=7 \
             icon.padding_left=8 \
@@ -153,7 +164,7 @@ sketchybar --add item front_app left \
     --set front_app \
         display="$MAC_DISPLAY" \
         icon="󰣆" \
-        icon.color="$INNIT_BLUE" \
+        icon.color="$INFO" \
         label.color="$MUTED" \
         label.max_chars=28 \
         background.color=0x00000000 \
@@ -165,7 +176,7 @@ sketchybar --add item front_app.lg left \
         display="$LG_DISPLAY" \
         drawing="$LG_DRAWING" \
         icon="󰣆" \
-        icon.color="$INNIT_BLUE" \
+        icon.color="$INFO" \
         label.color="$MUTED" \
         label.max_chars=24 \
         background.color=0x00000000 \
@@ -177,7 +188,7 @@ sketchybar --add item front_app.vertical left \
         display="$VIEWSONIC_DISPLAY" \
         drawing="$VIEWSONIC_DRAWING" \
         icon="󰣆" \
-        icon.color="$INNIT_BLUE" \
+        icon.color="$INFO" \
         label.color="$MUTED" \
         label.max_chars=18 \
         background.color=0x00000000 \
@@ -189,7 +200,7 @@ sketchybar --add item front_app.4k left \
         display="$FOUR_K_DISPLAY" \
         drawing="$FOUR_K_DRAWING" \
         icon="󰣆" \
-        icon.color="$INNIT_BLUE" \
+        icon.color="$INFO" \
         label.color="$MUTED" \
         label.max_chars=24 \
         background.color=0x00000000 \
@@ -202,7 +213,7 @@ sketchybar --add item clock.lg right \
         drawing="$LG_DRAWING" \
         icon="󰃭" \
         icon.y_offset=1 \
-        icon.color="$INNIT_GREEN" \
+        icon.color="$NORMAL" \
         label.color="$TEXT" \
         update_freq=10 \
         script="$PLUGIN_DIR/date_es.sh" \
@@ -214,7 +225,7 @@ sketchybar --add item clock.vertical right \
         drawing="$VIEWSONIC_DRAWING" \
         icon="󰃭" \
         icon.y_offset=1 \
-        icon.color="$INNIT_GREEN" \
+        icon.color="$NORMAL" \
         label.color="$TEXT" \
         update_freq=10 \
         script="$PLUGIN_DIR/date_es.sh" \
@@ -226,7 +237,7 @@ sketchybar --add item clock.4k right \
         drawing="$FOUR_K_DRAWING" \
         icon="󰃭" \
         icon.y_offset=1 \
-        icon.color="$INNIT_GREEN" \
+        icon.color="$NORMAL" \
         label.color="$TEXT" \
         update_freq=10 \
         script="$PLUGIN_DIR/date_es.sh" \
@@ -237,7 +248,7 @@ sketchybar --add item cpu.lg right \
         display="$LG_DISPLAY" \
         drawing="$LG_DRAWING" \
         icon="CPU" \
-        icon.color="$INNIT_BLUE" \
+        icon.color="$RESOURCE" \
         label.color="$TEXT" \
         update_freq=5 \
         script="$PLUGIN_DIR/cpu.sh"
@@ -247,7 +258,7 @@ sketchybar --add item cpu.vertical right \
         display="$VIEWSONIC_DISPLAY" \
         drawing="$VIEWSONIC_DRAWING" \
         icon="CPU" \
-        icon.color="$INNIT_BLUE" \
+        icon.color="$RESOURCE" \
         label.color="$TEXT" \
         update_freq=5 \
         script="$PLUGIN_DIR/cpu.sh"
@@ -258,7 +269,7 @@ sketchybar --add item cpu.4k right \
         display="$FOUR_K_DISPLAY" \
         drawing="$FOUR_K_DRAWING" \
         icon="CPU" \
-        icon.color="$INNIT_BLUE" \
+        icon.color="$RESOURCE" \
         label.color="$TEXT" \
         update_freq=5 \
         script="$PLUGIN_DIR/cpu.sh"
@@ -268,7 +279,7 @@ sketchybar --add item memory.lg right \
         display="$LG_DISPLAY" \
         drawing="$LG_DRAWING" \
         icon="RAM" \
-        icon.color="$INNIT_BLUE" \
+        icon.color="$RESOURCE" \
         label.color="$TEXT" \
         update_freq=10 \
         script="$PLUGIN_DIR/memory.sh"
@@ -278,7 +289,7 @@ sketchybar --add item memory.vertical right \
         display="$VIEWSONIC_DISPLAY" \
         drawing="$VIEWSONIC_DRAWING" \
         icon="RAM" \
-        icon.color="$INNIT_BLUE" \
+        icon.color="$RESOURCE" \
         label.color="$TEXT" \
         update_freq=10 \
         script="$PLUGIN_DIR/memory.sh"
@@ -289,7 +300,7 @@ sketchybar --add item memory.4k right \
         display="$FOUR_K_DISPLAY" \
         drawing="$FOUR_K_DRAWING" \
         icon="RAM" \
-        icon.color="$INNIT_BLUE" \
+        icon.color="$RESOURCE" \
         label.color="$TEXT" \
         update_freq=10 \
         script="$PLUGIN_DIR/memory.sh"
@@ -298,7 +309,7 @@ sketchybar --add item battery right \
     --set battery \
         display="$MAC_DISPLAY" \
         drawing="$MAC_LIGHT_DRAWING" \
-        icon.color="$MUTED" \
+        icon.color="$NORMAL" \
         icon.y_offset=1 \
         label.color="$TEXT" \
         update_freq=30 \
@@ -312,7 +323,7 @@ sketchybar --add item clock right \
         drawing="$MAC_LIGHT_DRAWING" \
         icon="󰃭" \
         icon.y_offset=1 \
-        icon.color="$INNIT_GREEN" \
+        icon.color="$NORMAL" \
         label.color="$TEXT" \
         update_freq=10 \
         script="$PLUGIN_DIR/date_es.sh" \
@@ -322,7 +333,7 @@ sketchybar --add item network right \
     --set network \
         display="$MAC_DISPLAY" \
         drawing="$MAC_LIGHT_DRAWING" \
-        icon.color="$MUTED" \
+        icon.color="$NORMAL" \
         icon.y_offset=1 \
         label.color="$TEXT" \
         update_freq=30 \
@@ -332,7 +343,7 @@ sketchybar --add item volume right \
     --set volume \
         display="$MAC_DISPLAY" \
         drawing="$MAC_LIGHT_DRAWING" \
-        icon.color="$MUTED" \
+        icon.color="$NORMAL" \
         icon.y_offset=1 \
         label.color="$TEXT" \
         update_freq=5 \
@@ -347,7 +358,7 @@ sketchybar --add item memory right \
         display="$MAC_DISPLAY" \
         drawing="$MAC_LIGHT_DRAWING" \
         icon="RAM" \
-        icon.color="$INNIT_BLUE" \
+        icon.color="$RESOURCE" \
         label.color="$TEXT" \
         update_freq=10 \
         script="$PLUGIN_DIR/memory.sh"
@@ -359,7 +370,7 @@ sketchybar --add item cpu right \
         display="$MAC_DISPLAY" \
         drawing="$MAC_LIGHT_DRAWING" \
         icon="CPU" \
-        icon.color="$INNIT_BLUE" \
+        icon.color="$RESOURCE" \
         label.color="$TEXT" \
         update_freq=5 \
         script="$PLUGIN_DIR/cpu.sh"

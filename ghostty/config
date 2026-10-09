@@ -3,32 +3,32 @@ font-family = FiraCode Nerd Font Mono Beard
 font-family = FiraCode Nerd Font
 font-size = 14
 
-# Theme: cortex (port de claude/opencode/themes/cortex.json)
-background = #0B0B0A
-foreground = #F8F1E7
-cursor-color = #F97316
-cursor-text = #0B0B0A
-selection-background = #7C2D12
-selection-foreground = #F8F1E7
+# Theme: RefactorIA dark defaults from the official site tokens.
+background = #0B0714
+foreground = #FFFFFF
+cursor-color = #7127FF
+cursor-text = #0B0714
+selection-background = #FFFFFF
+selection-foreground = #0B0714
 
-# Colores ANSI normales
-palette = 0=#0B0B0A
-palette = 1=#F87171
-palette = 2=#10B981
-palette = 3=#FBBF24
-palette = 4=#60A5FA
-palette = 5=#A78BFA
-palette = 6=#2DD4BF
-palette = 7=#F8F1E7
+# ANSI semantic colors are adapted for contrast; they are not RefactorIA brand tokens.
+palette = 0=#0B0714
+palette = 1=#FF6B8A
+palette = 2=#58E6A8
+palette = 3=#FFC857
+palette = 4=#8CC8FF
+palette = 5=#C7A6FF
+palette = 6=#66E6E6
+palette = 7=#FFFFFF
 
-# Colores brillantes
-palette = 8=#7D7468
-palette = 9=#FCA5A5
-palette = 10=#34D399
-palette = 11=#FCD34D
-palette = 12=#93C5FD
-palette = 13=#C4B5FD
-palette = 14=#5EEAD4
+# Bright ANSI variants retain the same semantic roles.
+palette = 8=#8F839D
+palette = 9=#FF9CB0
+palette = 10=#8FF0C3
+palette = 11=#FFD98A
+palette = 12=#B8DDFF
+palette = 13=#E1CFFF
+palette = 14=#A8F2F2
 palette = 15=#FFFFFF
 
 # Transparencia
@@ -59,6 +59,14 @@ macos-option-as-alt = left
 scrollback-limit = 10000
 copy-on-select = clipboard
 right-click-action = paste
+
+# Alan-adapted input shortcuts. Outer split bindings below stay available.
+keybind = alt+left=unbind
+keybind = alt+right=unbind
+keybind = cmd+k=clear_screen
+keybind = shift+enter=csi:13;2u
+keybind = alt+s=write_screen_file:paste
+keybind = ctrl+shift+s=write_scrollback_file:paste
 
 # Splits
 keybind = cmd+shift+d=new_split:down

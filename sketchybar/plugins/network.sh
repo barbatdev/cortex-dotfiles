@@ -1,6 +1,11 @@
 #!/bin/bash
 
-color=0xff3fb950
+# RefactorIA semantic colors; connected network status is neutral, disconnected stays warning.
+TEXT=0xffffffff
+NORMAL=0xfff2effa
+WARNING=0xffffc857
+
+color=$NORMAL
 icon="󰈀"
 label="net"
 
@@ -15,14 +20,14 @@ else
     if [[ "$service" == en* ]]; then
         icon="󰈀"
         label="$service"
-        color=0xff94a3b8
+        color=$NORMAL
     else
         wifi_device=$(networksetup -listallhardwareports 2>/dev/null | awk '/Wi-Fi|AirPort/ {getline; print $2; exit}')
         ssid=$(networksetup -getairportnetwork "$wifi_device" 2>/dev/null | sed 's/^Current Wi-Fi Network: //')
         icon="󰖩"
         label="${ssid:-offline}"
-        color=0xfff59e0b
+        color=$WARNING
     fi
 fi
 
-sketchybar --set "$NAME" icon="$icon" label="$label" icon.color="$color" label.max_chars=14
+sketchybar --set "$NAME" icon="$icon" label="$label" icon.color="$color" label.color="$TEXT" label.max_chars=14

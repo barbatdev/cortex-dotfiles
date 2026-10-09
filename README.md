@@ -1,6 +1,6 @@
 # dotfiles
 
-Configuración local extraída de `cortex`: terminal, shell, prompt, helpers de AI CLI y herramientas de desarrollo para macOS, con un primer perfil Home Manager para Linux headless.
+Configuración local extraida de `cortex`: terminal, shell, prompt, helpers de AI CLI y herramientas de desarrollo para macOS.
 
 ## CI
 
@@ -10,12 +10,12 @@ GitHub Actions ejecuta un smoke check mínimo en pull requests y pushes a `main`
 
 - **Terminal**: [Ghostty](https://ghostty.org/) y Alacritty
 - **Shell**: Zsh nativo de macOS + profile Fish core opt-in (W2)
-- **Prompt**: [Starship](https://starship.rs/) — tema Gruvbox Dark
+- **Prompt**: [Starship](https://starship.rs/) — prompt local RefactorIA aprobado
 - **Multiplexor**: tmux + helpers de sesión
-- **Barra macOS**: [SketchyBar](https://github.com/FelixKratz/SketchyBar) con tema Gruvbox
+- **Barra macOS**: [SketchyBar](https://github.com/FelixKratz/SketchyBar) con base oscura RefactorIA y acentos semánticos adaptados
 - **Window manager macOS**: [yabai](https://github.com/koekeishiya/yabai) + [skhd](https://github.com/koekeishiya/skhd) opcional y gradual
 - **Keyboard remaps macOS**: [Karabiner-Elements](https://karabiner-elements.pqrs.org/) con profile `cortex`
-- **Editor terminal**: Neovim basado en LazyVim/Gentleman.Dots con overlay RefactorIA
+- **Editor terminal**: Neovim basado en LazyVim/Gentleman.Dots; la config host selecciona `gentleman-kanagawa-blur` y no se encontró un overlay RefactorIA en la auditoría
 - **Ls**: [eza](https://github.com/eza-community/eza)
 - **AI CLI UX**: Claude Code statusline, OpenCode helpers y cmux local/remoto
 - **Workflow docs**: [cmux workflow](docs/cmux-workflow.md), [Herdr workflow](docs/herdr-workflow.md) y [keymaps prácticos](docs/keymaps.md)
@@ -50,56 +50,70 @@ El instalador macOS:
 1. Instala dependencias via Homebrew (cmux, starship, tmux, lazygit, neovim, eza, sketchybar, yabai, skhd, Karabiner-Elements, FiraCode Nerd Font)
 2. Hace backup de configs existentes con timestamp
 3. Crea symlinks de los dotfiles y guardrails globales (`.npmrc`, `pnpm/rc`, `.bunfig.toml`, `uv.toml`)
-4. Intenta seleccionar el profile `cortex` de Karabiner si `karabiner_cli` está disponible
-5. Intenta arrancar/recargar `sketchybar`, `yabai` y `skhd` sin cortar la instalación si macOS requiere permisos
-6. Crea `local/env.zsh` desde el template
+4. Instala los themes y launchers Barbatdev/RefactorIA sin activarlos
+5. Intenta seleccionar el profile `cortex` de Karabiner si `karabiner_cli` está disponible
+6. Intenta arrancar/recargar `sketchybar`, `yabai` y `skhd` sin cortar la instalación si macOS requiere permisos
+7. Crea `local/env.zsh` desde el template
 
-`install.sh` todavía no gestiona `bin/`. Para habilitar `gs`, enlazalo manualmente una vez:
+## Perfiles visuales opt-in
+
+`./install.sh` instala estos assets mediante symlinks individuales. No cambia el theme activo de Pi, Herdr, Fish o Ghostty; tampoco modifica Starship ni las variables universales de Fish.
+
+| Comando | Resultado |
+| --- | --- |
+| `hbarbatdev` | Abre un Herdr Barbatdev con config y sockets privados |
+| `hrefactoria` | Abre un Herdr RefactorIA con config y sockets privados |
+| `gbarbatdev` | Abre una instancia local y aislada de Ghostty con Barbatdev |
+| `grefactoria` | Abre una instancia local y aislada de Ghostty con RefactorIA |
+| `source ~/.config/fish/themes/barbatdev.fish` | Aplica Barbatdev sólo a la sesión Fish actual |
+| `source ~/.config/fish/themes/refactoria.fish` | Aplica RefactorIA sólo a la sesión Fish actual |
+
+Los launchers `g*` usan una instancia nueva de Ghostty, heredan la config base explícitamente antes del overlay visual y esperan hasta que esa instancia se cierre para poder limpiar su config temporal. Los launchers `h*` requieren ejecutarse desde una shell externa a Herdr; una invocación realmente anidada se rechaza para proteger el workspace activo.
+
+## Pilotos visuales locales aprobados
+
+Los launchers y themes Barbatdev/RefactorIA de esta sección son pilotos locales aprobados y opt-in. No deben confundirse con los pilotos visuales aprobados para Starship (prompt RefactorIA) y SketchyBar (barra RefactorIA con acentos semánticos adaptados).
+
+- **Fish**: el welcome/help automático existe como dos copias regulares locales del host (`fish_greeting` y `help-profile`). Es una excepción local separada; el theme de sintaxis sigue siendo opt-in por sesión.
+- **agent-dev**: no tiene SketchyBar; la apariencia local de SketchyBar permanece sin cambios.
+
+Este work unit sólo corrige documentación; no cambia visualmente el host.
+
+## Límite Nix + Home Manager (W1)
+
+W1 agrega solamente una base de Flake y Home Manager al repositorio. No instala Nix, no genera `flake.lock`, no activa Home Manager y no cambia ningún archivo del host.
+
+### Verificación segura ahora
 
 ```bash
-ln -sfn "$(pwd)/bin/gs" ~/.local/bin/gs
+bash scripts/nix-preflight.sh
+bash scripts/test-nix-preflight.sh
+bash -n scripts/nix-preflight.sh scripts/test-nix-preflight.sh
 ```
 
-`~/.local/bin` ya está en el `PATH` (ver `zsh/cortex-dotfiles.zsh` y `fish/conf.d/10-core.fish`).
+El preflight es de solo lectura y sin red: usa `--offline` y `--no-write-lock-file`. En una máquina sin Nix termina con estado no cero de forma esperada, pero no cambia el host. Su contrato de readiness exige macOS `arm64` o `x86_64`, un usuario y `HOME` válidos, Nix disponible y los inputs bloqueados ya disponibles localmente. Una configuración Fish existente es una advertencia, no un bloqueo: W1 no la administra.
 
-## Home Manager: límites y validación
+### Ownership y próximo bootstrap
 
-La Flake declara configuraciones puras para macOS y Linux como parte de [cortex-dotfiles #58](https://github.com/barbatdev/cortex-dotfiles/issues/58). Esta unidad no instala Nix, no activa Home Manager, no cambia el login shell y no modifica archivos del host. `flake.lock` ya está versionado y las comprobaciones no lo escriben.
-
-### Camino rápido para Linux headless
-
-Objetivo: Ubuntu 24.04 `x86_64` con el perfil `homeConfigurations.jbarbat-linux`.
-
-1. Use un checkout limpio; no actualice un checkout remoto existente en el lugar.
-2. Instale Nix fuera de este repositorio y verifique sus inputs ya bloqueados localmente.
-3. Ejecute las comprobaciones de solo lectura:
-
-   ```bash
-   bash scripts/nix-preflight.sh
-   bash scripts/test-nix-preflight.sh
-   bash -n scripts/nix-preflight.sh scripts/test-nix-preflight.sh
-   ```
-
-4. Espere la verificación independiente antes de cualquier activación. La instalación, `home-manager switch`, `nix run ... switch`, `chsh` y servicios quedan fuera de esta entrega.
-
-El preflight selecciona solamente `Darwin arm64` o `Linux x86_64`, usa `--offline` y `--no-write-lock-file`. En una máquina sin Nix termina con estado no cero de forma esperada y sin cambios. Rechaza sistemas o arquitecturas no soportados.
-
-### Configuraciones y ownership
-
-| Área | Decisión |
+| Área | Owner en W1 |
 | --- | --- |
-| macOS | `homeConfigurations.jbarbat` conserva `aarch64-darwin`, `/Users/jbarbat` y la compatibilidad existente. |
-| Linux | La configuración pura para Linux es `homeConfigurations.jbarbat-linux`: usa `x86_64-linux`, `/home/jbarbat` y declara solo `fish` y `starship` como runtime mínimo. |
-| Fish compartido | Home Manager mapea cada archivo declarado de forma explícita; no gestiona el directorio completo, historial ni variables Fish. |
-| Override privado | `~/.config/fish/conf.d/99-local.fish` sigue siendo del host, queda fuera del store y no se lee ni crea. |
-| Links no declarados | Los links o archivos previos sin declarar permanecen bajo ownership del host; esta entrega no elimina nada. |
-| Zsh | Permanece disponible como rollback; no se cambia el shell de login. |
+| `/opt/homebrew/bin/fish` | Homebrew actual |
+| Symlinks, servicios y fuentes actuales | `install.sh` |
+| Zsh y Ghostty | Configuración actual, sin cambios |
+| `~/.config/fish/conf.d/99-local.fish` | Host; reservado para secretos/estado privado futuro, no creado ni gestionado por Nix |
+| `flake.nix` y `nix/home.nix` | Base inactiva de Home Manager |
 
-Linux excluye screenshots y clipboard (`_screenshots_*`, `_time_ago`, `ss`, `last`, `ssd`, `imgclip` y `ccclip`). No instala backends gráficos ni gestiona funciones macOS. También están fuera de alcance Yabai, scripting addition/SIP/Dock, skhd, SketchyBar, Karabiner, tmux, Ghostty, herramientas X11/Wayland y flujos de permisos o servicios macOS.
+El bootstrap queda explícitamente diferido a un work unit revisado. Después de instalar Nix por fuera de este repositorio, ese trabajo podrá generar el lock con:
 
-### Rollback
+```bash
+nix --extra-experimental-features 'nix-command flakes' flake lock
+```
 
-Antes de una activación no existe estado de host que revertir. Después de una futura activación, el límite de rollback es el perfil `homeConfigurations.jbarbat-linux` y los archivos Fish explícitamente declarados; Zsh y `99-local.fish` permanecen fuera de ese límite. No elimine overrides privados ni links no declarados.
+Ese comando resuelve inputs y modifica `flake.lock`; por eso no es parte de W1. También quedan diferidos cualquier `home-manager switch`, `nix run ... switch`, instalación de paquetes, cambio de shell, `chsh`, servicios o extensiones Fish fuera del core W2.
+
+La configuración pura de W1 es `homeConfigurations.jbarbat`: declara `username = "jbarbat"`, `homeDirectory = "/Users/jbarbat"` y `system = "aarch64-darwin"` de forma explícita y revisable. Una futura activación debe seleccionar ese target sin derivar valores de la máquina en tiempo de evaluación.
+
+Para volver atrás de W1 basta quitar `flake.nix`, `nix/`, `scripts/nix-preflight.sh`, `scripts/test-nix-preflight.sh` y esta sección. No hay estado de host que revertir porque W1 no activó nada.
 
 ## Fish core profile (W2)
 
@@ -181,19 +195,19 @@ Para validar con agentes y clipboard falsos aislados:
 
 ```
 dotfiles/
-├── bin/
-│   └── gs                    # gentle-shell launcher + worktrees por PR (enlazar manualmente a ~/.local/bin/gs)
-├── claude/                   # Claude Code statusline
+├── claude/                   # Claude Code statusline y themes
 ├── docs/                     # Referencias operativas y keymaps
-├── ghostty/                  # Config Ghostty, muxy legado y shaders
+├── fish/                     # Profile, helpers y themes opt-in
+├── ghostty/                  # Config, perfiles visuales, muxy legado y shaders
+├── herdr/                    # Config base y perfiles visuales
+├── pi/                       # Themes de Pi
 ├── fonts/                    # Fuente RefactorIA y script de regeneración
 ├── npm/                      # Global npm defaults (~/.npmrc)
 ├── pnpm/                     # Global pnpm defaults (~/Library/Preferences/pnpm/rc)
 ├── bun/                      # Global bun defaults (~/.bunfig.toml)
 ├── uv/                       # Global uv defaults (~/.config/uv/uv.toml)
 ├── zsh/
-│   ├── zshrc                 # Bootstrap: dotfiles primero, Cortex al final (~/.zshrc)
-│   ├── cortex-dotfiles.zsh   # Entrypoint propio del profile de dotfiles
+│   ├── zshrc                 # Profile principal (~/.zshrc)
 │   └── scripts/
 │       ├── claude-helpers.zsh   # Integración Claude Code
 │       ├── cmux-sidebar-refresh.sh # Metadata Cortex para cmux
@@ -206,7 +220,7 @@ dotfiles/
 ├── tmux/                     # Config tmux
 ├── lazygit/                  # Config lazygit
 ├── karabiner/                # Config Karabiner-Elements (~/.config/karabiner/karabiner.json)
-├── nvim/                     # Notas de configuración Neovim RefactorIA
+├── nvim/                     # Notas de configuración Neovim del host (Kanagawa Blur, sin overlay)
 ├── sketchybar/               # Barra macOS y plugins
 ├── yabai/                    # Window manager macOS opcional
 ├── skhd/                     # Hotkeys macOS para yabai
@@ -221,11 +235,23 @@ dotfiles/
 
 ## Boundary con Cortex
 
-Este repo sigue siendo standalone: `install.sh` no requiere tener Cortex instalado. Administra el entrypoint fijo `~/.config/cortex-dotfiles/shell/cortex-dotfiles.zsh`, sus archivos enlazados y las variables `CORTEX_DOTFILES_*` documentadas acá.
+Este repo sigue siendo standalone: `install.sh` no requiere tener el repo `cortex` disponible y estos dotfiles deben poder instalarse por sí solos.
 
-El bootstrap carga dotfiles primero y después intenta cargar `~/.cortex/shell/cortex.zsh`. Esa segunda ruta y las variables core que exponga pertenecen a Cortex; este repo solo las consume. Ambos fragments son opcionales y un error en uno no impide intentar cargar el otro.
+Algunos artefactos viven acá temporalmente porque nacieron junto al setup personal, pero conceptualmente son propios del producto Cortex y no deberían tener a `cortex-dotfiles` como source of truth permanente:
 
-La coordinación vigente del contrato shell se sigue en [cortex #1259](https://github.com/barbatdev/cortex/issues/1259). Las migraciones de artefactos actualmente versionados en este repo se tratan por separado en [cortex-dotfiles #31](https://github.com/barbatdev/cortex-dotfiles/issues/31).
+- `opencode/themes/` — themes Cortex para OpenCode.
+- `claude/themes/` — themes Cortex para Claude Code.
+- `claude/statusline.sh` — statusline orientada a superficies Cortex.
+- `docs/agent-state-v1.md` — contrato `cortex.agent_state.v1`.
+- `scripts/check-agent-state.sh` — smoke check del contrato agent-state.
+- `zsh/scripts/agent-state.sh` — bridge local para reportar estado de agentes.
+- `zsh/scripts/postcompact-hook.sh` y `zsh/scripts/memsave-nudge.sh` — hooks ligados al workflow Cortex.
+
+La migración se coordina en tres repos independientes: `cortex` define ownership de los artefactos product-owned, `cortex-dotfiles` conserva instalación/adaptación local, y `cortex-dots` sigue siendo un snapshot OSS-safe de dotfiles sin depender de `cortex`.
+
+No borrar ni cambiar estos artefactos acá hasta que `cortex` tenga reemplazos validados y se decida qué queda como adaptación local.
+
+Seguimiento: [cortex-dotfiles #31](https://github.com/barbatdev/cortex-dotfiles/issues/31), [cortex #1038](https://github.com/barbatdev/cortex/issues/1038), [cortex-dots #14](https://github.com/barbatdev/cortex-dots/issues/14).
 
 ## Especificaciones
 
@@ -237,7 +263,7 @@ La coordinación vigente del contrato shell se sigue en [cortex #1259](https://g
 | --------- | ------------- |
 | `ga`, `gc`, `gp`, `gl` | Git shortcuts |
 | `dev`, `barbat`, `cowork`, `personal`, `tools`, `worktrees` | Navegación rápida en `~/dev` |
-| `work`, `innit`, `innit-apis`, `innit-mobile`, `innit-webs`, `innit-pcsoft` | Navegación rápida de trabajo |
+| `work`, `work-apis`, `work-mobile`, `work-webs`, `work-pcsoft` | Navegación rápida de trabajo |
 | `dotfiles` | Navegación rápida al repo de dotfiles |
 | `cc [path]` | Abrir Claude Code |
 | `oc [path]` | Abrir OpenCode |
@@ -253,7 +279,6 @@ La coordinación vigente del contrato shell se sigue en [cortex #1259](https://g
 | `reload` | Recargar zsh |
 | `refactoria` | Mostrar el logo RefactorIA en Braille Unicode |
 | `help-profile` | Ver todos los comandos |
-| `gs` | gentle-shell launcher + worktree desechable por PR (`bin/gs`, enlazar manualmente; ver Instalación) |
 
 ## Personalización
 
@@ -261,14 +286,12 @@ Editá `local/env.zsh` (gitignored) para configurar:
 
 - `SCREENSHOTS_DIR` — directorio de screenshots
 - `WORKSPACE_DIR` — directorio raíz de tus proyectos
-- `BARBATDEV_DIR` — repos de barbatdev, por defecto `$WORKSPACE_DIR/barbatdev`
-- `WORK_PROJECTS_DIR` — repos de trabajo, por defecto `$WORKSPACE_DIR/innit-sas`
-- `PERSONAL_PROJECTS_DIR` — repos locales, por defecto `$WORKSPACE_DIR/local`
-- `TOOLS_DIR` y `WORKTREES_DIR` — herramientas locales y worktrees
-- `CORTEX_DOTFILES_DIR` — repo fuente de dotfiles, por defecto `$BARBATDEV_DIR/cortex/cortex-dotfiles`
-- `CORTEX_DOTFILES_MULTIPLEXER` — fallback standalone para helpers, por defecto `cmux`; `CORTEX_MULTIPLEXER` de Cortex tiene precedencia
+- `CORTEX_HOME` — raíz canónica de cortex, por defecto `~/.cortex`
+- `CORTEX_ROOT` — repo principal cortex, por defecto `~/.cortex/cortex`
+- `CORTEX_DOTFILES_DIR` — repo dotfiles, por defecto `~/.cortex/cortex-dotfiles`
+- `CORTEX_SHELL_INTEGRATION` — fragmento zsh opcional administrado por Cortex, por defecto `$CORTEX_HOME/shell/cortex.zsh`
 - `OPENCODE_DEFAULT_FLAGS` — flags por defecto para `oc`
-- `INNIT_DIR` y overrides `INNIT_*_DIR` — raíz y subdirectorios `apis`, `mobile`, `webs` y `pcsoft`
+- `INNIT_DIR` y overrides `INNIT_*_DIR` — navegación rápida de subdirectorios
 - Aliases y paths personales
 
 ## Herdr remoto
@@ -286,7 +309,7 @@ Usá `hremote` desde tu terminal local en macOS. No hagas `ssh` primero y despu�
 
 ## SketchyBar
 
-La config macOS enlaza `sketchybar/` en `~/.config/sketchybar`. El diseño es sobrio, notch-safe y usa la paleta dark/green de InnIT.
+La config macOS enlaza `sketchybar/` en `~/.config/sketchybar`. El diseño local es sobrio, notch-safe y usa la base oscura RefactorIA con acentos semánticos adaptados.
 
 Layout activo:
 
@@ -339,22 +362,7 @@ sketchybar --reload
 
 Atajos resumidos junto al resto del stack: [keymaps](docs/keymaps.md).
 
-La configuración base es gradual: mantiene el tiling y la navegación por teclado sin scripting addition ni preparación parcial de SIP. La integración avanzada mediante scripting addition es opcional; si no está disponible, yabai conserva su configuración normal.
-
-### Scripting addition opcional
-
-Cuando la preparación previa está disponible, `yabai/yabairc` intenta cargar la scripting addition con `sudo -n`. La preparación parcial de SIP, NVRAM y `sudoers` es manual y este repositorio deliberadamente no la automatiza ni solicita credenciales. Consulte las [instrucciones oficiales de SIP de yabai](https://github.com/koekeishiya/yabai/wiki/Disabling-System-Integrity-Protection) para los requisitos y comandos vigentes.
-
-Si la carga protegida falla —por ejemplo, porque falta la autorización no interactiva— yabai continúa con la configuración base y no registra la señal de Dock. Solo una carga inicial satisfactoria registra una señal `dock_did_restart`; cada reinicio posterior de Dock ejecuta una única recarga no interactiva.
-
-Verificación acotada después de cargar yabai:
-
-```bash
-test -S "/tmp/yabai-sa_${USER}.socket"
-yabai -m signal --list | grep 'dock_did_restart'
-```
-
-El socket debe existir y la lista debe incluir una sola señal `dock_did_restart` con una acción `sudo -n` de carga. Después de un único reinicio manual de Dock, confirme que la señal sigue siendo única y pruebe una capacidad avanzada reversible dependiente de la scripting addition; restaure inmediatamente el estado previo de esa prueba. Para revertir la integración, restaure la versión anterior de `yabai/yabairc`, reinicie el servicio de yabai y revierta la preparación manual del sistema siguiendo la documentación oficial.
+La config incluida es gradual y no usa scripting addition: no requiere desactivar SIP. Sirve para acostumbrarse al tiling y navegación por teclado sin cambiar partes sensibles de macOS.
 
 El instalador crea symlinks en ambas rutas de configuración: `~/.config/yabai/yabairc` y `~/.yabairc` para yabai, `~/.config/skhd/skhdrc` y `~/.skhdrc` para skhd. Se mantienen las rutas legacy porque los launch services de yabai/skhd leen esas ubicaciones por defecto.
 
@@ -363,7 +371,7 @@ Decisiones:
 | Tema | Decisión |
 | ------ | ---------- |
 | Leader | `Option + Command` |
-| Scripting addition | Opcional; usa autorización no interactiva ya preparada |
+| Scripting addition | No se usa |
 | Raycast | Evitar shortcuts con `Option + Command` para reducir colisiones |
 | Apps flotantes | System Settings, Calculator, Activity Monitor y diálogos de Finder |
 | SketchyBar | Los spaces de la barra usan `yabai` si está disponible |
@@ -399,12 +407,17 @@ Atajos principales (`option + command`):
 
 | Atajo | Acción |
 | ------- | -------- |
-| `Option + Command + Left/Down/Up/Right` | Focus izquierda/abajo/arriba/derecha |
-| `Option + Command + Shift + Left/Down/Up/Right` | Mover ventana en el layout |
+| `Option + Command + H/J/K/L` o flechas | Focus izquierda/abajo/arriba/derecha |
+| `Option + Command + Shift + H/J/K/L` o flechas | Mover ventana en el layout |
 | `Option + Command + 1..9` | Ir al space |
 | `Option + Command + Shift + 1..9` | Mover ventana al space y seguirla |
 | `Option + Command + f` | Flotar/desflotar ventana |
+| `Option + Command + Shift + f` | Activar/desactivar zoom fullscreen |
 | `Option + Command + b` | Balancear layout |
+| `Option + Command + o` | Rotar layout 90 grados |
+| `Option + Command + x/y` | Espejar layout horizontal/verticalmente |
+| `Option + Command + e` | Alternar dirección del split enfocado |
+| `Option + Command + Tab` | Volver al space reciente |
 | `Option + Command + r` | Resetear gap a cero + balance + recargar SketchyBar |
 | `Option + Command + /` | Mostrar ayuda de atajos |
 | `Option + Command + Shift + r` | Recargar yabai/skhd/sketchybar |
@@ -453,25 +466,15 @@ El prompt usa una variante local de FiraCode Nerd Font Mono con el glyph de la b
 
 La config de Starship usa este glyph PUA directamente. Si la terminal no tiene seleccionada `FiraCode Nerd Font Mono Beard`, el prompt puede mostrar un cuadrado/tofu en lugar de la barba. En macOS, `install.sh` instala la fuente y deja configurado Ghostty con esa family.
 
-Para regenerar la fuente:
-
-```bash
-mkdir -p ~/Downloads/refactoria/build
-magick ~/Downloads/refactoria/RefactorIA.png -threshold 50% -negate ~/Downloads/refactoria/build/refactoria.bmp
-potrace ~/Downloads/refactoria/build/refactoria.bmp -s -o ~/Downloads/refactoria/build/refactoria.svg
-fontforge -script fonts/patch_beard.py \
-  --font ~/Library/Fonts/FiraCodeNerdFontMono-Regular.ttf \
-  --svg ~/Downloads/refactoria/build/refactoria.svg \
-  --output-dir ~/Downloads/refactoria/build
-cp ~/Downloads/refactoria/build/FiraCodeNerdFontMonoBeard-Reg.ttf ~/Library/Fonts/
-```
+Para regenerar el artefacto del repositorio, seguí la [fuente Braille canónica y el procedimiento verificado](docs/refactoria-branding.md#isotipo-and-font). No uses un PNG externo como fuente del isotipo ni instales la fuente generada en el host durante este trabajo documental.
 
 One-liner para renderizar el glyph con Pillow:
 
 ```bash
 python3 - <<'PY'
+from pathlib import Path
 from PIL import Image, ImageDraw, ImageFont
-font = ImageFont.truetype('~/Library/Fonts/FiraCodeNerdFontMonoBeard-Reg.ttf', 64)
+font = ImageFont.truetype(str(Path.home() / 'Library/Fonts/FiraCodeNerdFontMonoBeard-Reg.ttf'), 64)
 img = Image.new('RGB', (128, 128), 'black')
 draw = ImageDraw.Draw(img)
 draw.text((32, 24), '\U000F0F00', font=font, fill='white')
@@ -518,9 +521,3 @@ Además, la política operativa recomendada es:
 - preferir versiones pinneadas y lockfiles cuando el proyecto lo justifique
 - evitar `latest` y ejecuciones runtime no revisadas salvo necesidad explícita
 - hacer upgrades de dependencias en cambios/PRs dedicados, no mezclados con features
-
----
-
-<a href="https://github.com/Gentleman-Programming/gentle-ai">
-  <img width="220" src="https://raw.githubusercontent.com/Gentleman-Programming/gentle-ai/main/docs/assets/brand/built-with-gentle-ai.png" alt="Built with Gentle-AI" />
-</a>

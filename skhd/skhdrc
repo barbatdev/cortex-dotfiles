@@ -1,16 +1,34 @@
 # Leader = option + command.
 
+# Aplicaciones
+cmd - e : open -a Finder
+
 # Focus ventanas
 alt + cmd - left  : yabai -m window --focus west || yabai -m window --focus prev || true
 alt + cmd - down  : yabai -m window --focus south || yabai -m window --focus next || true
 alt + cmd - up    : yabai -m window --focus north || yabai -m window --focus prev || true
 alt + cmd - right : yabai -m window --focus east || yabai -m window --focus next || true
 
+# Aliases Vim adaptados desde Gentleman.Dots; se conserva el leader Option+Command.
+alt + cmd - h : yabai -m window --focus west || yabai -m window --focus prev || true
+alt + cmd - j : yabai -m window --focus south || yabai -m window --focus next || true
+alt + cmd - k : yabai -m window --focus north || yabai -m window --focus prev || true
+alt + cmd - l : yabai -m window --focus east || yabai -m window --focus next || true
+
 # Mover ventanas dentro del layout
 alt + cmd + shift - left  : yabai -m window --warp west || yabai -m window --swap west || true
 alt + cmd + shift - down  : yabai -m window --warp south || yabai -m window --swap south || true
 alt + cmd + shift - up    : yabai -m window --warp north || yabai -m window --swap north || true
 alt + cmd + shift - right : yabai -m window --warp east || yabai -m window --swap east || true
+
+alt + cmd + shift - h : yabai -m window --warp west || yabai -m window --swap west || true
+alt + cmd + shift - j : yabai -m window --warp south || yabai -m window --swap south || true
+alt + cmd + shift - k : yabai -m window --warp north || yabai -m window --swap north || true
+alt + cmd + shift - l : yabai -m window --warp east || yabai -m window --swap east || true
+
+# Mover ventana entre displays y seguirla
+alt + cmd + ctrl - left  : yabai -m window --display prev --focus || true
+alt + cmd + ctrl - right : yabai -m window --display next --focus || true
 
 # Spaces
 alt + cmd - 1 : yabai -m space --focus 1 || true
@@ -38,6 +56,12 @@ alt + cmd + shift - 9 : yabai -m window --space 9 && yabai -m space --focus 9 ||
 alt + cmd - f : yabai -m window --toggle float || true
 alt + cmd - b : yabai -m space --balance || true
 alt + cmd - r : yabai -m config --space window_gap 0; yabai -m space --balance || true; sketchybar --reload
+alt + cmd - o : yabai -m space --rotate 90 || true
+alt + cmd - x : yabai -m space --mirror x-axis || true
+alt + cmd - y : yabai -m space --mirror y-axis || true
+alt + cmd - e : yabai -m window --toggle split || true
+alt + cmd + shift - f : yabai -m window --toggle zoom-fullscreen || true
+alt + cmd - tab : yabai -m space --focus recent || true
 alt + cmd - 0x2C : ~/.config/sketchybar/plugins/shortcuts_help.sh
 
 # Servicios

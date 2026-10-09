@@ -226,6 +226,7 @@ cmd_sync() {
       [ -d "$CLONES/$repo/.git" ] || die "missing clean clone $CLONES/$repo"
       [ -z "$(git -C "$CLONES/$repo" status --porcelain)" ] || die "$CLONES/$repo has local changes; clean clones only"
       git -C "$CLONES/$repo" checkout -q main
+      git -C "$CLONES/$repo" fetch -q --tags origin
       git -C "$CLONES/$repo" pull -q --ff-only origin main
       printf '%-13s %s\n' "$repo" "$(git -C "$CLONES/$repo" log -1 --format='%h %cs %s')"
     done
