@@ -6,6 +6,9 @@ set -euo pipefail
 CLONES="$HOME/dev/gentle"
 TREES="$HOME/dev/worktrees"
 REPOS="gentle-ai gentle-shell engram"
+# Mac-only app clones (~/dev/gentle): synced by gs sync on non-workshop hosts,
+# never touched on workshop machines.
+MAC_APP_REPOS="gentle-dot gentle-shell-desktop"
 
 die() { printf 'gs: %s\n' "$*" >&2; exit 1; }
 
@@ -67,7 +70,9 @@ repo_name() {
     ai|gentle-ai) echo gentle-ai ;;
     shell|gentle-shell) echo gentle-shell ;;
     engram) echo engram ;;
-    *) die "unknown repo '${1:-}' (use: ai, shell, engram)" ;;
+    dot|gentle-dot) echo gentle-dot ;;
+    desktop|gentle-shell-desktop) echo gentle-shell-desktop ;;
+    *) die "unknown repo '${1:-}' (use: ai, shell, engram, dot, desktop)" ;;
   esac
 }
 
@@ -112,7 +117,9 @@ repo_here() {
     */gentle-ai|*/gentle-ai.git) echo gentle-ai ;;
     */gentle-shell|*/gentle-shell.git|*/gentle-pi|*/gentle-pi.git) echo gentle-shell ;;
     */engram|*/engram.git) echo engram ;;
-    *) die "cannot tell the repo from $url; give it: ai, shell, engram" ;;
+    */gentle-dot|*/gentle-dot.git) echo gentle-dot ;;
+    */gentle-shell-desktop|*/gentle-shell-desktop.git) echo gentle-shell-desktop ;;
+    *) die "cannot tell the repo from $url; give it: ai, shell, engram, dot, desktop" ;;
   esac
 }
 
@@ -244,6 +251,15 @@ cmd_sync() {
     shell="$HOME/.pi/agent/git/github.com/Gentleman-Programming/gentle-pi"
     printf 'gentle-shell  %s\n' "$(git -C "$shell" log -1 --format='%h %cs %s' 2>/dev/null || echo '?')"
   fi
+    # Mac-only app clones: sync when present, never fail if absent.
+    for repo in $MAC_APP_REPOS; do
+      [ -d "$CLONES/$repo/.git" ] || continue
+      [ -z "$(git -C "$CLONES/$repo" status --porcelain)" ] || { printf '%-13s skipped (local changes)\n' "$repo"; continue; }
+      git -C "$CLONES/$repo" checkout -q main 2>/dev/null || true
+      git -C "$CLONES/$repo" fetch -q --tags origin
+      git -C "$CLONES/$repo" pull -q --ff-only origin main
+      printf '%-13s %s\n' "$repo" "$(git -C "$CLONES/$repo" log -1 --format='%h %cs %s')"
+    done
   for name in gentle-ai engram; do
     if [ -e "$HOME/.local/bin/$name" ] && [ ! -L "$HOME/.local/bin/$name" ]; then
       mv "$HOME/.local/bin/$name" "$HOME/.local/bin/$name.pre-gw"
@@ -279,7 +295,7 @@ cmd_sync() {
 
 cmd_ls() {
   local repo
-  for repo in $REPOS; do
+  for repo in $REPOS $MAC_APP_REPOS; do
     [ -d "$CLONES/$repo/.git" ] && git -C "$CLONES/$repo" worktree list | grep -v "^$CLONES/$repo " || true
   done
 }
