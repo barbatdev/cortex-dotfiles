@@ -227,6 +227,9 @@ is_workshop() {
 
 cmd_sync() {
   local repo shell bin="$HOME/.local/share/gentle-ai/main" reg="$HOME/.pi/gentle-ai/dev-binary.json" name
+  # Stale GOROOT/GOBIN from a removed version manager breaks every go build.
+  if [ -n "${GOROOT:-}" ] && [ ! -d "$GOROOT" ]; then unset GOROOT; fi
+  if [ -n "${GOBIN:-}" ] && [ ! -d "$(dirname "$GOBIN")" ]; then unset GOBIN; fi
   mkdir -p "$bin" "$HOME/.local/bin" "$(dirname "$reg")"
   if is_workshop; then
     for repo in $REPOS; do
