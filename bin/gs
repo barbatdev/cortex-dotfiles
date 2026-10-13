@@ -253,7 +253,13 @@ cmd_sync() {
     pi update
     # Official main channel: builds Shell + AI from the exact main SHAs and
     # records the channel state, so later upgrades are no-ops when current.
-    gentle-shell upgrade --channel main
+    # Only gentle-shell >= 4.1.0 parses --channel; older launches keep their
+    # registry maturity policies happy and just skip this step.
+    if [ "$(gentle-shell --version 2>/dev/null | awk 'NR==1{print $2}')" = "4.0.0" ]; then
+      printf 'gentle-shell 4.0.0 cannot follow the main channel yet; skipping (needs >= 4.1.0)\n'
+    else
+      gentle-shell upgrade --channel main
+    fi
     pi update --extensions
     # Only remaining homemade piece: the engram core binary (no official channel yet).
     GOPROXY=direct GOBIN="$bin" go install github.com/Gentleman-Programming/engram/v3/cmd/engram@main
