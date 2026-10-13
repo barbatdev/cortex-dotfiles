@@ -248,13 +248,16 @@ cmd_sync() {
     (cd "$CLONES/engram/plugin/pi" && npm install --no-save --no-audit --no-fund --omit=peer --silent)
     shell="$CLONES/gentle-shell"
   else
-    printf 'mode: consumer (no workshop clones; everything from GitHub main)\n'
-    pi update --extension git:github.com/Gentleman-Programming/gentle-pi@main
-    pi update --extension git:github.com/Gentleman-Programming/engram@main
-    GOPROXY=direct GOBIN="$bin" go install github.com/gentleman-programming/gentle-ai/v4/cmd/gentle-ai@main
+    printf 'mode: consumer (official update channels)\n'
+    command -v gentle-shell >/dev/null 2>&1 || die "consumer sync needs gentle-shell on PATH; install it first"
+    pi update
+    # Official main channel: builds Shell + AI from the exact main SHAs and
+    # records the channel state, so later upgrades are no-ops when current.
+    gentle-shell upgrade --channel main
+    pi update --extensions
+    # Only remaining homemade piece: the engram core binary (no official channel yet).
     GOPROXY=direct GOBIN="$bin" go install github.com/Gentleman-Programming/engram/v3/cmd/engram@main
     shell="$HOME/.pi/agent/git/github.com/Gentleman-Programming/gentle-pi"
-    printf 'gentle-shell  %s\n' "$(git -C "$shell" log -1 --format='%h %cs %s' 2>/dev/null || echo '?')"
   fi
     # Mac-only app clones: sync when present, never fail if absent.
     for repo in $MAC_APP_REPOS; do
@@ -272,16 +275,26 @@ cmd_sync() {
     fi
     ln -sfn "$bin/$name" "$HOME/.local/bin/$name"
   done
-  local tmp; tmp=$(mktemp "$(dirname "$reg")/.dev-binary.XXXXXX")
-  printf '{"schema":"gentle-pi.dev-binary/v1","path":"%s"}\n' "$bin/gentle-ai" > "$tmp"
-  chmod 600 "$tmp"; mv -f "$tmp" "$reg"
+  local ai_bin
+  if is_workshop; then
+    local tmp; tmp=$(mktemp "$(dirname "$reg")/.dev-binary.XXXXXX")
+    printf '{"schema":"gentle-pi.dev-binary/v1","path":"%s"}\n' "$bin/gentle-ai" > "$tmp"
+    chmod 600 "$tmp"; mv -f "$tmp" "$reg"
+    ai_bin="$bin/gentle-ai"
+  else
+    # The official main channel owns the dev-binary registration; reuse its path.
+    ai_bin=$(sed -n 's/.*"path"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' "$reg" 2>/dev/null | head -1)
+    [ -x "$ai_bin" ] || die "gentle-ai binary not found in $reg; run: gentle-shell upgrade --channel main"
+  fi
+  ln -sfn "$ai_bin" "$HOME/.local/bin/gentle-ai"
+  ln -sfn "$bin/engram" "$HOME/.local/bin/engram"
 
-  printf '\ngentle-ai:  %s\nengram:     %s\n' "$("$bin/gentle-ai" --version 2>&1)" "$("$bin/engram" version 2>&1)"
+  printf '\ngentle-ai:  %s\nengram:     %s\n' "$("$ai_bin" --version 2>&1)" "$("$bin/engram" version 2>&1)"
   for name in gentle-ai engram; do
-    [ "$(command -v "$name")" = "$HOME/.local/bin/$name" ] || printf 'WARN: %s on PATH is %s, not the main build\n' "$name" "$(command -v "$name")"
+    [ "$(command -v "$name")" = "$HOME/.local/bin/$name" ] || printf 'WARN: %s on PATH is %s, not our build\n' "$name" "$(command -v "$name")"
   done
   local emits reads
-  emits=$("$bin/gentle-ai" review status --cwd "$shell" --contract gentle-ai.review-integration/v2 \
+  emits=$("$ai_bin" review status --cwd "$shell" --contract gentle-ai.review-integration/v2 \
     --agent claude-code --next-transition 2>/dev/null | grep -o 'review-integration\.status/v[0-9]*' | head -1 | sed 's#.*/##')
   reads=$(grep -rhoE 'review-integration\.status/v[0-9]+' "$shell/lib" "$shell/extensions" 2>/dev/null \
     | sed 's#.*/##' | sort -uV | tr '\n' ' ')
