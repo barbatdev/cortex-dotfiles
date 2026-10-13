@@ -257,8 +257,10 @@ cmd_sync() {
     # registry maturity policies happy and just skip this step.
     if [ "$(gentle-shell --version 2>/dev/null | awk 'NR==1{print $2}')" = "4.0.0" ]; then
       printf 'gentle-shell 4.0.0 cannot follow the main channel yet; skipping (needs >= 4.1.0)\n'
-    else
-      gentle-shell upgrade --channel main
+    elif ! gentle-shell upgrade --channel main; then
+      # Transient failures (GitHub API rate limit, network) must not abort the
+      # rest of the sync: extensions, engram and the compat check still run.
+      printf 'WARN: main-channel upgrade failed; keeping the current builds\n'
     fi
     pi update --extensions
     # Only remaining homemade piece: the engram core binary (no official channel yet).
