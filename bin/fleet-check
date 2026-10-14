@@ -1,0 +1,114 @@
+#!/usr/bin/env bash
+# fleet-check — un comando de salud por equipo de la flota Cortex.
+# Detecta perfil: full (stack gentle completo), minimal (solo pi), none (sin stack).
+# Reporta RESULTADO: TODO OK / HAY FALLAS y exit 0/1.
+# Uso: fleet-check [--quick]     (--quick omite arranque de pi y gs sync)
+set -u
+
+QUICK=0
+[ "${1:-}" = "--quick" ] && QUICK=1
+
+FAIL=0
+ok() { printf '  ✓ %s\n' "$1"; }
+bad() { printf '  ✗ %s\n' "$1"; FAIL=1; }
+skip() { printf '  - %s\n' "$1"; }
+
+PROFILE="full"
+command -v gentle-shell >/dev/null 2>&1 || PROFILE="minimal"
+command -v pi >/dev/null 2>&1 || PROFILE="none"
+
+echo "fleet-check $(date '+%Y-%m-%d %H:%M') — $(hostname) — perfil: $PROFILE"
+
+echo "== runtime:"
+for c in git node pnpm; do
+  command -v "$c" >/dev/null && ok "$c: $($c --version 2>&1 | head -1)" || { [ "$PROFILE" = "full" ] && bad "falta $c" || skip "$c ausente (ok en perfil $PROFILE)"; }
+done
+if command -v go >/dev/null; then
+  ok "go: $(go version 2>&1 | head -1)"
+else
+  [ "$PROFILE" = "full" ] && bad "falta go" || skip "go ausente (ok en perfil $PROFILE)"
+fi
+if [ -n "${GOROOT:-}" ] && [ ! -d "$GOROOT" ]; then
+  bad "GOROOT podrido en esta sesión: $GOROOT"
+else
+  ok "GOROOT saneo"
+fi
+if [ "$PROFILE" = "full" ]; then
+  for w in gs gentle-shell; do
+    if [ -f "$HOME/.local/bin/$w" ] && grep -q "mise/installs\|local/share/mise" "$HOME/.local/bin/$w" 2>/dev/null; then
+      bad "wrapper $w referencia mise"
+    else
+      ok "wrapper $w sin mise"
+    fi
+  done
+fi
+
+echo "== pi:"
+pi_bin=""
+if [ -x "$HOME/.pi/agent/bin/pi" ]; then
+  pi_bin="$HOME/.pi/agent/bin/pi"
+  ok "esquema gestionado"
+elif command -v pi >/dev/null; then
+  pi_bin="$(command -v pi)"
+  ok "esquema npm ($pi_bin)"
+else
+  bad "no hay pi"
+fi
+if [ -n "$pi_bin" ]; then
+  v="$("$pi_bin" --version 2>&1 | head -1)"
+  case "$v" in
+    *1.[2-9]*) ok "pi $v" ;;
+    *) bad "pi version inesperada: $v" ;;
+  esac
+fi
+
+if [ "$PROFILE" = "full" ]; then
+  echo "== extensiones de pi:"
+  if [ -e "$HOME/.pi/agent/npm/node_modules/gentle-pi" ]; then
+    if node -e "require.resolve('@heyhuynhgiabuu/pi-pretty',{paths:['$HOME/.pi/agent/npm/node_modules/gentle-pi/extensions']})" 2>/dev/null; then
+      ok "gentle-pi ext: pi-pretty resuelve"
+    else
+      bad "gentle-pi ext: pi-pretty NO resuelve (reparar con nodeLinker: hoisted)"
+    fi
+    if node -e "require.resolve('@anthropic-ai/claude-agent-sdk',{paths:['$HOME/.pi/agent/npm/node_modules/pi-claude-bridge/src']})" 2>/dev/null; then
+      ok "pi-claude-bridge: claude-agent-sdk resuelve"
+    else
+      bad "pi-claude-bridge: claude-agent-sdk NO resuelve"
+    fi
+  else
+    skip "npm:gentle-pi no instalado en este host"
+  fi
+
+  echo "== gentle-shell:"
+  out="$(timeout 30 gentle-shell --version 2>&1 | head -2 | tr '\n' ' ')"
+  echo "$out" | grep -q "gentle-shell" && ok "$out" || bad "gentle-shell no responde: $out"
+
+  if [ "$QUICK" -eq 0 ]; then
+    echo "== arranque real de pi (carga de extensiones):"
+    out="$(cd ~ && timeout 90 pi -p "respondé solo: ok" 2>&1 | head -2)"
+    echo "$out" | grep -qi "Failed to load extension" && bad "extensiones rompen: $out" || ok "extensiones cargan limpio"
+
+    echo "== gs sync (puede tardar minutos):"
+    sync_out="$(cd ~ && timeout 1500 gs sync 2>&1)"
+    sync_code=$?
+    echo "$sync_out" | tail -4 | sed 's/^/  | /'
+    [ $sync_code -eq 0 ] && ok "gs sync exit=0" || bad "gs sync exit=$sync_code"
+    echo "$sync_out" | grep -q "compat:     OK" && ok "compat OK" || bad "compat no OK"
+  else
+    skip "--quick: arranque de pi y gs sync omitidos"
+  fi
+elif [ "$PROFILE" = "minimal" ]; then
+  echo "== arranque real de pi (perfil mínimo):"
+  out="$(cd ~ && timeout 90 pi -p "respondé solo: ok" 2>&1 | head -2)"
+  echo "$out" | grep -qi "Failed to load extension\|error" && bad "pi falla: $out" || ok "pi responde: $out"
+else
+  skip "sin stack gentle en este equipo (nada que verificar)"
+fi
+
+echo
+if [ $FAIL -eq 0 ]; then
+  echo "RESULTADO: TODO OK"
+  exit 0
+fi
+echo "RESULTADO: HAY FALLAS"
+exit 1
