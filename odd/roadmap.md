@@ -32,6 +32,12 @@ WIP local sin commitear (47 archivos), ramas viejas, `TODO.md` obsoleto (todo ti
 untracked (`docs/refactoria-branding.md`, `fish/atuin/`).
 - Skills: `cortex-requirements-analyst` (spec de limpieza) · `cortex-evidence-auditor`
 
+### E6 — RefactorIA parity en nan · **HECHO (pendiente gate visual del usuario)**
+Tema pi `refactoria` + starship con config del repo. Fish/Claude/Herdr no aplican
+(no instalados en nan). Verificación técnica completa; el render visual requiere
+sesión observada por el usuario (mismo gate que los rollouts de octubre).
+- Feature: `odd/tasks/refactoria-nan-themes.md`
+
 ### E5 — limpieza de residuos de migración · **PENDIENTE**
 Cuarentenas de mise (~7 GB entre máquinas), backups de wrappers `*.wrapper-backup*`,
 `settings.json.pre-*` — borrar solo tras una semana sin incidencias.
