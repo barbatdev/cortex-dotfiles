@@ -141,14 +141,18 @@ open_or_finish() {
 }
 
 pr_prompt() {
-  printf 'Review Gentleman-Programming/%s PR #%s using the maintainer-delivery skill: read the PR, its linked issue, CI status and diff; run the preflight and race check; then report scope, risks, and what to test. Do not comment, push, or merge.' "$1" "$2"
+  # Same cortex-only rule as issue_prompt: the cortex variant is mandatory.
+  printf 'Review Gentleman-Programming/%s PR #%s using the cortex-maintainer-delivery skill, loading ~/.pi/agent/skills/cortex-maintainer-delivery/SKILL.md first (never the plain maintainer-delivery skill): read the PR, its linked issue, CI status and diff; run its preflight and race check; then report scope, risks, and what to test in Spanish. Do not comment, push, or merge.' "$1" "$2"
 }
 
 issue_prompt() {
   # Plan-first: the session presents the kickoff and STOPS. Implementation
   # starts only after the user explicitly approves the plan (agreed workflow;
   # the previous "then work test-first" wording made sessions auto-implement).
-  printf 'Take Gentleman-Programming/%s issue #%s using the maintainer-delivery skill: run the preflight, read the issue and repo conventions, then present a kickoff plan (expected behavior, approach, out of scope, branch %s) in Spanish and STOP. Do not implement, edit files, or commit: implementation starts only after the user explicitly approves the plan. Claiming, commenting, pushing, and opening the PR stay mine.' "$1" "$2" "$3"
+  # The CORTEX variant of the skill is mandatory, referenced by name and path:
+  # there is also a plain maintainer-delivery skill and the session must not
+  # pick that one.
+  printf 'Take Gentleman-Programming/%s issue #%s using the cortex-maintainer-delivery skill, loading ~/.pi/agent/skills/cortex-maintainer-delivery/SKILL.md first (never the plain maintainer-delivery skill): run its preflight, read the issue and repo conventions, then present a kickoff plan (expected behavior, approach, out of scope, branch %s) in Spanish and STOP. Do not implement, edit files, or commit: implementation starts only after the user explicitly approves the plan. Claiming, commenting, pushing, and opening the PR stay mine.' "$1" "$2" "$3"
 }
 
 cmd_pr() {
