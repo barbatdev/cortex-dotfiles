@@ -145,7 +145,10 @@ pr_prompt() {
 }
 
 issue_prompt() {
-  printf 'Take Gentleman-Programming/%s issue #%s using the maintainer-delivery skill: run the preflight, read the issue and repo conventions, draft the kickoff (expected behavior, out of scope, branch %s), then work test-first. Claiming, commenting, pushing, and opening the PR stay mine.' "$1" "$2" "$3"
+  # Plan-first: the session presents the kickoff and STOPS. Implementation
+  # starts only after the user explicitly approves the plan (agreed workflow;
+  # the previous "then work test-first" wording made sessions auto-implement).
+  printf 'Take Gentleman-Programming/%s issue #%s using the maintainer-delivery skill: run the preflight, read the issue and repo conventions, then present a kickoff plan (expected behavior, approach, out of scope, branch %s) in Spanish and STOP. Do not implement, edit files, or commit: implementation starts only after the user explicitly approves the plan. Claiming, commenting, pushing, and opening the PR stay mine.' "$1" "$2" "$3"
 }
 
 cmd_pr() {
