@@ -165,9 +165,11 @@ cmd_issue() {
   CMD="issue"; repo_and_number "$@"
   local gh_repo="Gentleman-Programming/$REPO" info state assignees title labels prs prefix slug branch path
   info=$(gh issue view "$NUM" -R "$gh_repo" --json state,assignees,title,labels \
-    --jq '[.state, ([.assignees[].login]|join(",")), .title, ([.labels[].name]|join(","))]|join("\t")') \
+    --jq '[.state, ([.assignees[].login]|join(",")), .title, ([.labels[].name]|join(","))]|join("\u001f")') \
     || die "cannot read $gh_repo#$NUM"
-  IFS=$'\t' read -r state assignees title labels <<<"$info"
+  # \x1f, not \t: read collapses consecutive IFS *whitespace* tabs, so empty
+  # assignees/labels fields shift the title into the assignees check.
+  IFS=$'\x1f' read -r state assignees title labels <<<"$info"
   path="$TREES/$REPO-issue-$NUM"
   if [ -e "$path" ]; then
     printf 'gs: reusing %s\n' "$path" >&2
