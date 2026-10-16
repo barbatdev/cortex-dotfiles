@@ -259,7 +259,10 @@ cmd_sync() {
   else
     printf 'mode: consumer (official update channels)\n'
     command -v gentle-shell >/dev/null 2>&1 || die "consumer sync needs gentle-shell on PATH; install it first"
-    pi update
+    # pi self-update cannot handle every installation schema (e.g. bun-compiled
+    # /opt/pi binaries): a failure there must not abort the sync, the official
+    # main channel below is the actual update path for Shell and AI.
+    pi update || printf 'WARN: pi update failed (non-self-updatable install?); keeping current pi\n'
     # Official main channel: builds Shell + AI from the exact main SHAs and
     # records the channel state, so later upgrades are no-ops when current.
     # Only gentle-shell >= 4.1.0 parses --channel; older launches keep their
@@ -271,7 +274,7 @@ cmd_sync() {
       # rest of the sync: extensions, engram and the compat check still run.
       printf 'WARN: main-channel upgrade failed; keeping the current builds\n'
     fi
-    pi update --extensions
+    pi update --extensions || printf 'WARN: pi update --extensions failed; keeping current extensions\n'
     # Only remaining homemade piece: the engram core binary (no official channel yet).
     GOPROXY=direct GOBIN="$bin" go install github.com/Gentleman-Programming/engram/v3/cmd/engram@main
     shell="$HOME/.pi/agent/git/github.com/Gentleman-Programming/gentle-pi"
