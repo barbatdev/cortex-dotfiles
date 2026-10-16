@@ -13,7 +13,6 @@ GitHub Actions ejecuta un smoke check mínimo en pull requests y pushes a `main`
 - **Prompt**: [Starship](https://starship.rs/) — prompt local RefactorIA aprobado
 - **Multiplexor**: tmux + helpers de sesión
 - **Barra macOS**: [SketchyBar](https://github.com/FelixKratz/SketchyBar) con base oscura RefactorIA y acentos semánticos adaptados
-- **Window manager macOS**: [yabai](https://github.com/koekeishiya/yabai) + [skhd](https://github.com/koekeishiya/skhd) opcional y gradual
 - **Keyboard remaps macOS**: [Karabiner-Elements](https://karabiner-elements.pqrs.org/) con profile `cortex`
 - **Editor terminal**: Neovim basado en LazyVim/Gentleman.Dots; la config host selecciona `gentleman-kanagawa-blur` y no se encontró un overlay RefactorIA en la auditoría
 - **Ls**: [eza](https://github.com/eza-community/eza)
@@ -47,12 +46,12 @@ bash install.sh --dry-run
 
 El instalador macOS:
 
-1. Instala dependencias via Homebrew (cmux, starship, tmux, lazygit, neovim, eza, sketchybar, yabai, skhd, Karabiner-Elements, FiraCode Nerd Font)
+1. Instala dependencias via Homebrew (cmux, starship, tmux, lazygit, neovim, eza, sketchybar, Karabiner-Elements, FiraCode Nerd Font)
 2. Hace backup de configs existentes con timestamp
 3. Crea symlinks de los dotfiles y guardrails globales (`.npmrc`, `pnpm/rc`, `.bunfig.toml`, `uv.toml`)
 4. Instala los themes y launchers Barbatdev/RefactorIA sin activarlos
 5. Intenta seleccionar el profile `cortex` de Karabiner si `karabiner_cli` está disponible
-6. Intenta arrancar/recargar `sketchybar`, `yabai` y `skhd` sin cortar la instalación si macOS requiere permisos
+6. Intenta arrancar/recargar `sketchybar` sin cortar la instalación si macOS requiere permisos
 7. Crea `local/env.zsh` desde el template
 
 ## Perfiles visuales opt-in
@@ -222,8 +221,6 @@ dotfiles/
 ├── karabiner/                # Config Karabiner-Elements (~/.config/karabiner/karabiner.json)
 ├── nvim/                     # Notas de configuración Neovim del host (Kanagawa Blur, sin overlay)
 ├── sketchybar/               # Barra macOS y plugins
-├── yabai/                    # Window manager macOS opcional
-├── skhd/                     # Hotkeys macOS para yabai
 ├── starship/
 │   └── starship.toml         # Prompt (~/.config/starship.toml)
 ├── local/
@@ -327,7 +324,7 @@ Interacciones:
 | Item | Acción |
 | ------ | -------- |
 | Glyph RefactorIA | abre `~/dev` |
-| Spaces | enfocan el space si `yabai` está corriendo |
+| Spaces | muestran los espacios del display activo |
 | Volumen | mute/unmute |
 | Batería | abre Battery Settings |
 | Fecha/hora | abre Calendar |
@@ -344,8 +341,6 @@ Si macOS deja monitores externos como `Online` aunque estén desconectados, se p
 ~/.config/sketchybar/sketchybar-profile.sh auto
 ```
 
-La separación global de ventanas queda desactivada en yabai (`top_padding=0`, `bottom_padding=0`, `left_padding=0`, `right_padding=0`, `window_gap=0`) para evitar márgenes persistentes después de reiniciar.
-
 El instalador intenta activarla automáticamente. Si macOS bloquea el servicio o querés hacerlo manualmente:
 
 ```bash
@@ -357,78 +352,6 @@ Para recargar cambios manualmente:
 ```bash
 sketchybar --reload
 ```
-
-## yabai + skhd
-
-Atajos resumidos junto al resto del stack: [keymaps](docs/keymaps.md).
-
-La config incluida es gradual y no usa scripting addition: no requiere desactivar SIP. Sirve para acostumbrarse al tiling y navegación por teclado sin cambiar partes sensibles de macOS.
-
-El instalador crea symlinks en ambas rutas de configuración: `~/.config/yabai/yabairc` y `~/.yabairc` para yabai, `~/.config/skhd/skhdrc` y `~/.skhdrc` para skhd. Se mantienen las rutas legacy porque los launch services de yabai/skhd leen esas ubicaciones por defecto.
-
-Decisiones:
-
-| Tema | Decisión |
-| ------ | ---------- |
-| Leader | `Option + Command` |
-| Scripting addition | No se usa |
-| Raycast | Evitar shortcuts con `Option + Command` para reducir colisiones |
-| Apps flotantes | System Settings, Calculator, Activity Monitor y diálogos de Finder |
-| SketchyBar | Los spaces de la barra usan `yabai` si está disponible |
-
-El instalador intenta arrancar o recargar estos servicios automáticamente después de enlazar la configuración. Activación manual de fallback:
-
-```bash
-yabai --start-service
-skhd --start-service
-```
-
-Para detenerlos:
-
-```bash
-yabai --stop-service
-skhd --stop-service
-```
-
-Si macOS bloquea los servicios, habilitá permisos en:
-
-```text
-System Settings → Privacy & Security → Accessibility
-```
-
-Binarios a permitir:
-
-```text
-/opt/homebrew/bin/yabai
-/opt/homebrew/bin/skhd
-```
-
-Atajos principales (`option + command`):
-
-| Atajo | Acción |
-| ------- | -------- |
-| `Option + Command + H/J/K/L` o flechas | Focus izquierda/abajo/arriba/derecha |
-| `Option + Command + Shift + H/J/K/L` o flechas | Mover ventana en el layout |
-| `Option + Command + 1..9` | Ir al space |
-| `Option + Command + Shift + 1..9` | Mover ventana al space y seguirla |
-| `Option + Command + f` | Flotar/desflotar ventana |
-| `Option + Command + Shift + f` | Activar/desactivar zoom fullscreen |
-| `Option + Command + b` | Balancear layout |
-| `Option + Command + o` | Rotar layout 90 grados |
-| `Option + Command + x/y` | Espejar layout horizontal/verticalmente |
-| `Option + Command + e` | Alternar dirección del split enfocado |
-| `Option + Command + Tab` | Volver al space reciente |
-| `Option + Command + r` | Resetear gap a cero + balance + recargar SketchyBar |
-| `Option + Command + /` | Mostrar ayuda de atajos |
-| `Option + Command + Shift + r` | Recargar yabai/skhd/sketchybar |
-
-Notas de uso:
-
-- `Option` es la tecla que macOS también llama `Alt`.
-- El bloque `dev` de SketchyBar también abre la ayuda de atajos con click.
-- Algunos comandos no hacen nada si no hay una ventana gestionada por `yabai` o si no existe una ventana vecina en esa dirección.
-- Si Raycast usa el mismo shortcut, deshabilitá ese hotkey en Raycast o cambialo para dejar `Option + Command` a `skhd`.
-- Para recargar cambios manualmente: `skhd --reload && yabai --restart-service && sketchybar --reload`.
 
 ## Karabiner-Elements
 

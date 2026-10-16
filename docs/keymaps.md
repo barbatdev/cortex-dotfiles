@@ -65,20 +65,6 @@ Claude Code and OpenCode keybindings are mostly app-native. This repo adds launc
 
 | Tool | Shortcut | Action |
 |------|----------|--------|
-| skhd/yabai | `Option+Command+H/J/K/L` or arrows | Focus window west/south/north/east. |
-| skhd/yabai | `Option+Command+Shift+H/J/K/L` or arrows | Warp or swap window in that direction. |
-| skhd/yabai | `Option+Command+1..9` | Focus space. |
-| skhd/yabai | `Option+Command+Shift+1..9` | Move window to space and follow it. |
-| skhd/yabai | `Option+Command+F` | Toggle float. |
-| skhd/yabai | `Option+Command+Shift+F` | Toggle zoom fullscreen. |
-| skhd/yabai | `Option+Command+B` | Balance layout. |
-| skhd/yabai | `Option+Command+O` | Rotate layout 90 degrees. |
-| skhd/yabai | `Option+Command+X/Y` | Mirror layout horizontally/vertically. |
-| skhd/yabai | `Option+Command+E` | Toggle focused-window split direction. |
-| skhd/yabai | `Option+Command+Tab` | Focus the recent space. |
-| skhd/yabai | `Option+Command+R` | Reset zero gap, balance, and reload SketchyBar. |
-| skhd/yabai | `Option+Command+/` | Show shortcuts help. |
-| skhd/yabai | `Option+Command+Shift+R` | Reload yabai, skhd, and SketchyBar. |
 | Karabiner | tap `Caps Lock` | `Escape`. |
 | Karabiner | hold `Caps Lock` | `Left Control`. |
 | Karabiner | `Right Command` | `Delete backward`. |
@@ -99,5 +85,4 @@ Claude Code and OpenCode keybindings are mostly app-native. This repo adds launc
 
 - [Herdr workflow](herdr-workflow.md)
 - [`ghostty/config`](../ghostty/config)
-- [`skhd/skhdrc`](../skhd/skhdrc)
 - [`karabiner/karabiner.json`](../karabiner/karabiner.json)

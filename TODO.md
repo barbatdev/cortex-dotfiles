@@ -14,7 +14,7 @@ Mejoras identificadas en dotfiles externos de referencia.
 ## Media prioridad
 
 - [x] **SketchyBar macOS** — barra versionada en `sketchybar/`, instalada por Homebrew y enlazada a `~/.config/sketchybar`; incluye espacios, app activa, reloj y calendario.
-- [x] **Issues #327/#328 — servicios y atajos yabai/skhd** — `install.sh` intenta arrancar SketchyBar/yabai/skhd sin cortar por permisos macOS; focus/move usan flechas en skhd, ayuda y README.
+- [x] **Issues #327/#328 — servicios y atajos yabai/skhd** — superseded: yabai/skhd fueron removidos del stack y del repo (la ayuda de atajos de sketchybar y el pair window-management quedaron en Karabiner/macOS nativo).
 - [x] **Karabiner-Elements macOS** — config versionada en `karabiner/karabiner.json`, instalada por Homebrew cask y enlazada a `~/.config/karabiner/karabiner.json`; profile `cortex` con Caps Lock tap Escape / hold Left Control.
 - [x] **`macos-option-as-alt = left` en Ghostty** — Alt izquierdo como meta key, Alt derecho para tildes y ñ.
 - [x] **`right_format` en Starship** — cmd_duration y time alineados al extremo derecho.

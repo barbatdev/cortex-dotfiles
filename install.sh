@@ -162,8 +162,6 @@ PY
             check_command tmux warn
             check_command lazygit warn
             check_command sketchybar warn
-            check_command yabai warn
-            check_command skhd warn
             if check_karabiner_cli_available || check_karabiner_app_exists; then
                 pass "Karabiner-Elements available"
             else
@@ -235,10 +233,6 @@ PY
     if [[ "$(uname -s)" == "Darwin" ]]; then
         check_symlink_target "$DOTFILES/pnpm/rc" "$HOME/Library/Preferences/pnpm/rc"
         check_symlink_target "$DOTFILES/sketchybar" "$HOME/.config/sketchybar"
-        check_symlink_target "$DOTFILES/yabai/yabairc" "$HOME/.config/yabai/yabairc"
-        check_symlink_target "$DOTFILES/yabai/yabairc" "$HOME/.yabairc"
-        check_symlink_target "$DOTFILES/skhd/skhdrc" "$HOME/.config/skhd/skhdrc"
-        check_symlink_target "$DOTFILES/skhd/skhdrc" "$HOME/.skhdrc"
         check_symlink_target "$DOTFILES/karabiner/karabiner.json" "$HOME/.config/karabiner/karabiner.json"
     else
         pass "macOS-only symlink targets skipped on non-macOS platform"
@@ -399,8 +393,6 @@ if [[ "$PLATFORM" == "Darwin" ]]; then
     install_formula_if_missing tmux tmux "multiplexor de terminal"
     install_formula_if_missing lazygit lazygit "git TUI"
     install_formula_if_missing sketchybar sketchybar "barra macOS"
-    install_formula_if_missing yabai yabai "window manager macOS" koekeishiya/formulae
-    install_formula_if_missing skhd skhd "hotkeys macOS" koekeishiya/formulae
 
     if ! karabiner_cli_available && ! karabiner_app_exists; then
         if [[ "$DRY_RUN" == true ]]; then
@@ -530,10 +522,6 @@ if [[ "$PLATFORM" == "Darwin" ]]; then
     backup_managed_symlink "$DOTFILES/fish/functions/grefactoria.fish" "$HOME/.config/fish/functions/grefactoria.fish"
     backup_if_exists "$HOME/Library/Preferences/pnpm/rc"
     backup_if_exists "$HOME/.config/sketchybar"
-    backup_if_exists "$HOME/.config/yabai/yabairc"
-    backup_if_exists "$HOME/.yabairc"
-    backup_if_exists "$HOME/.config/skhd/skhdrc"
-    backup_if_exists "$HOME/.skhdrc"
     backup_karabiner_if_exists
 fi
 
@@ -590,11 +578,6 @@ if [[ "$PLATFORM" == "Darwin" ]]; then
     create_symlink "$DOTFILES/pnpm/rc"                 "$HOME/Library/Preferences/pnpm/rc"
     run_or_plan "chmod +x sketchybar scripts" chmod +x "$DOTFILES/sketchybar/sketchybarrc" "$DOTFILES/sketchybar/plugins"/*.sh
     create_symlink "$DOTFILES/sketchybar"              "$HOME/.config/sketchybar"
-    run_or_plan "chmod +x $DOTFILES/yabai/yabairc" chmod +x "$DOTFILES/yabai/yabairc"
-    create_symlink "$DOTFILES/yabai/yabairc"           "$HOME/.config/yabai/yabairc"
-    create_symlink "$DOTFILES/yabai/yabairc"           "$HOME/.yabairc"
-    create_symlink "$DOTFILES/skhd/skhdrc"             "$HOME/.config/skhd/skhdrc"
-    create_symlink "$DOTFILES/skhd/skhdrc"             "$HOME/.skhdrc"
     create_symlink "$DOTFILES/karabiner/karabiner.json" "$HOME/.config/karabiner/karabiner.json"
 
     KARABINER_CLI="$(karabiner_cli_path || true)"
@@ -649,46 +632,6 @@ if [[ "$PLATFORM" == "Darwin" ]]; then
     else
         echo "  ! Abrí cmux y asegurá su CLI en PATH; después corré: cmux hooks setup"
     fi
-fi
-
-if [[ "$PLATFORM" != "Darwin" ]]; then
-    :
-elif [[ "$DRY_RUN" == true ]]; then
-    echo "  → Would start or restart yabai service if available"
-elif command -v yabai &>/dev/null; then
-    if pgrep -x yabai &>/dev/null; then
-        if yabai --restart-service &>/dev/null; then
-            echo "  ✓ yabai reiniciado"
-        else
-            warn_service "yabai" "yabai --restart-service"
-        fi
-    elif yabai --start-service &>/dev/null; then
-        echo "  ✓ yabai iniciado"
-    else
-        warn_service "yabai" "yabai --start-service"
-    fi
-else
-    echo "  - yabai no disponible; se omite"
-fi
-
-if [[ "$PLATFORM" != "Darwin" ]]; then
-    :
-elif [[ "$DRY_RUN" == true ]]; then
-    echo "  → Would start or reload skhd service if available"
-elif command -v skhd &>/dev/null; then
-    if pgrep -x skhd &>/dev/null; then
-        if skhd --reload &>/dev/null; then
-            echo "  ✓ skhd recargado"
-        else
-            warn_service "skhd" "skhd --reload"
-        fi
-    elif skhd --start-service &>/dev/null; then
-        echo "  ✓ skhd iniciado"
-    else
-        warn_service "skhd" "skhd --start-service"
-    fi
-else
-    echo "  - skhd no disponible; se omite"
 fi
 
 # --- Configuración local ---
