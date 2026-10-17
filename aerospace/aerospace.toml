@@ -1,0 +1,108 @@
+# AeroSpace — migración 1:1 desde yabai (ver ~/.local/backups/yabai-migration-*/).
+# Sin SIP, sin scripting addition: los updates de macOS 27 no rompen el tiling.
+# Los Spaces de macOS siguen existiendo: el indicador space.1..10 de SketchyBar
+# y los atajos ctrl+N de Herdr siguen funcionando sin cambios.
+
+# --- Global ---
+start-at-login = true
+after-startup-command = []
+
+# Sin gaps: las ventanas usan todo el monitor disponible (igual que yabai).
+[gaps]
+inner.horizontal = 0
+inner.vertical = 0
+outer.left = 0
+outer.bottom = 0
+outer.top = 0
+outer.right = 0
+
+[mode.main.binding]
+
+# --- Focus (flechas + vim, igual que skhd alt+cmd) ---
+alt-cmd-left = 'focus left'
+alt-cmd-down = 'focus down'
+alt-cmd-up = 'focus up'
+alt-cmd-right = 'focus right'
+alt-cmd-h = 'focus left'
+alt-cmd-j = 'focus down'
+alt-cmd-k = 'focus up'
+alt-cmd-l = 'focus right'
+
+# --- Mover ventanas en el layout (swap) ---
+alt-cmd-shift-left = 'move left'
+alt-cmd-shift-down = 'move down'
+alt-cmd-shift-up = 'move up'
+alt-cmd-shift-right = 'move right'
+alt-cmd-shift-h = 'move left'
+alt-cmd-shift-j = 'move down'
+alt-cmd-shift-k = 'move up'
+alt-cmd-shift-l = 'move right'
+
+# --- Workspaces 1..9 (mismos atajos que yabai) ---
+alt-cmd-1 = 'workspace 1'
+alt-cmd-2 = 'workspace 2'
+alt-cmd-3 = 'workspace 3'
+alt-cmd-4 = 'workspace 4'
+alt-cmd-5 = 'workspace 5'
+alt-cmd-6 = 'workspace 6'
+alt-cmd-7 = 'workspace 7'
+alt-cmd-8 = 'workspace 8'
+alt-cmd-9 = 'workspace 9'
+
+# Mover ventana al workspace y seguirla
+alt-cmd-shift-1 = 'move-node-to-workspace 1'
+alt-cmd-shift-2 = 'move-node-to-workspace 2'
+alt-cmd-shift-3 = 'move-node-to-workspace 3'
+alt-cmd-shift-4 = 'move-node-to-workspace 4'
+alt-cmd-shift-5 = 'move-node-to-workspace 5'
+alt-cmd-shift-6 = 'move-node-to-workspace 6'
+alt-cmd-shift-7 = 'move-node-to-workspace 7'
+alt-cmd-shift-8 = 'move-node-to-workspace 8'
+alt-cmd-shift-9 = 'move-node-to-workspace 9'
+
+# --- Layout ---
+alt-cmd-f = ['layout floating tiling']       # era: toggle float
+alt-cmd-b = 'balance-sizes'                  # era: space --balance
+alt-cmd-o = ['join-with down']               # era: rotate 90 (aprox. i3: fusionar hacia abajo)
+alt-cmd-x = 'resize smart +50'               # era: mirror x (no existe; redimensionar)
+alt-cmd-y = 'resize smart -50'               # era: mirror y (no existe; redimensionar)
+alt-cmd-e = 'split opposite'                 # era: toggle split
+alt-cmd-shift-f = 'fullscreen'               # era: toggle zoom-fullscreen
+alt-cmd-tab = 'workspace-back-and-forth'     # era: space --focus recent
+
+# Ayuda de atajos de la barra (era 0x2C = coma)
+alt-cmd-comma = 'exec-and-forget ~/.config/sketchybar/plugins/shortcuts_help.sh'
+
+# Recargar config (era: restart yabai service)
+alt-cmd-shift-r = 'reload-config'
+
+[mode.resize.binding]
+h = 'resize width -50'
+j = 'resize height +50'
+k = 'resize height -50'
+l = 'resize width +50'
+left = 'resize width -50'
+down = 'resize height +50'
+up = 'resize height -50'
+right = 'resize width +50'
+enter = 'mode main'
+esc = 'mode main'
+
+# --- Reglas float (equivalente de yabai manage=off) ---
+[[on-window-detected]]
+if.app-id = 'com.apple.systempreferences'
+run = ['layout floating']
+
+[[on-window-detected]]
+if.app-id = 'com.apple.calculator'
+run = ['layout floating']
+
+[[on-window-detected]]
+if.app-id = 'com.apple.ActivityMonitor'
+run = ['layout floating']
+
+[[on-window-detected]]
+if.app-id = 'com.apple.finder'
+if.window-title-regex-substring = '^(Copy|Move|Info|Preferences)'
+check-further-callbacks = true
+run = ['layout floating']

@@ -205,6 +205,7 @@ PY
     check_symlink_target "$DOTFILES/npm/npmrc" "$HOME/.npmrc"
     check_symlink_target "$DOTFILES/bun/bunfig.toml" "$HOME/.bunfig.toml"
     check_symlink_target "$DOTFILES/uv/uv.toml" "$HOME/.config/uv/uv.toml"
+    check_symlink_target "$DOTFILES/aerospace/aerospace.toml" "$HOME/.config/aerospace/aerospace.toml"
     check_symlink_target "$DOTFILES/starship/starship.toml" "$HOME/.config/starship.toml"
     check_symlink_target "$DOTFILES/herdr/config.toml" "$HOME/.config/herdr/config.toml"
     check_symlink_target "$DOTFILES/herdr/config-base.toml" "$HOME/.config/herdr/config-base.toml"
@@ -393,6 +394,7 @@ if [[ "$PLATFORM" == "Darwin" ]]; then
     install_formula_if_missing tmux tmux "multiplexor de terminal"
     install_formula_if_missing lazygit lazygit "git TUI"
     install_formula_if_missing sketchybar sketchybar "barra macOS"
+    install_cask_if_missing "/Applications/AeroSpace.app" aerospace nikitabobko/tap
 
     if ! karabiner_cli_available && ! karabiner_app_exists; then
         if [[ "$DRY_RUN" == true ]]; then
@@ -506,6 +508,7 @@ backup_if_exists "$HOME/.tmux.conf"
 backup_if_exists "$HOME/.claude/statusline.sh"
 backup_if_exists "$HOME/.claude/themes"
 backup_if_exists "$HOME/.config/lazygit/config.yml"
+backup_managed_symlink "$DOTFILES/aerospace/aerospace.toml" "$HOME/.config/aerospace/aerospace.toml"
 backup_managed_symlink "$DOTFILES/fish/themes/barbatdev.fish" "$HOME/.config/fish/themes/barbatdev.fish"
 backup_managed_symlink "$DOTFILES/fish/themes/refactoria.fish" "$HOME/.config/fish/themes/refactoria.fish"
 backup_managed_symlink "$DOTFILES/fish/functions/hbarbatdev.fish" "$HOME/.config/fish/functions/hbarbatdev.fish"
@@ -546,6 +549,7 @@ create_symlink() {
 create_symlink "$DOTFILES/zsh/zshrc"              "$HOME/.zshrc"
 create_symlink "$DOTFILES/npm/npmrc"               "$HOME/.npmrc"
 create_symlink "$DOTFILES/bun/bunfig.toml"         "$HOME/.bunfig.toml"
+create_symlink "$DOTFILES/aerospace/aerospace.toml" "$HOME/.config/aerospace/aerospace.toml"
 create_symlink "$DOTFILES/uv/uv.toml"              "$HOME/.config/uv/uv.toml"
 create_symlink "$DOTFILES/starship/starship.toml"  "$HOME/.config/starship.toml"
 create_symlink "$DOTFILES/herdr/config.toml"       "$HOME/.config/herdr/config.toml"
