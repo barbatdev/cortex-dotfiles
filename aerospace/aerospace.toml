@@ -66,7 +66,7 @@ alt-cmd-b = 'balance-sizes'                  # era: space --balance
 alt-cmd-o = ['join-with down']               # era: rotate 90 (aprox. i3: fusionar hacia abajo)
 alt-cmd-x = 'resize smart +50'               # era: mirror x (no existe; redimensionar)
 alt-cmd-y = 'resize smart -50'               # era: mirror y (no existe; redimensionar)
-alt-cmd-e = 'split opposite'                 # era: toggle split
+alt-cmd-e = 'layout tiles accordion'         # era: toggle split (split no juega con normalización)
 alt-cmd-shift-f = 'fullscreen'               # era: toggle zoom-fullscreen
 alt-cmd-tab = 'workspace-back-and-forth'     # era: space --focus recent
 
