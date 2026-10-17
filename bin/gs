@@ -234,8 +234,36 @@ is_workshop() {
   git -C "$CLONES/gentle-shell" remote get-url origin 2>/dev/null | grep -q 'Gentleman-Programming/gentle-shell'
 }
 
+# run_quiet LABEL CMD... — one-line ok/FAILED status; full output only on failure.
+run_quiet() {
+  local label="$1"; shift
+  local out; out=$(mktemp)
+  if "$@" >"$out" 2>&1; then
+    printf '  %-34s ok\n' "$label"
+  else
+    printf '  %-34s FAILED\n' "$label"
+    sed 's/^/      /' "$out"
+  fi
+  rm -f "$out"
+}
+
+# Installed versions, tolerant to missing binaries (used for before/after diffs).
+shell_version() { gentle-shell --version 2>/dev/null | awk 'NR==1{print $2}'; }
+ai_version()     { "$HOME/.local/bin/gentle-ai" --version 2>/dev/null | awk '{print $2}'; }
+engram_version() { "$HOME/.local/bin/engram" version 2>/dev/null | awk '{print $2}'; }
+
+# changed_part NAME BEFORE AFTER — "name (old -> new)" when the version moved.
+# An if without else always returns 0: under set -e, a plain "changed=$(...)"
+# assignment must not inherit a failure when nothing changed.
+changed_part() {
+  if [ -n "$2" ] && [ -n "$3" ] && [ "$2" != "$3" ]; then printf ' %s (%s -> %s)' "$1" "$2" "$3"; fi
+}
+
 cmd_sync() {
   local repo shell bin="$HOME/.local/share/gentle-ai/main" reg="$HOME/.pi/gentle-ai/dev-binary.json" name
+  # Versions before the sync power the closing message: restart only on change.
+  local shell_before ai_before engram_before
+  shell_before=$(shell_version); ai_before=$(ai_version); engram_before=$(engram_version)
   # Stale GOROOT/GOBIN from a removed version manager breaks every go build.
   if [ -n "${GOROOT:-}" ] && [ ! -d "$GOROOT" ]; then unset GOROOT; fi
   if [ -n "${GOBIN:-}" ] && [ ! -d "$(dirname "$GOBIN")" ]; then unset GOBIN; fi
@@ -243,6 +271,7 @@ cmd_sync() {
   command -v pi >/dev/null 2>&1 || export PATH="$HOME/.pi/agent/bin:$PATH"
   mkdir -p "$bin" "$HOME/.local/bin" "$(dirname "$reg")"
   if is_workshop; then
+    printf 'gs sync — %s — workshop (local clones)\n' "$(date '+%Y-%m-%d %H:%M')"
     for repo in $REPOS; do
       [ -d "$CLONES/$repo/.git" ] || die "missing clean clone $CLONES/$repo"
       [ -z "$(git -C "$CLONES/$repo" status --porcelain)" ] || die "$CLONES/$repo has local changes; clean clones only"
@@ -257,37 +286,38 @@ cmd_sync() {
     (cd "$CLONES/engram/plugin/pi" && npm install --no-save --no-audit --no-fund --omit=peer --silent)
     shell="$CLONES/gentle-shell"
   else
-    printf 'mode: consumer (official update channels)\n'
+    printf 'gs sync — %s — consumer (official update channels)\n' "$(date '+%Y-%m-%d %H:%M')"
     command -v gentle-shell >/dev/null 2>&1 || die "consumer sync needs gentle-shell on PATH; install it first"
     # pi self-update cannot handle every installation schema (e.g. bun-compiled
     # /opt/pi binaries): a failure there must not abort the sync, the official
     # main channel below is the actual update path for Shell and AI.
-    pi update || printf 'WARN: pi update failed (non-self-updatable install?); keeping current pi\n'
+    run_quiet 'pi update' pi update
     # Official main channel: builds Shell + AI from the exact main SHAs and
     # records the channel state, so later upgrades are no-ops when current.
     # Only gentle-shell >= 4.1.0 parses --channel; older launches keep their
     # registry maturity policies happy and just skip this step.
     if [ "$(gentle-shell --version 2>/dev/null | awk 'NR==1{print $2}')" = "4.0.0" ]; then
-      printf 'gentle-shell 4.0.0 cannot follow the main channel yet; skipping (needs >= 4.1.0)\n'
-    elif ! gentle-shell upgrade --channel main; then
+      printf '  %-34s skipped (4.0.0 cannot follow the main channel yet; needs >= 4.1.0)\n' 'gentle-shell upgrade (main)'
+    else
       # Transient failures (GitHub API rate limit, network) must not abort the
       # rest of the sync: extensions, engram and the compat check still run.
-      printf 'WARN: main-channel upgrade failed; keeping the current builds\n'
+      run_quiet 'gentle-shell upgrade (main)' gentle-shell upgrade --channel main
     fi
-    pi update --extensions || printf 'WARN: pi update --extensions failed; keeping current extensions\n'
+    run_quiet 'pi update --extensions' pi update --extensions
     # Only remaining homemade piece: the engram core binary (no official channel yet).
-    GOPROXY=direct GOBIN="$bin" go install github.com/Gentleman-Programming/engram/v3/cmd/engram@main
+    run_quiet 'engram (go install @main)' env GOPROXY=direct GOBIN="$bin" go install github.com/Gentleman-Programming/engram/v3/cmd/engram@main
     shell="$HOME/.pi/agent/git/github.com/Gentleman-Programming/gentle-pi"
   fi
-    # Mac-only app clones: sync when present, never fail if absent.
-    for repo in $MAC_APP_REPOS; do
-      [ -d "$CLONES/$repo/.git" ] || continue
-      [ -z "$(git -C "$CLONES/$repo" status --porcelain)" ] || { printf '%-13s skipped (local changes)\n' "$repo"; continue; }
-      git -C "$CLONES/$repo" checkout -q main 2>/dev/null || true
-      git -C "$CLONES/$repo" fetch -q --tags origin
-      git -C "$CLONES/$repo" pull -q --ff-only origin main
-      printf '%-13s %s\n' "$repo" "$(git -C "$CLONES/$repo" log -1 --format='%h %cs %s')"
-    done
+  # Mac-only app clones: sync when present, never fail if absent.
+  local app_synced=""
+  for repo in $MAC_APP_REPOS; do
+    [ -d "$CLONES/$repo/.git" ] || continue
+    [ -z "$(git -C "$CLONES/$repo" status --porcelain)" ] || { printf '  %-34s skipped (%s has local changes)\n' "$repo" "$repo"; continue; }
+    git -C "$CLONES/$repo" checkout -q main 2>/dev/null || true
+    git -C "$CLONES/$repo" fetch -q --tags origin
+    git -C "$CLONES/$repo" pull -q --ff-only origin main
+    app_synced="$app_synced $repo@$(git -C "$CLONES/$repo" log -1 --format=%h)"
+  done
   for name in gentle-ai engram; do
     if [ -e "$HOME/.local/bin/$name" ] && [ ! -L "$HOME/.local/bin/$name" ]; then
       mv "$HOME/.local/bin/$name" "$HOME/.local/bin/$name.pre-gw"
@@ -309,7 +339,12 @@ cmd_sync() {
   ln -sfn "$ai_bin" "$HOME/.local/bin/gentle-ai"
   ln -sfn "$bin/engram" "$HOME/.local/bin/engram"
 
-  printf '\ngentle-ai:  %s\nengram:     %s\n' "$("$ai_bin" --version 2>&1)" "$("$bin/engram" version 2>&1)"
+  # Versions after the sync decide the closing message: restart only on change.
+  local shell_after ai_after engram_after changed
+  shell_after=$(shell_version); ai_after=$(ai_version); engram_after=$(engram_version)
+  changed="$(changed_part shell "$shell_before" "$shell_after")$(changed_part gentle-ai "$ai_before" "$ai_after")$(changed_part engram "$engram_before" "$engram_after")"
+  printf '\nversions: shell %s | gentle-ai %s | engram %s\n' "${shell_after:-?}" "${ai_after:-?}" "${engram_after:-?}"
+  [ -n "$app_synced" ] && printf 'app repos:%s\n' "$app_synced"
   for name in gentle-ai engram; do
     [ "$(command -v "$name")" = "$HOME/.local/bin/$name" ] || printf 'WARN: %s on PATH is %s, not our build\n' "$name" "$(command -v "$name")"
   done
@@ -328,7 +363,11 @@ cmd_sync() {
   if is_workshop && grep -qE 'npm:gentle-(pi|engram)|git:github.com/Gentleman-Programming/gentle-(pi|shell)' "$HOME/.pi/agent/settings.json" 2>/dev/null; then
     printf 'WARN: ~/.pi/agent/settings.json lists a published gentle-pi/gentle-engram again; remove it\n'
   fi
-  printf '\nRestart Pi to pick up the new versions.\n'
+  if [ -n "$changed" ]; then
+    printf 'changed:%s\n  Restart Pi to pick them up.\n' "$changed"
+  else
+    printf 'nothing changed — no Pi restart needed.\n'
+  fi
 }
 
 cmd_ls() {
