@@ -353,9 +353,9 @@ cmd_sync() {
   done
   local emits reads
   emits=$( ("$ai_bin" review status --cwd "$shell" --contract gentle-ai.review-integration/v2 \
-    --agent claude-code --next-transition 2>/dev/null || true) | grep -o 'review-integration\.status/v[0-9]*' | head -1 | sed 's#.*/##')
+    --agent claude-code --next-transition 2>/dev/null || true) | grep -o 'review-integration\.status/v[0-9]*' | head -1 | sed 's#.*/##' || true)
   reads=$( (grep -rhoE 'review-integration\.status/v[0-9]+' "$shell/lib" "$shell/extensions" 2>/dev/null || true) \
-    | sed 's#.*/##' | sort -uV | tr '\n' ' ')
+    | sed 's#.*/##' | sort -uV | tr '\n' ' ' || true)
   if [ -z "$emits" ] || [ -z "$reads" ]; then
     printf 'compat:     UNVERIFIED (emits=%s reads=%s)\n' "${emits:-?}" "${reads:-?}"
   elif printf '%s' "$reads" | tr ' ' '\n' | grep -qx "$emits"; then
