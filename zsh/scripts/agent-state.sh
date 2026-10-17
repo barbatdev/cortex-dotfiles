@@ -296,6 +296,6 @@ raise SystemExit(main(sys.argv[1:]))
 PY
 }
 
-if [ "${0##*/}" = "agent-state.sh" ] && [ -z "${ZSH_EVAL_CONTEXT:-}" ]; then
+if { [ "${0##*/}" = "agent-state.sh" ] || [ "${0##*/}" = "agent-state" ]; } && [ -z "${ZSH_EVAL_CONTEXT:-}" ]; then
     cortex_agent_state "$@"
 fi

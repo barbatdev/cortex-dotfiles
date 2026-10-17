@@ -42,6 +42,8 @@ MANAGED_LINKS=(
   "pnpm/rc|$HOME/Library/Preferences/pnpm/rc|darwin"
   "sketchybar|$HOME/.config/sketchybar|darwin"
   "karabiner/karabiner.json|$HOME/.config/karabiner/karabiner.json|darwin"
+  "pi/extensions/cortex-agent-state.ts|$HOME/.pi/agent/extensions/cortex-agent-state.ts|all"
+  "zsh/scripts/agent-state.sh|$HOME/.local/bin/agent-state|all"
 )
 
 # Whether a manifest entry (src|dst|platform) applies to the current platform.
@@ -543,6 +545,7 @@ done < <(manifest_entries)
 source "$DOTFILES/scripts/seed-file.sh"
 seed_file "$DOTFILES/opencode/tui.json" "$HOME/.config/opencode/tui.json"
 run_or_plan "chmod +x $DOTFILES/claude/statusline.sh" chmod +x "$DOTFILES/claude/statusline.sh"
+run_or_plan "chmod +x agent-state CLI" chmod +x "$DOTFILES/zsh/scripts/agent-state.sh"
 if [[ "$PLATFORM" == "Darwin" ]]; then
     run_or_plan "chmod +x sketchybar scripts" chmod +x "$DOTFILES/sketchybar/sketchybarrc" "$DOTFILES/sketchybar/plugins"/*.sh
 
