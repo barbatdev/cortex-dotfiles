@@ -248,9 +248,12 @@ run_quiet() {
 }
 
 # Installed versions, tolerant to missing binaries (used for before/after diffs).
-shell_version() { gentle-shell --version 2>/dev/null | awk 'NR==1{print $2}'; }
-ai_version()     { "$HOME/.local/bin/gentle-ai" --version 2>/dev/null | awk '{print $2}'; }
-engram_version() { "$HOME/.local/bin/engram" version 2>/dev/null | awk '{print $2}'; }
+# The `|| true` is load-bearing: with pipefail, a missing binary (127) in the
+# pipeline would kill the whole script under set -e before any output (this bit
+# nan, where gentle-ai is not installed yet).
+shell_version() { gentle-shell --version 2>/dev/null | awk 'NR==1{print $2}' || true; }
+ai_version()     { "$HOME/.local/bin/gentle-ai" --version 2>/dev/null | awk '{print $2}' || true; }
+engram_version() { "$HOME/.local/bin/engram" version 2>/dev/null | awk '{print $2}' || true; }
 
 # changed_part NAME BEFORE AFTER — "name (old -> new)" when the version moved.
 # An if without else always returns 0: under set -e, a plain "changed=$(...)"
