@@ -352,9 +352,9 @@ cmd_sync() {
     [ "$(command -v "$name")" = "$HOME/.local/bin/$name" ] || printf 'WARN: %s on PATH is %s, not our build\n' "$name" "$(command -v "$name")"
   done
   local emits reads
-  emits=$("$ai_bin" review status --cwd "$shell" --contract gentle-ai.review-integration/v2 \
-    --agent claude-code --next-transition 2>/dev/null | grep -o 'review-integration\.status/v[0-9]*' | head -1 | sed 's#.*/##')
-  reads=$(grep -rhoE 'review-integration\.status/v[0-9]+' "$shell/lib" "$shell/extensions" 2>/dev/null \
+  emits=$( ("$ai_bin" review status --cwd "$shell" --contract gentle-ai.review-integration/v2 \
+    --agent claude-code --next-transition 2>/dev/null || true) | grep -o 'review-integration\.status/v[0-9]*' | head -1 | sed 's#.*/##')
+  reads=$( (grep -rhoE 'review-integration\.status/v[0-9]+' "$shell/lib" "$shell/extensions" 2>/dev/null || true) \
     | sed 's#.*/##' | sort -uV | tr '\n' ' ')
   if [ -z "$emits" ] || [ -z "$reads" ]; then
     printf 'compat:     UNVERIFIED (emits=%s reads=%s)\n' "${emits:-?}" "${reads:-?}"
