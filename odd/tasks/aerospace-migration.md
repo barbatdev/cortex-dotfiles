@@ -22,7 +22,9 @@ macOS 27 rompió yabai (scripting addition roto, sin release con fix). El usuari
 - L1 (user): "ayer te pedí sacar yabai... no era eso lo que me estaba jodiendo. Desde que entro macos 27 empezó a joder mal yabai y capaz ya sacaron alguna actualización?"
 - L2: verificado — yabai 7.1.25 no soporta macOS 27; fixes en master sin release; mantenedor poco activo (#2684). Decisión: migrar a AeroSpace 0.21.3-Beta.
 - L3: AeroSpace requiere Accesibilidad (gate del usuario); otorgado. Server arriba, 3 ventanas gestionadas, workspaces 1..9.
-- L4 (user): "te trancaste mal" → recuperación vía manpages del cask en vez de probar flags.
+## Log
+
+- L5 (cierre revert): AeroSpace era inestable en el combo real (macOS 27 + 4 monitores: crashes + desync workspace↔space). Revert a yabai 7.1.25 parcheado (#2800, alias 27→26, binario compilado y reemplazado en Cellar) + skhd como LaunchAgents de usuario. Tiling y atajos verificados. Sin SA: space ops no-op — el usuario confirmó que no usa espacios de yabai. osax /Library/ScriptingAdditions/yabai.osax borrado con sudo (confirmado ausente). Pendiente menor: ninguno bloqueante.
 
 ## Notas
 
