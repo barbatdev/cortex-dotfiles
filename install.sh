@@ -7,6 +7,61 @@ TIMESTAMP=$(date +%Y%m%d_%H%M%S)
 DRY_RUN=false
 PLATFORM="$(uname -s)"
 
+# --- Managed symlink manifest (single source of truth) ---
+# Format: "repo-relative-src|absolute-destination|platform"
+# platform: "all" or "darwin". Consumed by backup, symlink creation and --check,
+# so a new dotfile only needs one entry here.
+MANAGED_LINKS=(
+  "zsh/zshrc|$HOME/.zshrc|all"
+  "npm/npmrc|$HOME/.npmrc|all"
+  "bun/bunfig.toml|$HOME/.bunfig.toml|all"
+  "aerospace/aerospace.toml|$HOME/.config/aerospace/aerospace.toml|all"
+  "uv/uv.toml|$HOME/.config/uv/uv.toml|all"
+  "starship/starship.toml|$HOME/.config/starship.toml|all"
+  "herdr/config.toml|$HOME/.config/herdr/config.toml|all"
+  "herdr/config-base.toml|$HOME/.config/herdr/config-base.toml|all"
+  "herdr/profiles/barbatdev.toml|$HOME/.config/herdr/profiles/barbatdev.toml|all"
+  "herdr/profiles/refactoria.toml|$HOME/.config/herdr/profiles/refactoria.toml|all"
+  "fish/themes/barbatdev.fish|$HOME/.config/fish/themes/barbatdev.fish|all"
+  "fish/themes/refactoria.fish|$HOME/.config/fish/themes/refactoria.fish|all"
+  "fish/functions/hbarbatdev.fish|$HOME/.config/fish/functions/hbarbatdev.fish|all"
+  "fish/functions/hrefactoria.fish|$HOME/.config/fish/functions/hrefactoria.fish|all"
+  "pi/themes/barbatdev.json|$HOME/.pi/agent/themes/barbatdev.json|all"
+  "pi/themes/refactoria.json|$HOME/.pi/agent/themes/refactoria.json|all"
+  "ghostty/config|$HOME/.config/ghostty/config|all"
+  "ghostty/shaders|$HOME/.config/ghostty/shaders|all"
+  "ghostty/profiles/barbatdev.conf|$HOME/.config/ghostty/profiles/barbatdev.conf|darwin"
+  "ghostty/profiles/refactoria.conf|$HOME/.config/ghostty/profiles/refactoria.conf|darwin"
+  "fish/functions/gbarbatdev.fish|$HOME/.config/fish/functions/gbarbatdev.fish|darwin"
+  "fish/functions/grefactoria.fish|$HOME/.config/fish/functions/grefactoria.fish|darwin"
+  "opencode/tui.json|$HOME/.config/opencode/tui.json|all"
+  "opencode/themes|$HOME/.config/opencode/themes|all"
+  "tmux/tmux.conf|$HOME/.tmux.conf|all"
+  "claude/statusline.sh|$HOME/.claude/statusline.sh|all"
+  "claude/themes|$HOME/.claude/themes|all"
+  "lazygit/config.yml|$HOME/.config/lazygit/config.yml|all"
+  "pnpm/rc|$HOME/Library/Preferences/pnpm/rc|darwin"
+  "sketchybar|$HOME/.config/sketchybar|darwin"
+  "karabiner/karabiner.json|$HOME/.config/karabiner/karabiner.json|darwin"
+)
+
+# Whether a manifest entry (src|dst|platform) applies to the current platform.
+link_applies() {
+    local platform="$3"
+    [[ "$platform" == "all" ]] && return 0
+    [[ "$platform" == "darwin" && "$PLATFORM" == "Darwin" ]]
+}
+
+# Emit each applicable manifest entry as "abs-src|dst|platform".
+manifest_entries() {
+    local entry src dst platform
+    for entry in "${MANAGED_LINKS[@]}"; do
+        IFS='|' read -r src dst platform <<<"$entry"
+        link_applies "$src" "$dst" "$platform" || continue
+        printf '%s|%s|%s\n' "$DOTFILES/$src" "$dst" "$platform"
+    done
+}
+
 if [[ "${1:-}" == "--dry-run" ]]; then
     DRY_RUN=true
 fi
@@ -201,41 +256,13 @@ PY
 
     echo ""
     echo "checking symlink targets"
-    check_symlink_target "$DOTFILES/zsh/zshrc" "$HOME/.zshrc"
-    check_symlink_target "$DOTFILES/npm/npmrc" "$HOME/.npmrc"
-    check_symlink_target "$DOTFILES/bun/bunfig.toml" "$HOME/.bunfig.toml"
-    check_symlink_target "$DOTFILES/uv/uv.toml" "$HOME/.config/uv/uv.toml"
-    check_symlink_target "$DOTFILES/aerospace/aerospace.toml" "$HOME/.config/aerospace/aerospace.toml"
-    check_symlink_target "$DOTFILES/starship/starship.toml" "$HOME/.config/starship.toml"
-    check_symlink_target "$DOTFILES/herdr/config.toml" "$HOME/.config/herdr/config.toml"
-    check_symlink_target "$DOTFILES/herdr/config-base.toml" "$HOME/.config/herdr/config-base.toml"
-    check_symlink_target "$DOTFILES/herdr/profiles/barbatdev.toml" "$HOME/.config/herdr/profiles/barbatdev.toml"
-    check_symlink_target "$DOTFILES/herdr/profiles/refactoria.toml" "$HOME/.config/herdr/profiles/refactoria.toml"
-    check_symlink_target "$DOTFILES/fish/themes/barbatdev.fish" "$HOME/.config/fish/themes/barbatdev.fish"
-    check_symlink_target "$DOTFILES/fish/themes/refactoria.fish" "$HOME/.config/fish/themes/refactoria.fish"
-    check_symlink_target "$DOTFILES/fish/functions/hbarbatdev.fish" "$HOME/.config/fish/functions/hbarbatdev.fish"
-    check_symlink_target "$DOTFILES/fish/functions/hrefactoria.fish" "$HOME/.config/fish/functions/hrefactoria.fish"
-    check_symlink_target "$DOTFILES/pi/themes/barbatdev.json" "$HOME/.pi/agent/themes/barbatdev.json"
-    check_symlink_target "$DOTFILES/pi/themes/refactoria.json" "$HOME/.pi/agent/themes/refactoria.json"
-    check_symlink_target "$DOTFILES/ghostty/config" "$HOME/.config/ghostty/config"
-    check_symlink_target "$DOTFILES/ghostty/shaders" "$HOME/.config/ghostty/shaders"
-    if [[ "$(uname -s)" == "Darwin" ]]; then
-        check_symlink_target "$DOTFILES/ghostty/profiles/barbatdev.conf" "$HOME/.config/ghostty/profiles/barbatdev.conf"
-        check_symlink_target "$DOTFILES/ghostty/profiles/refactoria.conf" "$HOME/.config/ghostty/profiles/refactoria.conf"
-        check_symlink_target "$DOTFILES/fish/functions/gbarbatdev.fish" "$HOME/.config/fish/functions/gbarbatdev.fish"
-        check_symlink_target "$DOTFILES/fish/functions/grefactoria.fish" "$HOME/.config/fish/functions/grefactoria.fish"
-    fi
-    check_symlink_target "$DOTFILES/opencode/tui.json" "$HOME/.config/opencode/tui.json"
-    check_symlink_target "$DOTFILES/opencode/themes" "$HOME/.config/opencode/themes"
-    check_symlink_target "$DOTFILES/tmux/tmux.conf" "$HOME/.tmux.conf"
-    check_symlink_target "$DOTFILES/claude/statusline.sh" "$HOME/.claude/statusline.sh"
-    check_symlink_target "$DOTFILES/claude/themes" "$HOME/.claude/themes"
-    check_symlink_target "$DOTFILES/lazygit/config.yml" "$HOME/.config/lazygit/config.yml"
-    if [[ "$(uname -s)" == "Darwin" ]]; then
-        check_symlink_target "$DOTFILES/pnpm/rc" "$HOME/Library/Preferences/pnpm/rc"
-        check_symlink_target "$DOTFILES/sketchybar" "$HOME/.config/sketchybar"
-        check_symlink_target "$DOTFILES/karabiner/karabiner.json" "$HOME/.config/karabiner/karabiner.json"
-    else
+    manifest_count=0
+    while IFS='|' read -r src dst _; do
+        check_symlink_target "$src" "$dst"
+        manifest_count=$((manifest_count + 1))
+    done < <(manifest_entries)
+    pass "manifest symlinks checked: $manifest_count"
+    if [[ "$(uname -s)" != "Darwin" ]]; then
         pass "macOS-only symlink targets skipped on non-macOS platform"
     fi
 
@@ -254,9 +281,9 @@ PY
         check_shell "$path" bash
     done
     check_json "$DOTFILES/karabiner/karabiner.json"
-    for path in "$DOTFILES"/opencode/*.json "$DOTFILES"/opencode/**/*.json "$DOTFILES"/claude/themes/*.json "$DOTFILES"/pi/themes/*.json; do
+    while IFS= read -r -d '' path; do
         check_json "$path"
-    done
+    done < <(find "$DOTFILES/opencode" "$DOTFILES/claude/themes" "$DOTFILES/pi/themes" -name '*.json' -type f -print0 2>/dev/null | sort -z)
     for path in \
         "$DOTFILES/fish/themes/barbatdev.fish" \
         "$DOTFILES/fish/themes/refactoria.fish" \
@@ -269,9 +296,9 @@ PY
     check_toml "$DOTFILES/starship/starship.toml"
     check_toml "$DOTFILES/bun/bunfig.toml"
     check_toml "$DOTFILES/uv/uv.toml"
-    for path in "$DOTFILES"/herdr/*.toml "$DOTFILES"/herdr/**/*.toml; do
+    while IFS= read -r -d '' path; do
         check_toml "$path"
-    done
+    done < <(find "$DOTFILES/herdr" -name '*.toml' -type f -print0 2>/dev/null | sort -z)
 
     echo ""
     if [[ "$CRITICAL_FAILURES" -gt 0 ]]; then
@@ -441,47 +468,16 @@ fi
 echo ""
 echo "💾 Haciendo backup de configs existentes..."
 
-backup_if_exists() {
+# Unified backup: symlinks are backed up with cp -P (never following the
+# operand into the repo), real files/dirs with cp -R. An already-correct
+# managed symlink is skipped so re-running install creates no new backups.
+backup_path() {
     local src="$1"
-    if [[ -e "$src" && ! -L "$src" ]]; then
-        local backup="${src}.bak_${TIMESTAMP}"
-        if [[ "$DRY_RUN" == true ]]; then
-            echo "  → Would backup $src to $backup"
-        else
-            cp -R "$src" "$backup"
-            echo "  → Backup: $backup"
-        fi
-    fi
-}
-
-backup_karabiner_if_exists() {
-    local src="$HOME/.config/karabiner/karabiner.json"
-    if [[ -e "$src" || -L "$src" ]]; then
-        local backup="${src}.bak_${TIMESTAMP}"
-        if [[ "$DRY_RUN" == true ]]; then
-            echo "  → Would backup $src to $backup"
-        else
-            if [[ -L "$src" ]]; then
-                cp -P "$src" "$backup"
-            else
-                cp "$src" "$backup"
-            fi
-            echo "  → Backup: $backup"
-        fi
-    fi
-}
-
-backup_managed_symlink() {
-    local expected_src="$1"
     local dst="$2"
-
-    if [[ -L "$dst" && "$(readlink "$dst")" == "$expected_src" ]]; then
-        return
+    [[ -e "$dst" || -L "$dst" ]] || return 0
+    if [[ -L "$dst" && "$(readlink "$dst")" == "$src" ]]; then
+        return 0
     fi
-    if [[ ! -e "$dst" && ! -L "$dst" ]]; then
-        return
-    fi
-
     local backup="${dst}.bak_${TIMESTAMP}"
     if [[ "$DRY_RUN" == true ]]; then
         echo "  → Would backup $dst to $backup"
@@ -494,39 +490,31 @@ backup_managed_symlink() {
     fi
 }
 
-backup_if_exists "$HOME/.zshrc"
-backup_if_exists "$HOME/.npmrc"
-backup_if_exists "$HOME/.bunfig.toml"
-backup_if_exists "$HOME/.config/uv/uv.toml"
-backup_if_exists "$HOME/.config/starship.toml"
-backup_if_exists "$HOME/.config/herdr/config.toml"
-backup_if_exists "$HOME/.config/ghostty/config"
-backup_if_exists "$HOME/.config/herdr/config.toml"
-backup_if_exists "$HOME/.config/opencode/tui.json"
-backup_if_exists "$HOME/.config/opencode/themes"
-backup_if_exists "$HOME/.tmux.conf"
-backup_if_exists "$HOME/.claude/statusline.sh"
-backup_if_exists "$HOME/.claude/themes"
-backup_if_exists "$HOME/.config/lazygit/config.yml"
-backup_managed_symlink "$DOTFILES/aerospace/aerospace.toml" "$HOME/.config/aerospace/aerospace.toml"
-backup_managed_symlink "$DOTFILES/fish/themes/barbatdev.fish" "$HOME/.config/fish/themes/barbatdev.fish"
-backup_managed_symlink "$DOTFILES/fish/themes/refactoria.fish" "$HOME/.config/fish/themes/refactoria.fish"
-backup_managed_symlink "$DOTFILES/fish/functions/hbarbatdev.fish" "$HOME/.config/fish/functions/hbarbatdev.fish"
-backup_managed_symlink "$DOTFILES/fish/functions/hrefactoria.fish" "$HOME/.config/fish/functions/hrefactoria.fish"
-backup_managed_symlink "$DOTFILES/herdr/config-base.toml" "$HOME/.config/herdr/config-base.toml"
-backup_managed_symlink "$DOTFILES/herdr/profiles/barbatdev.toml" "$HOME/.config/herdr/profiles/barbatdev.toml"
-backup_managed_symlink "$DOTFILES/herdr/profiles/refactoria.toml" "$HOME/.config/herdr/profiles/refactoria.toml"
-backup_managed_symlink "$DOTFILES/pi/themes/barbatdev.json" "$HOME/.pi/agent/themes/barbatdev.json"
-backup_managed_symlink "$DOTFILES/pi/themes/refactoria.json" "$HOME/.pi/agent/themes/refactoria.json"
-if [[ "$PLATFORM" == "Darwin" ]]; then
-    backup_managed_symlink "$DOTFILES/ghostty/profiles/barbatdev.conf" "$HOME/.config/ghostty/profiles/barbatdev.conf"
-    backup_managed_symlink "$DOTFILES/ghostty/profiles/refactoria.conf" "$HOME/.config/ghostty/profiles/refactoria.conf"
-    backup_managed_symlink "$DOTFILES/fish/functions/gbarbatdev.fish" "$HOME/.config/fish/functions/gbarbatdev.fish"
-    backup_managed_symlink "$DOTFILES/fish/functions/grefactoria.fish" "$HOME/.config/fish/functions/grefactoria.fish"
-    backup_if_exists "$HOME/Library/Preferences/pnpm/rc"
-    backup_if_exists "$HOME/.config/sketchybar"
-    backup_karabiner_if_exists
-fi
+# Pre-flight: a real directory at a symlink destination cannot be replaced by
+# ln -sfn (it would fail mid-run with set -e). Abort cleanly before any change.
+preflight_conflicts() {
+    local src dst conflicts=0
+    while IFS='|' read -r src dst _; do
+        if [[ -d "$dst" && ! -L "$dst" ]]; then
+            if [[ "$DRY_RUN" == true ]]; then
+                echo "  → Would abort: $dst is a real directory; remove or move it before installing"
+            else
+                echo "❌ $dst es un directorio real; movelo o borralo antes de instalar (el symlink no puede reemplazarlo)."
+            fi
+            conflicts=$((conflicts + 1))
+        fi
+    done < <(manifest_entries)
+    if [[ "$conflicts" -gt 0 && "$DRY_RUN" != true ]]; then
+        echo "Abortando: $conflicts destino(s) son directorios reales y romperían la creación de symlinks."
+        exit 1
+    fi
+}
+
+preflight_conflicts
+
+while IFS='|' read -r src dst _; do
+    backup_path "$src" "$dst"
+done < <(manifest_entries)
 
 # --- Crear symlinks ---
 echo ""
@@ -546,43 +534,13 @@ create_symlink() {
     fi
 }
 
-create_symlink "$DOTFILES/zsh/zshrc"              "$HOME/.zshrc"
-create_symlink "$DOTFILES/npm/npmrc"               "$HOME/.npmrc"
-create_symlink "$DOTFILES/bun/bunfig.toml"         "$HOME/.bunfig.toml"
-create_symlink "$DOTFILES/aerospace/aerospace.toml" "$HOME/.config/aerospace/aerospace.toml"
-create_symlink "$DOTFILES/uv/uv.toml"              "$HOME/.config/uv/uv.toml"
-create_symlink "$DOTFILES/starship/starship.toml"  "$HOME/.config/starship.toml"
-create_symlink "$DOTFILES/herdr/config.toml"       "$HOME/.config/herdr/config.toml"
-create_symlink "$DOTFILES/herdr/config-base.toml"  "$HOME/.config/herdr/config-base.toml"
-create_symlink "$DOTFILES/herdr/profiles/barbatdev.toml" "$HOME/.config/herdr/profiles/barbatdev.toml"
-create_symlink "$DOTFILES/herdr/profiles/refactoria.toml" "$HOME/.config/herdr/profiles/refactoria.toml"
-create_symlink "$DOTFILES/fish/themes/barbatdev.fish" "$HOME/.config/fish/themes/barbatdev.fish"
-create_symlink "$DOTFILES/fish/themes/refactoria.fish" "$HOME/.config/fish/themes/refactoria.fish"
-create_symlink "$DOTFILES/fish/functions/hbarbatdev.fish" "$HOME/.config/fish/functions/hbarbatdev.fish"
-create_symlink "$DOTFILES/fish/functions/hrefactoria.fish" "$HOME/.config/fish/functions/hrefactoria.fish"
-create_symlink "$DOTFILES/pi/themes/barbatdev.json" "$HOME/.pi/agent/themes/barbatdev.json"
-create_symlink "$DOTFILES/pi/themes/refactoria.json" "$HOME/.pi/agent/themes/refactoria.json"
-create_symlink "$DOTFILES/ghostty/config"          "$HOME/.config/ghostty/config"
-create_symlink "$DOTFILES/ghostty/shaders"         "$HOME/.config/ghostty/shaders"
-if [[ "$PLATFORM" == "Darwin" ]]; then
-    create_symlink "$DOTFILES/ghostty/profiles/barbatdev.conf" "$HOME/.config/ghostty/profiles/barbatdev.conf"
-    create_symlink "$DOTFILES/ghostty/profiles/refactoria.conf" "$HOME/.config/ghostty/profiles/refactoria.conf"
-    create_symlink "$DOTFILES/fish/functions/gbarbatdev.fish" "$HOME/.config/fish/functions/gbarbatdev.fish"
-    create_symlink "$DOTFILES/fish/functions/grefactoria.fish" "$HOME/.config/fish/functions/grefactoria.fish"
-fi
-create_symlink "$DOTFILES/opencode/tui.json"       "$HOME/.config/opencode/tui.json"
-create_symlink "$DOTFILES/opencode/themes"         "$HOME/.config/opencode/themes"
-create_symlink "$DOTFILES/tmux/tmux.conf"          "$HOME/.tmux.conf"
+while IFS='|' read -r src dst _; do
+    create_symlink "$src" "$dst"
+done < <(manifest_entries)
 run_or_plan "chmod +x $DOTFILES/claude/statusline.sh" chmod +x "$DOTFILES/claude/statusline.sh"
 run_or_plan "chmod +x cmux integration scripts" chmod +x "$DOTFILES/zsh/scripts/cmux-sidebar-refresh.sh"
-create_symlink "$DOTFILES/claude/statusline.sh"    "$HOME/.claude/statusline.sh"
-create_symlink "$DOTFILES/claude/themes"           "$HOME/.claude/themes"
-create_symlink "$DOTFILES/lazygit/config.yml"      "$HOME/.config/lazygit/config.yml"
 if [[ "$PLATFORM" == "Darwin" ]]; then
-    create_symlink "$DOTFILES/pnpm/rc"                 "$HOME/Library/Preferences/pnpm/rc"
     run_or_plan "chmod +x sketchybar scripts" chmod +x "$DOTFILES/sketchybar/sketchybarrc" "$DOTFILES/sketchybar/plugins"/*.sh
-    create_symlink "$DOTFILES/sketchybar"              "$HOME/.config/sketchybar"
-    create_symlink "$DOTFILES/karabiner/karabiner.json" "$HOME/.config/karabiner/karabiner.json"
 
     KARABINER_CLI="$(karabiner_cli_path || true)"
     if [[ -n "$KARABINER_CLI" ]]; then
