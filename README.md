@@ -54,6 +54,34 @@ El instalador macOS:
 6. Intenta arrancar/recargar `sketchybar` sin cortar la instalación si macOS requiere permisos
 7. Crea `local/env.zsh` desde el template
 
+### Backups y restore
+
+Cada destino de symlink existente que no apunte ya al repo se respalda antes de
+reescribirlo como `<destino>.bak_<YYYYMMDD_HHMMSS>`:
+
+- Un symlink existente se respalda con `cp -P` (el link, sin seguir su destino).
+- Un archivo o directorio real se respalda con `cp -R`.
+
+Restore manual:
+
+```bash
+# 1. Quitá el symlink administrado
+rm ~/.zshrc
+# 2. Restaurá el backup más reciente (lista con ls -la ~/.zshrc.bak_*)
+cp -R ~/.zshrc.bak_20260213_101500 ~/.zshrc
+```
+
+Para directorios completos (por ejemplo `~/.config/opencode/themes`), borrá el
+symlink y usá `cp -R backup directorio`. Los backups no se limpian
+automáticamente; revisalos periódicamente con:
+
+```bash
+find ~ -maxdepth 4 -name '*.bak_[0-9]*' -print
+```
+
+Si un destino es un directorio real (no symlink), el instalador aborta antes de
+tocar nada: movelo o borralo y volvé a correr `install.sh`.
+
 ## Perfiles visuales opt-in
 
 `./install.sh` instala estos assets mediante symlinks individuales. No cambia el theme activo de Pi, Herdr, Fish o Ghostty; tampoco modifica Starship ni las variables universales de Fish.
