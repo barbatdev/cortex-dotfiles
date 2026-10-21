@@ -16,8 +16,8 @@ GitHub Actions ejecuta un smoke check mínimo en pull requests y pushes a `main`
 - **Keyboard remaps macOS**: [Karabiner-Elements](https://karabiner-elements.pqrs.org/) con profile `cortex`
 - **Editor terminal**: Neovim basado en LazyVim/Gentleman.Dots; la config host selecciona `gentleman-kanagawa-blur` y no se encontró un overlay RefactorIA en la auditoría
 - **Ls**: [eza](https://github.com/eza-community/eza)
-- **AI CLI UX**: Claude Code statusline, OpenCode helpers y cmux local/remoto
-- **Workflow docs**: [cmux workflow](docs/cmux-workflow.md), [Herdr workflow](docs/herdr-workflow.md) y [keymaps prácticos](docs/keymaps.md)
+- **AI CLI UX**: Claude Code statusline, OpenCode helpers y herdr local/remoto
+- **Workflow docs**: [Herdr workflow](docs/herdr-workflow.md) y [keymaps prácticos](docs/keymaps.md)
 - **Supply-chain guardrails**: defaults globales para `uv`, `npm`, `pnpm` y `bun`
 - **Fuente**: FiraCode Nerd Font + variante custom RefactorIA
 
@@ -46,7 +46,7 @@ bash install.sh --dry-run
 
 El instalador macOS:
 
-1. Instala dependencias via Homebrew (cmux, starship, tmux, lazygit, neovim, eza, sketchybar, Karabiner-Elements, FiraCode Nerd Font)
+1. Instala dependencias via Homebrew (starship, tmux, lazygit, neovim, eza, sketchybar, Karabiner-Elements, FiraCode Nerd Font)
 2. Hace backup de configs existentes con timestamp
 3. Crea symlinks de los dotfiles y guardrails globales (`.npmrc`, `pnpm/rc`, `.bunfig.toml`, `uv.toml`)
 4. Instala los themes y launchers Barbatdev/RefactorIA sin activarlos
@@ -237,8 +237,7 @@ dotfiles/
 │   ├── zshrc                 # Profile principal (~/.zshrc)
 │   └── scripts/
 │       ├── claude-helpers.zsh   # Integración Claude Code
-│       ├── cmux-sidebar-refresh.sh # Metadata Cortex para cmux
-│       ├── ssh-helpers.zsh      # cmux SSH y SSH convencional
+│       ├── ssh-helpers.zsh      # SSH con contexto de host
 │       ├── git-helpers.zsh      # Identidades Git y clone helpers
 │       ├── tmux-helpers.zsh     # Helpers tmux
 │       ├── worktree-helpers.zsh # Helpers git worktree
@@ -255,8 +254,6 @@ dotfiles/
 │   └── env.zsh.example       # Template de config local (gitignored)
 └── install.sh
 ```
-
-> Nota migración cmux: el path legacy `~/Library/Application Support/com.cmuxterm.app/config.ghostty` ya no está gestionado por estos dotfiles. Si todavía existe en tu máquina, podés borrarlo manualmente sin afectar la configuración actual.
 
 ## Boundary con Cortex
 
@@ -295,7 +292,7 @@ Seguimiento: [cortex-dotfiles #31](https://github.com/barbatdev/cortex-dotfiles/
 | `ccclip <files>` | Copiar código al clipboard |
 | `tcc`, `tdev`, `ta`, `tn`, `tl`, `tk` | Helpers tmux (`tcc` abre Claude Code en tmux) |
 | `wtadd`, `wtlist`, `wtremove` | Helpers de git worktrees |
-| `sshx`, `sshc`, `sshx-doctor` | cmux SSH persistente, SSH convencional y diagnóstico |
+| `sshc` | SSH con contexto de host en el prompt |
 | `cortex.agent_state.v1`, `agent-state` | Reportar/listar estado local de agentes Cortex y, dentro de Herdr, actualizar el pane actual |
 | `ss [n]` | Listar últimos screenshots |
 | `last [-c\|-o]` | Último screenshot |
@@ -323,7 +320,7 @@ Editá `local/env.zsh` (gitignored) para configurar:
 
 Referencia completa: [Herdr workflow](docs/herdr-workflow.md). Atajos prácticos: [keymaps](docs/keymaps.md).
 
-El profile Fish también expone `h`, `hs`, `hl`, `hhere`, `hmain`, `hrole`, `hnew`, `hfocus`, `hside`, `hscratch`, `hname`, `whereami`, `sshc`, `sshx` y `sshx-doctor`; Home Manager mapea cada función de forma explícita.
+El profile Fish también expone `h`, `hs`, `hl`, `hhere`, `hmain`, `hrole`, `hnew`, `hfocus`, `hside`, `hscratch`, `hname`, `whereami` y `sshc`; Home Manager mapea cada función de forma explícita.
 
 Usá `hremote` desde tu terminal local en macOS. No hagas `ssh` primero y después intentes levantar `herdr` dentro de esa sesión remota.
 
@@ -454,7 +451,6 @@ No usarlo como banner automático del shell por defecto. En sesiones de trabajo 
 El setup instala estas protecciones globales para reducir riesgo de supply-chain:
 
 - `~/.npmrc`
-  - `min-release-age=7`
   - `ignore-scripts=true`
 - `~/Library/Preferences/pnpm/rc`
   - `minimum-release-age=10080` (7 días en minutos)

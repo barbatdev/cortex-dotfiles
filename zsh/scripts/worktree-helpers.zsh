@@ -1,5 +1,5 @@
 #region Worktree Helpers
-# Funciones para gestión de git worktrees con integración cmux.
+# Funciones para gestión de git worktrees.
 # Detecta repos PCSoft automáticamente y bloquea la creación de worktrees en ellos.
 
 # Verifica si el repo actual contiene archivos PCSoft (Categoría B — prohibido worktree)
@@ -32,7 +32,7 @@ _wt_path_for() {
     printf '%s/%s/%s' "$(_wt_base_dir)" "$repo_name" "$name"
 }
 
-# Crea un worktree en ~/dev/worktrees/<repo>/ y abre el agente desde cmux.
+# Crea un worktree en ~/dev/worktrees/<repo>/ y abre el agente.
 # Uso: wtadd <nombre> [branch]
 #   <nombre>  — nombre del worktree (crea ~/dev/worktrees/<repo>/<nombre>)
 #   [branch]  — branch existente o nueva (default: crea branch nueva con el mismo nombre)
@@ -82,10 +82,10 @@ wtadd() {
 
     echo "✓ Worktree creado: $wt_path"
 
-    if [[ "${CORTEX_MULTIPLEXER:-${CORTEX_DOTFILES_MULTIPLEXER:-cmux}}" == "cmux" ]]; then
-        echo "→ Abriendo agente para el worktree..."
-        cc "$wt_path"
-    fi
+    echo "✓ Worktree creado: $wt_path"
+
+    echo "→ Abriendo agente para el worktree..."
+    cc "$wt_path"
 }
 
 # Lista los worktrees activos del repo actual.

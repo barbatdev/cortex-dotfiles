@@ -33,10 +33,9 @@ string match -q '*hhere: herdr is not available*' "$missing_herdr"; or fail "hhe
 printf '%s\n' '#!/bin/sh' 'printf "herdr|%s|%s|%s\n" "$CORTEX_MULTIPLEXER" "$CORTEX_SSH_TARGET" "$*" >> "$HERDR_TEST_LOG"' 'case "$1 $2" in' '  "workspace list") printf "{\"result\":{\"workspaces\":[]}}\n" ;;' 'esac' >"$fake_bin/herdr"
 printf '%s\n' '#!/bin/sh' 'if [ -n "$HERDR_TEST_WORKSPACE_ID" ]; then printf "%s\n" "$HERDR_TEST_WORKSPACE_ID"; elif [ -n "$HERDR_TEST_PANE_ID" ]; then printf "%s\n" "$HERDR_TEST_PANE_ID"; fi' >"$fake_bin/python3"
 printf '%s\n' '#!/bin/sh' 'printf "ssh|%s|%s\n" "$CORTEX_SSH_TARGET" "$*" >> "$HERDR_TEST_LOG"' '[ "$1" = -G ] && exit 0' 'exit 99' >"$fake_bin/ssh"
-printf '%s\n' '#!/bin/sh' 'printf "cmux|%s|%s\n" "$CORTEX_SSH_TARGET" "$*" >> "$HERDR_TEST_LOG"' >"$fake_bin/cmux"
 printf '%s\n' '#!/bin/sh' 'printf "testhost\n"' >"$fake_bin/hostname"
 printf '%s\n' '#!/bin/sh' 'printf "123456\n"' >"$fake_bin/date"
-chmod +x "$fake_bin/herdr" "$fake_bin/python3" "$fake_bin/ssh" "$fake_bin/cmux" "$fake_bin/hostname" "$fake_bin/date"
+chmod +x "$fake_bin/herdr" "$fake_bin/python3" "$fake_bin/ssh" "$fake_bin/hostname" "$fake_bin/date"
 set -l local_output (run_function "$fake_bin" hhere "$workspace/project")
 test -z "$local_output"; or fail "hhere outer output: $local_output"
 set -l herdr_log (string collect <"$workspace/herdr.log")
@@ -69,14 +68,6 @@ run_function "$fake_bin" sshc agent-dev -p 22
 set herdr_log (string collect <"$workspace/herdr.log")
 assert_equal "$herdr_log" 'ssh|agent-dev|agent-dev -p 22' 'sshc routing'
 printf '' >"$workspace/herdr.log"
-run_function "$fake_bin" sshx agent-dev -o StrictHostKeyChecking=no
-set herdr_log (string collect <"$workspace/herdr.log")
-assert_equal "$herdr_log" 'cmux|agent-dev|ssh agent-dev -o StrictHostKeyChecking=no' 'sshx routing'
-printf '' >"$workspace/herdr.log"
-run_function "$fake_bin" sshx-doctor agent-dev; or fail 'sshx-doctor success'
-set herdr_log (string collect <"$workspace/herdr.log")
-assert_equal "$herdr_log" 'ssh||-G agent-dev' 'sshx-doctor must only resolve config'
-printf '' >"$workspace/herdr.log"
 set -l rename_output (env HERDR_TEST_PANE_ID=pane-1 HOME="$workspace/home" PATH="$fake_bin:/usr/bin:/bin" TMPDIR="$workspace/tmp" HERDR_TEST_LOG="$workspace/herdr.log" "$fish_bin" --no-config -c 'set -gx fish_function_path $argv[1]; hname review' "$functions_dir")
 assert_equal "$rename_output" 'pane: review' 'hname output'
 set herdr_log (string collect <"$workspace/herdr.log")
@@ -85,17 +76,8 @@ if run_function "$fake_bin" sshc -bad >"$workspace/invalid.out" 2>&1
     fail 'invalid ssh target must fail'
 end
 string match -q '*Target SSH inválido: -bad*' (string collect <"$workspace/invalid.out"); or fail 'invalid ssh target error'
-if run_function "$empty_bin" sshx agent-dev >"$workspace/missing-cmux.out" 2>&1
-    fail 'missing cmux must fail'
-end
-string match -q '*cmux no está disponible*' (string collect <"$workspace/missing-cmux.out"); or fail 'missing cmux error'
 if env HOME="$workspace/home" PATH="$empty_bin" TMPDIR="$workspace/tmp" "$fish_bin" --no-config -c 'set -gx fish_function_path $argv[1]; sshc agent-dev' "$functions_dir" >"$workspace/missing-ssh.out" 2>&1
     fail 'missing ssh must fail'
 end
 string match -q '*sshc: ssh is not available*' (string collect <"$workspace/missing-ssh.out"); or fail 'missing ssh error'
-if env HOME="$workspace/home" PATH="$empty_bin" TMPDIR="$workspace/tmp" "$fish_bin" --no-config -c 'set -gx fish_function_path $argv[1]; sshx-doctor agent-dev' "$functions_dir" >"$workspace/doctor-missing.out" 2>&1
-    fail 'doctor without tools must fail'
-end
-set -l doctor_missing (string collect <"$workspace/doctor-missing.out")
-string match -q '*cmux no encontrado*' "$doctor_missing"; and string match -q '*ssh no encontrado*' "$doctor_missing"; or fail 'doctor missing tools'
 printf 'PASS: Fish W5b Herdr and SSH parity\n'

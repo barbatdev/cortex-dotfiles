@@ -1,0 +1,31 @@
+# Barbatdev/Cortex orange Herdr profile.
+
+[theme]
+# One Dark supplies stable structural defaults outside Herdr's custom palette.
+name = "one-dark"
+auto_switch = false
+
+[theme.custom]
+panel_bg = "#27231D"
+surface0 = "#17130F"
+surface1 = "#27231D"
+surface_dim = "#11100E"
+overlay0 = "#8E8375"
+overlay1 = "#B9AD9C"
+text = "#F8F1E7"
+subtext0 = "#B9AD9C"
+accent = "#F97316"
+blue = "#60A5FA"
+red = "#F87171"
+green = "#34D399"
+yellow = "#FBBF24"
+mauve = "#A78BFA"
+teal = "#2DD4BF"
+peach = "#FB923C"
+
+[ui]
+accent = "#F97316"
+show_agent_labels_on_pane_borders = true
+
+[ui.toast]
+delivery = "herdr"

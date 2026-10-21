@@ -6,7 +6,7 @@ next_agent = "prefix+alt+j"
 focus_agent = "prefix+ctrl+1..9"
 
 [ui.toast]
-delivery = "terminal"
+delivery = "herdr"
 
 [ui]
 sidebar_width = 32
@@ -56,4 +56,4 @@ teal = "#66E6E6"
 peach = "#FFC857"
 
 [ui.sound]
-enabled = true
+enabled = false

@@ -1,0 +1,49 @@
+--- a/src/client/shell/endpoint_sidebar.rs
++++ b/src/client/shell/endpoint_sidebar.rs
+@@ -522,17 +522,35 @@
+             width,
+             1,
+         );
+-        put_right_text(
+-            buffer,
+-            workspace_area,
+-            footer_y,
+-            if attention { "● menu" } else { "menu" },
+-            Style::default().fg(if attention {
+-                palette.accent
+-            } else {
+-                palette.overlay0
+-            }),
+-        );
++        if attention {
++            let start_x = workspace_area.right().saturating_sub(6);
++            put_text(
++                buffer,
++                start_x,
++                footer_y,
++                2,
++                "● ",
++                Style::default()
++                    .fg(palette.accent)
++                    .add_modifier(Modifier::BOLD),
++            );
++            put_text(
++                buffer,
++                start_x.saturating_add(2),
++                footer_y,
++                4,
++                "menu",
++                Style::default().fg(palette.overlay0),
++            );
++        } else {
++            put_right_text(
++                buffer,
++                workspace_area,
++                footer_y,
++                "menu",
++                Style::default().fg(palette.overlay0),
++            );
++        }
+     }
+     super::endpoint_agents::render_expanded(
+         buffer,
