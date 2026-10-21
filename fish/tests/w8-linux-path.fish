@@ -42,10 +42,19 @@ mkdir -p "$bare"
 set -l out_bare (env -i HOME="$bare" PATH="$fake:/usr/bin:/bin" "$fish_bin" --no-config -c "$probe" "$core")
 string match -q -- "*$bare*" "$out_bare[1]"; and fail "missing dirs were added to PATH: $out_bare[1]"
 
-# macOS keeps `o`.
+# macOS: 10-core.fish owns PATH too (config.fish no longer edits it).
 printf '#!/bin/sh\necho Darwin\n' >"$fake/uname"
-set -l out_mac (env -i HOME="$bare" PATH="$fake:/usr/bin:/bin" "$fish_bin" --no-config -c "$probe" "$core")
+set -l mac "$ws/mac"
+set -l mac_dirs .cargo/bin .local/bin .opencode/bin .volta/bin .bun/bin .nix-profile/bin .gentle-ai/bin
+for d in $mac_dirs
+    mkdir -p "$mac/$d"
+end
+set -l out_mac (env -i HOME="$mac" PATH="$fake:/usr/bin:/bin" "$fish_bin" --no-config -c "$probe" "$core")
 test "$out_mac[2]" = o=defined; or fail "macOS must define the open alias ($out_mac[2])"
+set -l mac_ours (string join '|' (string match -- "$mac/*" (string split '|' -- $out_mac[1])))
+set -l mac_expected "$mac/.gentle-ai/bin|$mac/.cargo/bin|$mac/.local/bin|$mac/.opencode/bin|$mac/.volta/bin|$mac/.bun/bin|$mac/.nix-profile/bin"
+test "$mac_ours" = "$mac_expected"; or fail "macOS PATH order (expected $mac_expected, got $mac_ours)"
+string match -q -- "$mac/.gentle-ai/bin|*" "$out_mac[1]"; or fail "gentle-ai launchers must lead the macOS PATH ($out_mac[1])"
 
 rm -rf -- "$ws"
 printf 'linux path checks passed\n'

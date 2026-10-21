@@ -86,6 +86,10 @@ set -l aliases (run_fish -c 'functions gpl' | string collect)
 string match -q '*git pull*' "$aliases"; or fail 'gpl alias'
 run_fish -c 'functions -q gs; and exit 1; or exit 0'; or fail 'gs alias should not exist'
 
+# Platform PATH blocks (w8) would put the host's real Homebrew starship ahead of
+# this stub; pin a platform with no Homebrew so only the guard is under test.
+printf '#!/bin/sh\necho Linux\n' >"$bin/uname"
+chmod +x "$bin/uname"
 printf '#!/bin/sh\n[ "$1" = init ] && printf "set -gx W2_STARSHIP_READY 1\\n"\n' >"$bin/starship"
 chmod +x "$bin/starship"
 set -l noninteractive (run_fish -c 'set -q W2_STARSHIP_READY; and echo ready; or echo skipped')
