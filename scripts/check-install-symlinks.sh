@@ -65,7 +65,7 @@ printf '%s\n' seed > "$seed_src"
 seed_absent="$tmp_dir/seed/absent.json"
 seed_file "$seed_src" "$seed_absent" >/dev/null
 [[ -f "$seed_absent" && ! -L "$seed_absent" && "$(<"$seed_absent")" == seed ]]
-[[ "$(stat -f %Lp "$seed_absent" 2>/dev/null || stat -c %a "$seed_absent")" == 644 ]]
+[[ "$(stat -c %a "$seed_absent" 2>/dev/null || stat -f %Lp "$seed_absent")" == 644 ]]
 
 seed_link="$tmp_dir/seed-link.json"
 ln -s "$seed_src" "$seed_link"
