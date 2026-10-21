@@ -105,6 +105,12 @@ else
     alias la 'ls -lah -A'
 end
 
+# gs sync installs the Gentle stack from main, so every host follows the beta
+# channel for gentle-ai install/upgrade and engram downloads.
+if not set -q GENTLE_AI_CHANNEL; or test -z "$GENTLE_AI_CHANNEL"
+    set -gx GENTLE_AI_CHANNEL beta
+end
+
 # gentle-ai's managed launchers (OpenCode background subagents) must win on PATH;
 # gentle-ai cannot persist PATH for fish login shells by itself.
 if test -d "$HOME/.gentle-ai/bin"

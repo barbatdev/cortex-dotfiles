@@ -24,5 +24,11 @@ test (count (string match -a -- "$ws/with/.gentle-ai/bin" (string split '|' -- "
 set -l without (env -i HOME="$ws/without" PATH=/usr/bin:/bin "$fish_bin" --no-config -c "$probe" "$core")
 string match -q '*gentle-ai*' -- "$without"; and fail "missing launcher dir added to PATH: $without"
 
+# Every host follows the beta channel (gs sync installs from main); a host may override.
+set -l channel (env -i HOME="$ws/without" PATH=/usr/bin:/bin "$fish_bin" --no-config -c 'source $argv[1]; echo $GENTLE_AI_CHANNEL' "$core")
+test "$channel" = beta; or fail "GENTLE_AI_CHANNEL default (expected beta, got '$channel')"
+set -l override (env -i HOME="$ws/without" PATH=/usr/bin:/bin GENTLE_AI_CHANNEL=stable "$fish_bin" --no-config -c 'source $argv[1]; echo $GENTLE_AI_CHANNEL' "$core")
+test "$override" = stable; or fail "GENTLE_AI_CHANNEL override not kept (got '$override')"
+
 rm -rf -- "$ws"
 printf 'gentle-ai path checks passed\n'
