@@ -65,6 +65,8 @@ jobs:
           fish fish/tests/w5a-hremote.fish
           fish fish/tests/w5b-herdr-ssh.fish
           fish fish/tests/w6-agent-helpers.fish
+          fish fish/tests/w7-gentle-ai-path.fish
+          fish fish/tests/w8-linux-path.fish
 
       - name: Validate JSON configs
         shell: bash

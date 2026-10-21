@@ -49,6 +49,33 @@ else
 end
 set -gx VISUAL "$EDITOR"
 
+if test (uname) = Darwin
+    # This file owns the macOS PATH; config.fish must not edit it, because it
+    # loads after conf.d and would bury the entries below (and gentle-ai's).
+    for brew_bin in /opt/homebrew/bin/brew /usr/local/bin/brew
+        if test -x $brew_bin
+            $brew_bin shellenv fish | source
+            break
+        end
+    end
+    # Later entries end up first (fish_add_path --move prepends).
+    for tool_bin in /usr/local/bin /nix/var/nix/profiles/default/bin "$HOME/.nix-profile/bin" "$HOME/.bun/bin" "$HOME/.volta/bin" "$HOME/.opencode/bin" "$HOME/.local/bin" /opt/homebrew/sbin /opt/homebrew/bin "$HOME/.cargo/bin"
+        if test -d "$tool_bin"
+            fish_add_path --path --move "$tool_bin"
+        end
+    end
+end
+
+if test (uname) = Linux
+    # One list for every Linux host; each dir is added only if it exists.
+    # Later entries end up first (fish_add_path --move prepends).
+    for tool_bin in /usr/local/go/bin $HOME/.local/go-*/bin "$HOME/.bun/bin" "$HOME/.local/share/pnpm/bin" /nix/var/nix/profiles/default/bin "$HOME/.nix-profile/bin" "$HOME/.opencode/bin" "$HOME/.local/bin"
+        if test -d "$tool_bin"
+            fish_add_path --path --move "$tool_bin"
+        end
+    end
+end
+
 alias g git
 alias ga 'git add'
 alias gc 'git commit -m'
@@ -64,7 +91,10 @@ alias .. 'cd ..'
 alias ... 'cd ../..'
 alias .... 'cd ../../..'
 alias c clear
-alias o open
+
+if test (uname) = Darwin
+    alias o open
+end
 
 if command -q eza
     alias ll 'eza -la --icons --git'
