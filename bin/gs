@@ -266,7 +266,7 @@ changed_part() {
 }
 
 cmd_sync() {
-  local repo shell bin="$HOME/.local/share/gentle-ai/main" reg="$HOME/.pi/gentle-ai/dev-binary.json" name
+  local ai_files="" repo shell bin="$HOME/.local/share/gentle-ai/main" reg="$HOME/.pi/gentle-ai/dev-binary.json" name
   # Versions before the sync power the closing message: restart only on change.
   local shell_before ai_before engram_before
   shell_before=$(shell_version); ai_before=$(ai_version); engram_before=$(engram_version)
@@ -353,7 +353,16 @@ cmd_sync() {
   else
     local ai_sync=(sync)
     [ -n "${GS_SYNC_AGENTS:-}" ] && ai_sync+=(--agents "$GS_SYNC_AGENTS")
-    run_quiet 'gentle-ai sync' "$ai_bin" "${ai_sync[@]}"
+    # Like run_quiet, but keeps the output: its file count feeds the restart hint.
+    local ai_out; ai_out=$(mktemp)
+    if "$ai_bin" "${ai_sync[@]}" >"$ai_out" 2>&1; then
+      printf '  %-34s ok\n' 'gentle-ai sync'
+    else
+      printf '  %-34s FAILED\n' 'gentle-ai sync'
+      sed 's/^/      /' "$ai_out"
+    fi
+    ai_files=$(sed -n 's/^Sync actions executed: \([0-9][0-9]*\) files* changed.*/\1/p' "$ai_out" | head -1)
+    rm -f "$ai_out"
   fi
   # gs sync is the only upgrade path; older homemade scripts drift the hosts apart.
   for name in "$HOME/.local/bin/gentle-maintainer-upgrade" "$HOME/.local/bin/gentle-sync.sh" \
@@ -384,6 +393,9 @@ cmd_sync() {
   fi
   if is_workshop && grep -qE 'npm:gentle-(pi|engram)|git:github.com/Gentleman-Programming/gentle-(pi|shell)' "$HOME/.pi/agent/settings.json" 2>/dev/null; then
     printf 'WARN: ~/.pi/agent/settings.json lists a published gentle-pi/gentle-engram again; remove it\n'
+  fi
+  if [ -n "$ai_files" ] && [ "$ai_files" -gt 0 ]; then
+    changed="$changed managed configs ($ai_files files)"
   fi
   if [ -n "$changed" ]; then
     printf 'changed:%s\n  Restart Pi to pick them up.\n' "$changed"

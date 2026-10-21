@@ -27,7 +27,7 @@ case "\$name \$1" in
       printf '#!/bin/sh\necho "engram 3.0.0"\n' >"\$GOBIN/engram"; chmod +x "\$GOBIN/engram" ;;
     esac; done ;;
   "gentle-ai --version") echo "gentle-ai 4.2.1" ;;
-  "gentle-ai sync") [ -n "\${FAKE_AI_SYNC_FAIL:-}" ] && { echo "Error: partial sync"; exit 1; }; echo "managed sync executed" ;;
+  "gentle-ai sync") [ -n "\${FAKE_AI_SYNC_FAIL:-}" ] && { echo "Error: partial sync"; exit 1; }; echo "managed sync executed"; [ -n "\${FAKE_AI_SYNC_CHANGED:-}" ] && echo "Sync actions executed: \$FAKE_AI_SYNC_CHANGED files changed"; true ;;
 esac
 exit 0
 EOF
@@ -50,6 +50,12 @@ out=$(run_sync) || fail 'gs sync exited non-zero' "$out"
 engram_line=$(grep -n 'cmd/engram@main' "$log" | cut -d: -f1)
 sync_line=$(grep -n '^gentle-ai|sync' "$log" | cut -d: -f1)
 (( engram_line < sync_line )) || fail 'gentle-ai sync ran before the binaries step' "$(cat "$log")"
+
+[[ "$out" == *'nothing changed'* ]] || fail 'no-op sync should not ask for a Pi restart' "$out"
+
+# 1b. Config changes from gentle-ai sync also ask for a Pi restart.
+out=$(run_sync FAKE_AI_SYNC_CHANGED=3) || fail 'gs sync exited non-zero' "$out"
+[[ "$out" == *'changed: managed configs (3 files)'*'Restart Pi'* ]] || fail 'config changes not reported' "$out"
 
 # 2. GS_SYNC_AGENTS scopes the runtimes for this host.
 out=$(run_sync GS_SYNC_AGENTS=claude-code,opencode,pi) || fail 'scoped gs sync exited non-zero' "$out"
