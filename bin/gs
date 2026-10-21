@@ -29,8 +29,11 @@ gs - gentle-shell on main, plus one disposable worktree per PR
   gs review <repo> <pr>    Check out someone else's PR to test or review it
   gs base <repo>           Clean origin/main worktree, to compare failures
   gs run [pi args...]      Run gentle-shell --link with this worktree as --package-root
-  gs sync                  Bring gentle-shell, gentle-ai and engram to main and check
-                           compatibility (workshop: local clones; elsewhere: GitHub)
+  gs sync                  Bring gentle-shell, gentle-ai and engram to main, run
+                           gentle-ai sync for managed configs, and check compatibility
+                           (workshop: local clones; elsewhere: GitHub)
+                           GS_SYNC_AGENTS=a,b scopes gentle-ai sync to those runtimes;
+                           GS_SKIP_AI_SYNC=1 skips it (binaries only)
   gs ls                    List open worktrees
   gs done                  Remove the current worktree and its merged local branch
                            (drops odd/tasks records; refuses if real work would be lost)
@@ -341,6 +344,22 @@ cmd_sync() {
   fi
   ln -sfn "$ai_bin" "$HOME/.local/bin/gentle-ai"
   ln -sfn "$bin/engram" "$HOME/.local/bin/engram"
+
+  # New binaries are not enough: gentle-ai sync materializes the managed configs
+  # (agents, skills, plugins, engram instructions) every runtime reads.
+  # GS_SYNC_AGENTS scopes runtimes per host (local env); empty = gentle-ai default.
+  if [ "${GS_SKIP_AI_SYNC:-}" = 1 ]; then
+    printf '  %-34s skipped (GS_SKIP_AI_SYNC=1)\n' 'gentle-ai sync'
+  else
+    local ai_sync=(sync)
+    [ -n "${GS_SYNC_AGENTS:-}" ] && ai_sync+=(--agents "$GS_SYNC_AGENTS")
+    run_quiet 'gentle-ai sync' "$ai_bin" "${ai_sync[@]}"
+  fi
+  # gs sync is the only upgrade path; older homemade scripts drift the hosts apart.
+  for name in "$HOME/.local/bin/gentle-maintainer-upgrade" "$HOME/.local/bin/gentle-sync.sh" \
+    /usr/bin/gentle-sync.sh /usr/local/bin/gentle-upgrade.sh /bin/gentle-upgrade.sh; do
+    [ -e "$name" ] && printf 'WARN: legacy upgrade script %s; use gs sync only and remove it\n' "$name"
+  done
 
   # Versions after the sync decide the closing message: restart only on change.
   local shell_after ai_after engram_after changed
