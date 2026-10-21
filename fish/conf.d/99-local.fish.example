@@ -14,3 +14,7 @@
 # set -gx GS_SKIP_AI_SYNC 1
 # 10-core.fish defaults GENTLE_AI_CHANNEL to beta; override only on a host that must differ:
 # set -gx GENTLE_AI_CHANNEL stable
+# gs sync also pulls the dotfiles clone (clean, on main) and installs 10-core.fish.
+# set -gx CORTEX_DOTFILES_DIR "$HOME/dev/barbatdev/cortex/cortex-dotfiles"
+# set -gx GS_HM_CONFIG jbarbat-linux   # flake config when Home Manager owns 10-core.fish
+# set -gx GS_SKIP_DOTFILES 1

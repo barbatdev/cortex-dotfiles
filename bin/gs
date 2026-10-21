@@ -34,6 +34,10 @@ gs - gentle-shell on main, plus one disposable worktree per PR
                            (workshop: local clones; elsewhere: GitHub)
                            GS_SYNC_AGENTS=a,b scopes gentle-ai sync to those runtimes;
                            GS_SKIP_AI_SYNC=1 skips it (binaries only)
+                           Then pulls the dotfiles clone (clean, on main only) and
+                           installs its fish 10-core.fish: symlink, or home-manager
+                           switch when Home Manager owns it (GS_HM_CONFIG picks the
+                           flake config); GS_SKIP_DOTFILES=1 skips this step
   gs ls                    List open worktrees
   gs done                  Remove the current worktree and its merged local branch
                            (drops odd/tasks records; refuses if real work would be lost)
@@ -265,8 +269,60 @@ changed_part() {
   if [ -n "$2" ] && [ -n "$3" ] && [ "$2" != "$3" ]; then printf ' %s (%s -> %s)' "$1" "$2" "$3"; fi
 }
 
+# sync_dotfiles — pull the dotfiles clone and install its fish 10-core.fish, so
+# hosts never keep hand-edited copies. Sets dot_change (" dotfiles (a -> b)").
+# Never fails the sync: every problem is a status line.
+sync_dotfiles() {
+  local dir="${CORTEX_DOTFILES_DIR:-$HOME/dev/barbatdev/cortex/cortex-dotfiles}"
+  local target="$HOME/.config/fish/conf.d/10-core.fish" src branch old new out cfg
+  if [ "${GS_SKIP_DOTFILES:-}" = 1 ]; then
+    printf '  %-34s skipped (GS_SKIP_DOTFILES=1)\n' dotfiles; return 0
+  fi
+  if [ ! -d "$dir/.git" ]; then
+    printf '  %-34s skipped (no clone at %s)\n' dotfiles "$dir"; return 0
+  fi
+  # Never touch work in progress: only a clean clone on main follows origin.
+  if [ -n "$(git -C "$dir" status --porcelain 2>/dev/null)" ]; then
+    printf '  %-34s skipped (%s has local changes)\n' dotfiles "$dir"; return 0
+  fi
+  branch=$(git -C "$dir" branch --show-current 2>/dev/null || true)
+  if [ "$branch" != main ]; then
+    printf '  %-34s skipped (%s is on %s, not main)\n' dotfiles "$dir" "${branch:-detached HEAD}"; return 0
+  fi
+  old=$(git -C "$dir" rev-parse --short HEAD)
+  if ! out=$(git -C "$dir" pull -q --ff-only origin main 2>&1); then
+    printf '  %-34s FAILED\n' dotfiles; printf '%s\n' "$out" | sed 's/^/      /'; return 0
+  fi
+  new=$(git -C "$dir" rev-parse --short HEAD)
+  printf '  %-34s ok\n' dotfiles
+  [ "$old" != "$new" ] && dot_change=" dotfiles ($old -> $new)"
+
+  src="$dir/fish/conf.d/10-core.fish"
+  [ -f "$src" ] || return 0
+  # Home Manager owns the file when it links into the nix store: switch, never relink.
+  if [ -L "$target" ] && case "$(readlink "$target")" in "${GS_HM_STORE_PREFIX:-/nix/store}"/*) true ;; *) false ;; esac; then
+    if ! command -v home-manager >/dev/null 2>&1; then
+      printf '  %-34s skipped (Home Manager link but no home-manager on PATH)\n' '10-core.fish'; return 0
+    fi
+    if [ "$(uname)" = Darwin ]; then cfg=jbarbat; else cfg=jbarbat-linux; fi
+    run_quiet 'home-manager switch' home-manager switch --flake "$dir#${GS_HM_CONFIG:-$cfg}" -b pre-gs
+    return 0
+  fi
+  if [ -L "$target" ] && [ "$(readlink "$target")" = "$src" ]; then
+    printf '  %-34s ok\n' '10-core.fish'; return 0
+  fi
+  mkdir -p "$(dirname "$target")"
+  if [ -e "$target" ] || [ -L "$target" ]; then
+    local backup="$target.pre-gs"
+    { [ -e "$backup" ] || [ -L "$backup" ]; } && backup="$target.pre-gs.$(date +%s)"
+    mv "$target" "$backup"
+  fi
+  ln -s "$src" "$target"
+  printf '  %-34s linked\n' '10-core.fish'
+}
+
 cmd_sync() {
-  local ai_files="" repo shell bin="$HOME/.local/share/gentle-ai/main" reg="$HOME/.pi/gentle-ai/dev-binary.json" name
+  local ai_files="" dot_change="" repo shell bin="$HOME/.local/share/gentle-ai/main" reg="$HOME/.pi/gentle-ai/dev-binary.json" name
   # Versions before the sync power the closing message: restart only on change.
   local shell_before ai_before engram_before
   shell_before=$(shell_version); ai_before=$(ai_version); engram_before=$(engram_version)
@@ -364,6 +420,7 @@ cmd_sync() {
     ai_files=$(sed -n 's/^Sync actions executed: \([0-9][0-9]*\) files* changed.*/\1/p' "$ai_out" | head -1)
     rm -f "$ai_out"
   fi
+  sync_dotfiles
   # gs sync is the only upgrade path; older homemade scripts drift the hosts apart.
   for name in "$HOME/.local/bin/gentle-maintainer-upgrade" "$HOME/.local/bin/gentle-sync.sh" \
     /usr/bin/gentle-sync.sh /usr/local/bin/gentle-upgrade.sh /bin/gentle-upgrade.sh; do
@@ -397,6 +454,7 @@ cmd_sync() {
   if [ -n "$ai_files" ] && [ "$ai_files" -gt 0 ]; then
     changed="$changed managed configs ($ai_files files)"
   fi
+  changed="$changed$dot_change"
   if [ -n "$changed" ]; then
     printf 'changed:%s\n  Restart Pi to pick them up.\n' "$changed"
   else
