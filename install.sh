@@ -34,7 +34,6 @@ MANAGED_LINKS=(
   "ghostty/profiles/refactoria.conf|$HOME/.config/ghostty/profiles/refactoria.conf|darwin"
   "fish/functions/gbarbatdev.fish|$HOME/.config/fish/functions/gbarbatdev.fish|darwin"
   "fish/functions/grefactoria.fish|$HOME/.config/fish/functions/grefactoria.fish|darwin"
-  "opencode/tui.json|$HOME/.config/opencode/tui.json|all"
   "opencode/themes|$HOME/.config/opencode/themes|all"
   "tmux/tmux.conf|$HOME/.tmux.conf|all"
   "claude/statusline.sh|$HOME/.claude/statusline.sh|all"
@@ -261,6 +260,10 @@ PY
         manifest_count=$((manifest_count + 1))
     done < <(manifest_entries)
     pass "manifest symlinks checked: $manifest_count"
+    check_file "$DOTFILES/opencode/tui.json"
+    if [[ -L "$HOME/.config/opencode/tui.json" ]]; then
+        warn "opencode tui.json is a symlink; gentle-ai sync refuses it (install.sh converts it to a copy)"
+    fi
     if [[ "$(uname -s)" != "Darwin" ]]; then
         pass "macOS-only symlink targets skipped on non-macOS platform"
     fi
@@ -535,6 +538,10 @@ create_symlink() {
 while IFS='|' read -r src dst _; do
     create_symlink "$src" "$dst"
 done < <(manifest_entries)
+# gentle-ai sync edits tui.json and refuses symlinks: seed a copy instead.
+# shellcheck source=scripts/seed-file.sh
+source "$DOTFILES/scripts/seed-file.sh"
+seed_file "$DOTFILES/opencode/tui.json" "$HOME/.config/opencode/tui.json"
 run_or_plan "chmod +x $DOTFILES/claude/statusline.sh" chmod +x "$DOTFILES/claude/statusline.sh"
 if [[ "$PLATFORM" == "Darwin" ]]; then
     run_or_plan "chmod +x sketchybar scripts" chmod +x "$DOTFILES/sketchybar/sketchybarrc" "$DOTFILES/sketchybar/plugins"/*.sh

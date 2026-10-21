@@ -129,6 +129,8 @@ El preflight es de solo lectura y sin red: usa `--offline` y `--no-write-lock-fi
 | Zsh y Ghostty | Configuración actual, sin cambios |
 | `~/.config/fish/conf.d/99-local.fish` | Host; reservado para secretos/estado privado futuro, no creado ni gestionado por Nix |
 | `flake.nix` y `nix/home.nix` | Base inactiva de Home Manager |
+| Linux | La configuración pura para Linux es `homeConfigurations.jbarbat-linux`: usa `x86_64-linux`, `/home/jbarbat` y declara solo `fish` y `starship` como runtime mínimo. |
+| Fish compartido | Home Manager mapea cada archivo declarado de forma explícita; no gestiona el directorio completo, historial ni variables Fish. |
 
 El bootstrap queda explícitamente diferido a un work unit revisado. Después de instalar Nix por fuera de este repositorio, ese trabajo podrá generar el lock con:
 
