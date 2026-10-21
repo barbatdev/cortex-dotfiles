@@ -8,3 +8,7 @@
 # set -gx GIT_WORKDEV_EMAIL "you@company.invalid"
 # set -gx GIT_PERSONALDEV_NAME "Your personal name"
 # set -gx GIT_PERSONALDEV_EMAIL "you@personal.invalid"
+# gs sync runs gentle-ai sync after updating binaries. Scope it to this host's runtimes:
+# set -gx GS_SYNC_AGENTS claude-code,opencode,pi
+# Binaries only, no managed-config sync:
+# set -gx GS_SKIP_AI_SYNC 1
