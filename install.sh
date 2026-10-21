@@ -224,7 +224,10 @@ PY
         check_symlink_target "$DOTFILES/fish/functions/gbarbatdev.fish" "$HOME/.config/fish/functions/gbarbatdev.fish"
         check_symlink_target "$DOTFILES/fish/functions/grefactoria.fish" "$HOME/.config/fish/functions/grefactoria.fish"
     fi
-    check_symlink_target "$DOTFILES/opencode/tui.json" "$HOME/.config/opencode/tui.json"
+    check_file "$DOTFILES/opencode/tui.json"
+    if [[ -L "$HOME/.config/opencode/tui.json" ]]; then
+        warn "opencode tui.json is a symlink; gentle-ai sync refuses it (install.sh converts it to a copy)"
+    fi
     check_symlink_target "$DOTFILES/opencode/themes" "$HOME/.config/opencode/themes"
     check_symlink_target "$DOTFILES/tmux/tmux.conf" "$HOME/.tmux.conf"
     check_symlink_target "$DOTFILES/claude/statusline.sh" "$HOME/.claude/statusline.sh"
@@ -500,7 +503,6 @@ backup_if_exists "$HOME/.config/starship.toml"
 backup_if_exists "$HOME/.config/herdr/config.toml"
 backup_if_exists "$HOME/.config/ghostty/config"
 backup_if_exists "$HOME/.config/herdr/config.toml"
-backup_if_exists "$HOME/.config/opencode/tui.json"
 backup_if_exists "$HOME/.config/opencode/themes"
 backup_if_exists "$HOME/.tmux.conf"
 backup_if_exists "$HOME/.claude/statusline.sh"
@@ -566,7 +568,10 @@ if [[ "$PLATFORM" == "Darwin" ]]; then
     create_symlink "$DOTFILES/fish/functions/gbarbatdev.fish" "$HOME/.config/fish/functions/gbarbatdev.fish"
     create_symlink "$DOTFILES/fish/functions/grefactoria.fish" "$HOME/.config/fish/functions/grefactoria.fish"
 fi
-create_symlink "$DOTFILES/opencode/tui.json"       "$HOME/.config/opencode/tui.json"
+# gentle-ai sync edits tui.json and refuses symlinks: seed a copy instead.
+# shellcheck source=scripts/seed-file.sh
+source "$DOTFILES/scripts/seed-file.sh"
+seed_file "$DOTFILES/opencode/tui.json"           "$HOME/.config/opencode/tui.json"
 create_symlink "$DOTFILES/opencode/themes"         "$HOME/.config/opencode/themes"
 create_symlink "$DOTFILES/tmux/tmux.conf"          "$HOME/.tmux.conf"
 run_or_plan "chmod +x $DOTFILES/claude/statusline.sh" chmod +x "$DOTFILES/claude/statusline.sh"
