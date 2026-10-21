@@ -49,6 +49,16 @@ else
 end
 set -gx VISUAL "$EDITOR"
 
+if test (uname) = Linux
+    # One list for every Linux host; each dir is added only if it exists.
+    # Later entries end up first (fish_add_path --move prepends).
+    for tool_bin in /usr/local/go/bin $HOME/.local/go-*/bin "$HOME/.bun/bin" "$HOME/.local/share/pnpm/bin" /nix/var/nix/profiles/default/bin "$HOME/.nix-profile/bin" "$HOME/.opencode/bin" "$HOME/.local/bin"
+        if test -d "$tool_bin"
+            fish_add_path --path --move "$tool_bin"
+        end
+    end
+end
+
 alias g git
 alias ga 'git add'
 alias gc 'git commit -m'
@@ -64,7 +74,10 @@ alias .. 'cd ..'
 alias ... 'cd ../..'
 alias .... 'cd ../../..'
 alias c clear
-alias o open
+
+if test (uname) = Darwin
+    alias o open
+end
 
 if command -q eza
     alias ll 'eza -la --icons --git'
