@@ -55,3 +55,37 @@ if backup_if_exists "$collision" >/dev/null 2>&1; then
 fi
 [[ "$(<"$collision")" == original ]]
 [[ "$(<"$collision.bak_test")" == existing ]]
+
+# seed_file: tool-owned configs (gentle-ai refuses symlinks) are copied once.
+# shellcheck source=scripts/seed-file.sh
+source "$repo_root/scripts/seed-file.sh"
+seed_src="$tmp_dir/seed-src"
+printf '%s\n' seed > "$seed_src"
+
+seed_absent="$tmp_dir/seed/absent.json"
+seed_file "$seed_src" "$seed_absent" >/dev/null
+[[ -f "$seed_absent" && ! -L "$seed_absent" && "$(<"$seed_absent")" == seed ]]
+
+seed_link="$tmp_dir/seed-link.json"
+ln -s "$seed_src" "$seed_link"
+seed_file "$seed_src" "$seed_link" >/dev/null
+[[ -f "$seed_link" && ! -L "$seed_link" && "$(<"$seed_link")" == seed ]]
+[[ "$(<"$seed_src")" == seed ]]
+
+seed_owned="$tmp_dir/seed-owned.json"
+printf '%s\n' tool-edited > "$seed_owned"
+seed_file "$seed_src" "$seed_owned" >/dev/null
+[[ "$(<"$seed_owned")" == tool-edited ]]
+
+seed_foreign="$tmp_dir/seed-foreign.json"
+ln -s "$old_target" "$seed_foreign"
+seed_file "$seed_src" "$seed_foreign" >/dev/null
+[[ -L "$seed_foreign" && "$(readlink "$seed_foreign")" == "$old_target" ]]
+
+DRY_RUN=true
+seed_dry="$tmp_dir/seed-dry.json"
+seed_file "$seed_src" "$seed_dry" >/dev/null
+[[ ! -e "$seed_dry" ]]
+DRY_RUN=false
+
+echo "install symlink checks passed"
