@@ -12,3 +12,5 @@
 # set -gx GS_SYNC_AGENTS claude-code,opencode,pi
 # Binaries only, no managed-config sync:
 # set -gx GS_SKIP_AI_SYNC 1
+# 10-core.fish defaults GENTLE_AI_CHANNEL to beta; override only on a host that must differ:
+# set -gx GENTLE_AI_CHANNEL stable
