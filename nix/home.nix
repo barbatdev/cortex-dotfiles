@@ -51,8 +51,6 @@ let
     "fish/functions/herdr-orient.fish".source = ../fish/functions/herdr-orient.fish;
     "fish/functions/whereami.fish".source = ../fish/functions/whereami.fish;
     "fish/functions/sshc.fish".source = ../fish/functions/sshc.fish;
-    "fish/functions/sshx.fish".source = ../fish/functions/sshx.fish;
-    "fish/functions/sshx-doctor.fish".source = ../fish/functions/sshx-doctor.fish;
     "fish/functions/_cortex_resolve_target.fish".source = ../fish/functions/_cortex_resolve_target.fish;
     "fish/functions/_cortex_run_agent.fish".source = ../fish/functions/_cortex_run_agent.fish;
     "fish/functions/cc.fish".source = ../fish/functions/cc.fish;

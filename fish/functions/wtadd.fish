@@ -31,7 +31,6 @@ function wtadd
     end; or return 1
 
     printf 'Worktree created: %s\n' "$worktree"
-    if test "$CORTEX_MULTIPLEXER" = cmux
-        cc "$worktree"
-    end
+    cc "$worktree"
+
 end

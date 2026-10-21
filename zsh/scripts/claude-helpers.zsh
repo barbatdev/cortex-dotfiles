@@ -1,13 +1,5 @@
 #region Claude Code Helpers
 
-_cmux_sidebar_refresh() {
-    local target="${1:-$PWD}"
-    local workspace="${2:-}"
-    local script="${_DOTFILES_DIR:-$HOME/.cortex/cortex-dotfiles}/zsh/scripts/cmux-sidebar-refresh.sh"
-
-    [[ -x "$script" ]] && "$script" "$target" "$workspace" >/dev/null 2>&1 || true
-}
-
 _cortex_resolve_target() {
     local target="${1:-.}"
     local resolved
@@ -22,22 +14,8 @@ _cortex_resolve_target() {
 _cortex_run_agent() {
     local target="$1"
     shift
-    local -a agent_command=("$@")
-    local command_string=""
-    local arg created workspace
 
-    if [[ "${CORTEX_MULTIPLEXER:-${CORTEX_DOTFILES_MULTIPLEXER:-cmux}}" == "cmux" && -n "${CMUX_WORKSPACE_ID:-}" && "$target" != "$PWD" ]]; then
-        for arg in "${agent_command[@]}"; do
-            command_string+="${(q)arg} "
-        done
-        created=$(cmux workspace create --cwd "$target" --command "$command_string" --json) || return 1
-        workspace=$(jq -er '.workspace_ref // .workspace_id' <<<"$created") || return 1
-        _cmux_sidebar_refresh "$target" "$workspace"
-        return
-    fi
-
-    _cmux_sidebar_refresh "$target"
-    (cd -q "$target" && command "${agent_command[@]}")
+    (cd -q "$target" && command "$@")
 }
 
 # Abre Claude Code en el path indicado.

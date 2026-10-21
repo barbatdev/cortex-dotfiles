@@ -20,7 +20,6 @@ _cortex_dotfiles_path_prepend() {
 }
 
 _cortex_dotfiles_path_prepend "$HOME/.local/bin"
-[[ -d "/Applications/cmux.app/Contents/Resources/bin" ]] && _cortex_dotfiles_path_prepend "/Applications/cmux.app/Contents/Resources/bin"
 #endregion
 
 #region Zsh Options
