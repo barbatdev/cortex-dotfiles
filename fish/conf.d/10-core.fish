@@ -16,7 +16,7 @@ if not set -q CORTEX_DOTFILES_DIR; or test -z "$CORTEX_DOTFILES_DIR"
     set -gx CORTEX_DOTFILES_DIR "$BARBATDEV_DIR/cortex/cortex-dotfiles"
 end
 if not set -q CORTEX_MULTIPLEXER; or test -z "$CORTEX_MULTIPLEXER"
-    set -gx CORTEX_MULTIPLEXER cmux
+    set -gx CORTEX_MULTIPLEXER herdr
 end
 set -gx CLAUDE_CODE_EFFORT_LEVEL high
 if not set -q WORK_PROJECTS_DIR; or test -z "$WORK_PROJECTS_DIR"

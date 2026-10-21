@@ -49,10 +49,10 @@ end
 
 cp "$core" "$xdg/fish/conf.d/10-core.fish"
 set -l defaults (run_fish -c 'string join "|" $WORKSPACE_DIR $BARBATDEV_DIR $CORTEX_HOME $CORTEX_ROOT $CORTEX_DOTFILES_DIR $CORTEX_MULTIPLEXER $CLAUDE_CODE_EFFORT_LEVEL $WORK_PROJECTS_DIR $PERSONAL_PROJECTS_DIR $INNIT_DIR $SCREENSHOTS_DIR $EDITOR $VISUAL')
-assert_equal "$defaults" "$home/dev|$home/dev/barbatdev|$home/.cortex|$home/dev/barbatdev/cortex/cortex|$home/dev/barbatdev/cortex/cortex-dotfiles|cmux|high|$home/dev/innit-sas|$home/dev/barbatdev/products|$home/dev/innit-sas|$home/Screenshots|$bin/nvim|$bin/nvim" 'defaults and editor selection'
+assert_equal "$defaults" "$home/dev|$home/dev/barbatdev|$home/.cortex|$home/dev/barbatdev/cortex/cortex|$home/dev/barbatdev/cortex/cortex-dotfiles|herdr|high|$home/dev/innit-sas|$home/dev/barbatdev/products|$home/dev/innit-sas|$home/Screenshots|$bin/nvim|$bin/nvim" 'defaults and editor selection'
 
 set -l empty_defaults (env -i HOME="$home" USER=test-user LOGNAME=test-user XDG_CONFIG_HOME="$xdg" PATH="$bin:/usr/bin:/bin" TERM=xterm-256color LANG=C WORKSPACE_DIR= BARBATDEV_DIR= CORTEX_HOME= CORTEX_ROOT= CORTEX_DOTFILES_DIR= CORTEX_MULTIPLEXER= CLAUDE_CODE_EFFORT_LEVEL= WORK_PROJECTS_DIR= PERSONAL_PROJECTS_DIR= INNIT_DIR= SCREENSHOTS_DIR= "$fish_bin" -c 'string join "|" $WORKSPACE_DIR $BARBATDEV_DIR $CORTEX_HOME $CORTEX_ROOT $CORTEX_DOTFILES_DIR $CORTEX_MULTIPLEXER $CLAUDE_CODE_EFFORT_LEVEL $WORK_PROJECTS_DIR $PERSONAL_PROJECTS_DIR $INNIT_DIR $SCREENSHOTS_DIR')
-assert_equal "$empty_defaults" "$home/dev|$home/dev/barbatdev|$home/.cortex|$home/dev/barbatdev/cortex/cortex|$home/dev/barbatdev/cortex/cortex-dotfiles|cmux|high|$home/dev/innit-sas|$home/dev/barbatdev/products|$home/dev/innit-sas|$home/Screenshots" 'empty environment values use defaults'
+assert_equal "$empty_defaults" "$home/dev|$home/dev/barbatdev|$home/.cortex|$home/dev/barbatdev/cortex/cortex|$home/dev/barbatdev/cortex/cortex-dotfiles|herdr|high|$home/dev/innit-sas|$home/dev/barbatdev/products|$home/dev/innit-sas|$home/Screenshots" 'empty environment values use defaults'
 
 printf 'set -gx WORKSPACE_DIR "$HOME/private-dev"\nset -gx EDITOR private-editor\nset -gx VISUAL private-editor\n' >"$xdg/fish/conf.d/99-local.fish"
 set -l overrides (run_fish -c 'string join "|" $WORKSPACE_DIR $EDITOR $VISUAL')
