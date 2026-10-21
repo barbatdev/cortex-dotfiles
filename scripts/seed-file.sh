@@ -27,6 +27,8 @@ seed_file() {
     local tmp
     tmp="$(mktemp "$dst.seed.XXXXXX")"
     cp "$src" "$tmp"
+    # mktemp creates 0600; configs are world-readable like a plain cp.
+    chmod 0644 "$tmp"
     # mv over a symlink replaces the link itself, never its target.
     mv -f "$tmp" "$dst"
     echo "  ✓ $dst seeded from $src"
