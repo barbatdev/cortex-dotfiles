@@ -75,6 +75,12 @@ else
     alias la 'ls -lah -A'
 end
 
+# gentle-ai's managed launchers (OpenCode background subagents) must win on PATH;
+# gentle-ai cannot persist PATH for fish login shells by itself.
+if test -d "$HOME/.gentle-ai/bin"
+    fish_add_path --path --move "$HOME/.gentle-ai/bin"
+end
+
 if status is-interactive; and command -q starship
     starship init fish | source
 end
