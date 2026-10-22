@@ -5,12 +5,15 @@
 # operaciones de spaces vía yabai no existen sin SA: se usan los atajos
 # nativos de Mission Control (ctrl+1..9 activables en Ajustes).
 
-# Resincronización tras suspensión: al despertar, los displays aparecen en
-# etapas y yabai queda con ventanas mal ubicadas. La signal display_changed
-# dispara un script con debounce que reinicia el Dock (workaround conocido,
-# ver asmvik/yabai#259, #159, #1237). El debounce evita múltiples restarts.
+# Resincronización tras suspensión: al despertar, los monitores externos
+# vuelven a conectarse y yabai queda con ventanas mal ubicadas. La signal
+# display_added dispara un script con debounce que reinicia el Dock
+# (workaround conocido, ver asmvik/yabai#259, #159, #1237). No se usa
+# display_changed porque en macOS 27 también se dispara al minimizar
+# ventanas, y el restart del Dock las des-minimiza. El debounce evita
+# múltiples restarts.
 SCRIPT_DIR="$(dirname "$(readlink -f "${BASH_SOURCE[0]:-$HOME/.yabairc}")")"
-yabai -m signal --add event=display_changed action="$SCRIPT_DIR/scripts/wake-resync.sh &"
+yabai -m signal --add event=display_added action="$SCRIPT_DIR/scripts/wake-resync.sh &"
 
 yabai -m config layout bsp
 yabai -m config window_placement second_child
