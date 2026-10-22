@@ -10,3 +10,4 @@ local/env.zsh
 *.backup
 # Local Pi runtime state
 .atl/
+.codegraph/
