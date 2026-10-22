@@ -16,6 +16,7 @@ MANAGED_LINKS=(
   "npm/npmrc|$HOME/.npmrc|all"
   "bun/bunfig.toml|$HOME/.bunfig.toml|all"
   "aerospace/aerospace.toml|$HOME/.config/aerospace/aerospace.toml|all"
+  "yabai/yabairc|$HOME/.yabairc|darwin"
   "uv/uv.toml|$HOME/.config/uv/uv.toml|all"
   "starship/starship.toml|$HOME/.config/starship.toml|all"
   "herdr/config.toml|$HOME/.config/herdr/config.toml|all"
