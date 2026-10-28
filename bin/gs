@@ -16,7 +16,10 @@ usage() {
   cat <<'EOF'
 gs - gentle-shell on main, plus one disposable worktree per PR
 
-  gs [pi args...]          Open gentle-shell (--link) in the current directory
+  gs [pi args...]          Open gentle-shell (--link) in the current directory.
+                           Consumer: always the main build from gs sync.
+                           Workshop: inside a gentle-shell clone or worktree, Pi
+                           loads that path (gs run); elsewhere the synced clone.
 
   gs pr [repo] <n>         One step to review PR <n>: worktree (reused and
                            updated if it exists), then Pi on it for shell PRs
@@ -54,6 +57,12 @@ Fastest start:
   Each session: one worktree, Pi loads the package from it, /reload picks up edits.
   Sessions share ~/.pi/agent (--link) and subagents use the main clone.
   gs sync is separate: run it with no other session open.
+
+gs and gs sync share one source of truth: workshop launches the clone it syncs;
+consumer launches the package behind `gentle-shell` on PATH, the one
+`gentle-shell upgrade --channel main` replaces. gs sync prints "gs opens: <version>",
+compares it with GitHub main, and exits 1 with INCOMPLETE when any step failed
+or the launch target is stale.
 
 Machines (gs sync detects the mode):
   agent-gentle  workshop: clean clones in ~/dev/gentle; pr, issue, new, review, run, done
@@ -241,6 +250,32 @@ is_workshop() {
   git -C "$CLONES/gentle-shell" remote get-url origin 2>/dev/null | grep -q 'Gentleman-Programming/gentle-shell'
 }
 
+# resolve_link PATH — physical path of PATH after following every symlink
+# (portable: macOS readlink has no -f on older releases).
+resolve_link() {
+  local p=$1 dir link
+  while [ -L "$p" ]; do
+    dir=$(cd -P "$(dirname "$p")" && pwd); link=$(readlink "$p")
+    case "$link" in /*) p=$link ;; *) p="$dir/$link" ;; esac
+  done
+  printf '%s/%s\n' "$(cd -P "$(dirname "$p")" && pwd)" "$(basename "$p")"
+}
+
+# shell_root — the single gentle-shell package that gs launches and gs sync checks.
+# Workshop: the clean clone. Consumer: the package behind `gentle-shell` on PATH,
+# which is exactly what `gentle-shell upgrade --channel main` replaces. The
+# launcher loads its extensions and its bundled Pi from this root, so launching
+# any other copy runs stale code even after a successful sync.
+shell_root() {
+  if is_workshop; then echo "$CLONES/gentle-shell"; return 0; fi
+  local bin; bin=$(command -v gentle-shell 2>/dev/null) || return 1
+  dirname "$(dirname "$(resolve_link "$bin")")"
+}
+
+# Labels of failed sync steps; any entry makes gs sync report INCOMPLETE and exit 1.
+SYNC_FAILED=""
+sync_failed() { SYNC_FAILED="$SYNC_FAILED $1;"; }
+
 # run_quiet LABEL CMD... — one-line ok/FAILED status; full output only on failure.
 run_quiet() {
   local label="$1"; shift
@@ -250,6 +285,7 @@ run_quiet() {
   else
     printf '  %-34s FAILED\n' "$label"
     sed 's/^/      /' "$out"
+    sync_failed "$label"
   fi
   rm -f "$out"
 }
@@ -291,7 +327,7 @@ sync_dotfiles() {
   fi
   old=$(git -C "$dir" rev-parse --short HEAD)
   if ! out=$(git -C "$dir" pull -q --ff-only origin main 2>&1); then
-    printf '  %-34s FAILED\n' dotfiles; printf '%s\n' "$out" | sed 's/^/      /'; return 0
+    printf '  %-34s FAILED\n' dotfiles; printf '%s\n' "$out" | sed 's/^/      /'; sync_failed dotfiles; return 0
   fi
   new=$(git -C "$dir" rev-parse --short HEAD)
   printf '  %-34s ok\n' dotfiles
@@ -368,8 +404,12 @@ cmd_sync() {
     run_quiet 'pi update --extensions' pi update --extensions
     # Only remaining homemade piece: the engram core binary (no official channel yet).
     run_quiet 'engram (go install @main)' env GOPROXY=direct GOBIN="$bin" go install github.com/Gentleman-Programming/engram/v3/cmd/engram@main
-    shell="$HOME/.pi/agent/git/github.com/Gentleman-Programming/gentle-pi"
+    # Legacy pi-managed checkout from before the main channel: nothing updates it
+    # any more and gs no longer launches it. Kept on disk, never deleted here.
+    local legacy="$HOME/.pi/agent/git/github.com/Gentleman-Programming/gentle-pi"
+    [ -d "$legacy" ] && printf 'WARN: stale legacy checkout %s is unused (gs launches the gentle-shell on PATH); remove it when convenient\n' "$legacy"
   fi
+  shell=$(shell_root) || die "gentle-shell not found on PATH after sync"
   # Mac-only app clones: sync when present, never fail if absent.
   local app_synced=""
   for repo in $MAC_APP_REPOS; do
@@ -416,6 +456,7 @@ cmd_sync() {
     else
       printf '  %-34s FAILED\n' 'gentle-ai sync'
       sed 's/^/      /' "$ai_out"
+      sync_failed 'gentle-ai sync'
     fi
     ai_files=$(sed -n 's/^Sync actions executed: \([0-9][0-9]*\) files* changed.*/\1/p' "$ai_out" | head -1)
     rm -f "$ai_out"
@@ -432,6 +473,28 @@ cmd_sync() {
   shell_after=$(shell_version); ai_after=$(ai_version); engram_after=$(engram_version)
   changed="$(changed_part shell "$shell_before" "$shell_after")$(changed_part gentle-ai "$ai_before" "$ai_after")$(changed_part engram "$engram_before" "$engram_after")"
   printf '\nversions: shell %s | gentle-ai %s | engram %s\n' "${shell_after:-?}" "${ai_after:-?}" "${engram_after:-?}"
+  # The launch target must be the package this sync just updated: ask it directly.
+  local launched
+  launched=$( (node "$shell/bin/gentle-shell.mjs" --version 2>/dev/null || true) | awk 'NR==1{print $2}')
+  printf 'gs opens:  %s (%s)\n' "${launched:-?}" "$shell"
+  if [ -z "$launched" ]; then
+    sync_failed "gs launch target $shell unreadable"
+  elif [ -n "$shell_after" ] && [ "$launched" != "$shell_after" ]; then
+    sync_failed "gs launch target is $launched but gentle-shell on PATH is $shell_after"
+  fi
+  # Consumer builds carry the main SHA (x.y.z-main.<sha12>): compare with GitHub.
+  if ! is_workshop; then
+    local built remote
+    built=$(printf '%s' "$launched" | sed -n 's/.*-main\.\([0-9a-f]\{7,\}\)$/\1/p')
+    remote=$(git ls-remote "${GS_SHELL_REMOTE:-https://github.com/Gentleman-Programming/gentle-pi}" refs/heads/main 2>/dev/null | awk '{print $1}' || true)
+    if [ -z "$built" ]; then
+      sync_failed "gentle-shell $launched is not a main-channel build"
+    elif [ -z "$remote" ]; then
+      printf 'WARN: could not read gentle-pi main from GitHub; freshness unverified\n'
+    elif [ "${remote#"$built"}" = "$remote" ]; then
+      sync_failed "gentle-shell behind main (built ${built}, main ${remote:0:12})"
+    fi
+  fi
   [ -n "$app_synced" ] && printf 'app repos:%s\n' "$app_synced"
   for name in gentle-ai engram; do
     [ "$(command -v "$name")" = "$HOME/.local/bin/$name" ] || printf 'WARN: %s on PATH is %s, not our build\n' "$name" "$(command -v "$name")"
@@ -455,7 +518,11 @@ cmd_sync() {
     changed="$changed managed configs ($ai_files files)"
   fi
   changed="$changed$dot_change"
-  if [ -n "$changed" ]; then
+  if [ -n "$SYNC_FAILED" ]; then
+    printf 'INCOMPLETE — failed:%s\n  Some components may be stale; fix the above and run gs sync again.\n' "$SYNC_FAILED"
+    [ -n "$changed" ] && printf 'changed anyway:%s\n  Restart Pi to pick them up.\n' "$changed"
+    return 1
+  elif [ -n "$changed" ]; then
     printf 'changed:%s\n  Restart Pi to pick them up.\n' "$changed"
   else
     printf 'nothing changed — no Pi restart needed.\n'
@@ -495,9 +562,14 @@ $other"
 }
 
 cmd_launch() {
-  local root
-  if is_workshop; then root="$CLONES/gentle-shell"
-  else root="$HOME/.pi/agent/git/github.com/Gentleman-Programming/gentle-pi"; fi
+  local root here
+  # Workshop dogfooding: inside any gentle-shell checkout (clone or worktree),
+  # Pi loads the package from that path, exactly like gs run.
+  if is_workshop && here=$(git rev-parse --show-toplevel 2>/dev/null) &&
+    grep -q '"name": *"gentle-pi"' "$here/package.json" 2>/dev/null; then
+    cmd_run "$@"
+  fi
+  root=$(shell_root) || die "gentle-shell not on PATH (install it, then run: gs sync)"
   [ -f "$root/bin/gentle-shell.mjs" ] || die "gentle-shell not found at $root (run: gs sync)"
   exec node "$root/bin/gentle-shell.mjs" --link "$@"
 }
