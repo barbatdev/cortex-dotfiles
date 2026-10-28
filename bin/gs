@@ -372,7 +372,9 @@ cmd_sync() {
     printf 'gs sync — %s — workshop (local clones)\n' "$(date '+%Y-%m-%d %H:%M')"
     for repo in $REPOS; do
       [ -d "$CLONES/$repo/.git" ] || die "missing clean clone $CLONES/$repo"
-      [ -z "$(git -C "$CLONES/$repo" status --porcelain)" ] || die "$CLONES/$repo has local changes; clean clones only"
+      # Untracked files (.engram/, odd/ left by sessions run in the clone) survive
+      # checkout and pull untouched; only tracked edits would be at risk.
+      [ -z "$(git -C "$CLONES/$repo" status --porcelain --untracked-files=no)" ] || die "$CLONES/$repo has local changes; clean clones only"
       git -C "$CLONES/$repo" checkout -q main
       git -C "$CLONES/$repo" fetch -q --tags origin
       git -C "$CLONES/$repo" pull -q --ff-only origin main

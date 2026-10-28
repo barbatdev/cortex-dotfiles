@@ -104,6 +104,28 @@ OUT=$(cd "$W" && "$GS" 2>&1); L=$(cat "$CALLS" 2>/dev/null)
 check "consumer: inside a gentle-shell checkout gs still opens the main build" \
   '[[ "$L" == "launch $NPM --link" ]]'
 
+# --- sync (workshop) ----------------------------------------------------------
+
+setup workshop
+# Clones need an origin with main; the path keeps the Gentleman-Programming name.
+O="$T/Gentleman-Programming"; mkdir -p "$O"
+for r in gentle-shell gentle-ai engram; do
+  c="$HOME/dev/gentle/$r"
+  git -C "$c" -c user.email=t@t -c user.name=t commit -q --allow-empty -m init
+  git -C "$c" branch -M main
+  git clone -q --bare "$c" "$O/$r.git"; git -C "$c" remote set-url origin "$O/$r.git"
+  git -C "$c" fetch -q origin
+done
+git -C "$HOME/dev/gentle/gentle-shell" checkout -q --detach
+mkdir -p "$HOME/dev/gentle/gentle-shell/.engram" "$HOME/dev/gentle/gentle-shell/odd/checks"
+touch "$HOME/dev/gentle/gentle-shell/.engram/x" "$HOME/dev/gentle/gentle-shell/odd/checks/y"
+OUT=$("$GS" sync 2>&1); rc=$?
+check "workshop sync: untracked session files and detached HEAD do not block it" \
+  '[[ "$OUT" != *"clean clones only"* ]] && [ "$(git -C "$HOME/dev/gentle/gentle-shell" branch --show-current)" = main ] && [ -e "$HOME/dev/gentle/gentle-shell/.engram/x" ]'
+echo tracked >> "$HOME/dev/gentle/gentle-shell/VERSION"; git -C "$HOME/dev/gentle/gentle-shell" add VERSION
+OUT=$("$GS" sync 2>&1); rc=$?
+check "workshop sync: tracked edits in a clone still stop it" '[ $rc -ne 0 ] && [[ "$OUT" == *"clean clones only"* ]]'
+
 # --- sync (consumer) ----------------------------------------------------------
 
 setup consumer; remote_main HEAD; main=$(sha_of)
