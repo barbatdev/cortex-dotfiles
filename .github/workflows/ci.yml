@@ -88,6 +88,9 @@ jobs:
       - name: Check gs sync runs gentle-ai sync
         run: bash scripts/test-gs-sync.sh
 
+      - name: Check gs launches what gs sync updates
+        run: bash tests/gs_test.sh
+
       - name: Check Nix Home Manager preflight contracts
         run: bash scripts/test-nix-preflight.sh
 

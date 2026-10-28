@@ -21,7 +21,8 @@ cat >"$shims/_shim" <<EOF
 name=\$(basename "\$0")
 printf '%s|%s\n' "\$name" "\$*" >>"$log"
 case "\$name \$1" in
-  "gentle-shell --version") echo "gentle-shell 4.2.0" ;;
+  "gentle-shell --version") echo "gentle-shell 4.2.0-main.abc1234def56" ;;
+  node\ *) echo "gentle-shell 4.2.0-main.abc1234def56" ;;
   "go install")
     for arg in "\$@"; do case "\$arg" in *cmd/engram@*)
       printf '#!/bin/sh\necho "engram 3.0.0"\n' >"\$GOBIN/engram"; chmod +x "\$GOBIN/engram" ;;
@@ -32,13 +33,13 @@ esac
 exit 0
 EOF
 chmod +x "$shims/_shim"
-for name in gentle-shell pi go home-manager; do ln -s _shim "$shims/$name"; done
+for name in gentle-shell pi go home-manager node; do ln -s _shim "$shims/$name"; done
 ai_dir="$ws/ai"; mkdir -p "$ai_dir"; ln -s "$shims/_shim" "$ai_dir/gentle-ai"
 printf '{"schema":"gentle-pi.dev-binary/v1","path":"%s"}\n' "$ai_dir/gentle-ai" >"$home/.pi/gentle-ai/dev-binary.json"
 
 run_sync() {
   : >"$log"
-  env -i HOME="$home" PATH="$shims:/usr/bin:/bin" TERM=dumb "$@" \
+  env -i HOME="$home" PATH="$shims:/usr/bin:/bin" TERM=dumb GS_SHELL_REMOTE="$ws/no-remote" "$@" \
     bash "$repo_root/bin/gs" sync 2>&1
 }
 ai_sync_calls() { grep '^gentle-ai|sync' "$log" || true; }
@@ -66,8 +67,11 @@ out=$(run_sync GS_SKIP_AI_SYNC=1) || fail 'skipped gs sync exited non-zero' "$ou
 [[ -z "$(ai_sync_calls)" ]] || fail 'gentle-ai sync ran despite GS_SKIP_AI_SYNC=1' "$(cat "$log")"
 [[ "$out" == *'gentle-ai sync'*'skipped (GS_SKIP_AI_SYNC=1)'* ]] || fail 'missing skip status line' "$out"
 
-# 4. A failing gentle-ai sync is reported with its output, and gs sync goes on.
-out=$(run_sync FAKE_AI_SYNC_FAIL=1) || fail 'gs sync aborted on gentle-ai sync failure' "$out"
+# 4. A failing gentle-ai sync is reported with its output, gs sync goes on to the
+#    closing report, and then exits 1 with INCOMPLETE instead of claiming success.
+out=$(run_sync FAKE_AI_SYNC_FAIL=1) && fail 'gs sync exited 0 despite a failed gentle-ai sync' "$out"
+[[ "$out" == *'INCOMPLETE — failed: gentle-ai sync'* ]] || fail 'failed step not in INCOMPLETE summary' "$out"
+[[ "$out" != *'no Pi restart needed'* ]] || fail 'claimed no restart needed after a failure' "$out"
 [[ "$out" == *'gentle-ai sync'*'FAILED'*'Error: partial sync'* ]] || fail 'failure output not surfaced' "$out"
 [[ "$out" == *'versions:'* ]] || fail 'sync stopped before the closing report' "$out"
 
