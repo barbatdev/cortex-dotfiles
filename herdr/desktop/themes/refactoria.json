@@ -1,7 +1,7 @@
 {
   "background": "#0B0714",
   "foreground": "#FFFFFF",
-  "selection": "#FFFFFF",
+  "selection": "#7127FF",
   "cursor": "#FFB547",
   "ansi": [
     "#0B0714", "#FF6B8A", "#58E6A8", "#FFC857",
@@ -27,7 +27,7 @@
     "accent_foreground": "#FFFFFF",
     "solid": "#7127FF",
     "solid_foreground": "#FFFFFF",
-    "selection": "#FFFFFF",
+    "selection": "#7127FF",
     "working": "#8CC8FF",
     "blocked": "#FFC857",
     "done": "#58E6A8",
