@@ -568,6 +568,15 @@ seed_file "$DOTFILES/opencode/tui.json" "$HOME/.config/opencode/tui.json"
 if [[ "$PLATFORM" == "Darwin" ]]; then
     seed_file "$DOTFILES/herdr/desktop/settings.json" "$HOME/.config/herdr-app/settings.json"
 fi
+# Pi owns settings.json: merge only the RefactorIA appearance keys into it.
+if command -v python3 &>/dev/null; then
+    pi_appearance_args=("$DOTFILES/pi/appearance.json" "$HOME/.pi/agent/settings.json")
+    [[ "$DRY_RUN" == true ]] && pi_appearance_args+=(--dry-run)
+    python3 -I "$DOTFILES/scripts/pi_appearance.py" "${pi_appearance_args[@]}" \
+        || echo "  ! Pi appearance not merged; fix ~/.pi/agent/settings.json and rerun"
+else
+    echo "  ! python3 unavailable; skipped Pi appearance merge"
+fi
 run_or_plan "chmod +x $DOTFILES/claude/statusline.sh" chmod +x "$DOTFILES/claude/statusline.sh"
 run_or_plan "chmod +x agent-state CLI" chmod +x "$DOTFILES/zsh/scripts/agent-state.sh"
 if [[ "$PLATFORM" == "Darwin" ]]; then
