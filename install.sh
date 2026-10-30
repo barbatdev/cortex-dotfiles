@@ -24,12 +24,6 @@ MANAGED_LINKS=(
   "herdr/config-base.toml|$HOME/.config/herdr/config-base.toml|all"
   "herdr/profiles/barbatdev.toml|$HOME/.config/herdr/profiles/barbatdev.toml|all"
   "herdr/profiles/refactoria.toml|$HOME/.config/herdr/profiles/refactoria.toml|all"
-  "fish/themes/barbatdev.fish|$HOME/.config/fish/themes/barbatdev.fish|all"
-  "fish/themes/refactoria.fish|$HOME/.config/fish/themes/refactoria.fish|all"
-  "fish/functions/hbarbatdev.fish|$HOME/.config/fish/functions/hbarbatdev.fish|all"
-  "fish/functions/hrefactoria.fish|$HOME/.config/fish/functions/hrefactoria.fish|all"
-  "fish/functions/__herdr_tab_autoname.fish|$HOME/.config/fish/functions/__herdr_tab_autoname.fish|all"
-  "fish/functions/herdr-screens.fish|$HOME/.config/fish/functions/herdr-screens.fish|darwin"
   "pi/themes/barbatdev.json|$HOME/.pi/agent/themes/barbatdev.json|all"
   "pi/themes/refactoria.json|$HOME/.pi/agent/themes/refactoria.json|all"
   "ghostty/config|$HOME/.config/ghostty/config|all"
@@ -44,8 +38,6 @@ MANAGED_LINKS=(
   "ghostty/shaders|$HOME/.config/ghostty/shaders|all"
   "ghostty/profiles/barbatdev.conf|$HOME/.config/ghostty/profiles/barbatdev.conf|darwin"
   "ghostty/profiles/refactoria.conf|$HOME/.config/ghostty/profiles/refactoria.conf|darwin"
-  "fish/functions/gbarbatdev.fish|$HOME/.config/fish/functions/gbarbatdev.fish|darwin"
-  "fish/functions/grefactoria.fish|$HOME/.config/fish/functions/grefactoria.fish|darwin"
   "opencode/themes|$HOME/.config/opencode/themes|all"
   "tmux/tmux.conf|$HOME/.tmux.conf|all"
   "claude/statusline.sh|$HOME/.claude/statusline.sh|all"
@@ -300,17 +292,6 @@ PY
     while IFS= read -r -d '' path; do
         check_json "$path"
     done < <(find "$DOTFILES/opencode" "$DOTFILES/claude/themes" "$DOTFILES/pi/themes" -name '*.json' -type f -print0 2>/dev/null | sort -z)
-    for path in \
-        "$DOTFILES/fish/themes/barbatdev.fish" \
-        "$DOTFILES/fish/themes/refactoria.fish" \
-        "$DOTFILES/fish/functions/hbarbatdev.fish" \
-        "$DOTFILES/fish/functions/hrefactoria.fish" \
-        "$DOTFILES/fish/functions/__herdr_tab_autoname.fish" \
-        "$DOTFILES/fish/functions/herdr-screens.fish" \
-        "$DOTFILES/fish/functions/gbarbatdev.fish" \
-        "$DOTFILES/fish/functions/grefactoria.fish"; do
-        check_shell "$path" fish
-    done
     check_toml "$DOTFILES/starship/starship.toml"
     check_toml "$DOTFILES/bun/bunfig.toml"
     check_toml "$DOTFILES/uv/uv.toml"
