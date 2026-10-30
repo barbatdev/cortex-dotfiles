@@ -28,7 +28,7 @@
     "userBg": "#2C2144",
     "userText": "#FFFFFF",
     "toolPendingBg": "#17102A",
-    "toolSuccessBg": "#17102A",
+    "toolSuccessBg": "#2C2144",
     "toolErrorBg": "#281322",
     "infoBg": "#17102A",
     "gauge.ok": "textAccent",
