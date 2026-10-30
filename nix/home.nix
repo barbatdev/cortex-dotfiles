@@ -3,6 +3,7 @@
 let
   sharedFishFiles = {
     "fish/conf.d/10-core.fish".source = ../fish/conf.d/10-core.fish;
+    "fish/conf.d/20-herdr-clipboard.fish".source = ../fish/conf.d/20-herdr-clipboard.fish;
     "fish/functions/_go_dev_dir.fish".source = ../fish/functions/_go_dev_dir.fish;
     "fish/functions/_go_first_existing_dir.fish".source = ../fish/functions/_go_first_existing_dir.fish;
     "fish/functions/dev.fish".source = ../fish/functions/dev.fish;
