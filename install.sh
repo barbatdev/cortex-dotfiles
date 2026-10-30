@@ -596,6 +596,15 @@ fi
 
 # --- Configuración local ---
 echo ""
+# --- Apariencia macOS ---
+echo ""
+echo "🎨 Apariencia macOS"
+if [[ "$DRY_RUN" == true ]]; then
+    "$DOTFILES/scripts/macos-appearance.sh" --dry-run
+else
+    "$DOTFILES/scripts/macos-appearance.sh"
+fi
+
 if [[ ! -f "$DOTFILES/local/env.zsh" ]]; then
     if [[ "$DRY_RUN" == true ]]; then
         echo "📝 Would create local/env.zsh from local/env.zsh.example"
