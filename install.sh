@@ -13,6 +13,7 @@ PLATFORM="$(uname -s)"
 # so a new dotfile only needs one entry here.
 MANAGED_LINKS=(
   "zsh/zshrc|$HOME/.zshrc|all"
+  "zsh/cortex-dotfiles.zsh|$HOME/.config/cortex-dotfiles/shell/cortex-dotfiles.zsh|all"
   "npm/npmrc|$HOME/.npmrc|all"
   "bun/bunfig.toml|$HOME/.bunfig.toml|all"
   "aerospace/aerospace.toml|$HOME/.config/aerospace/aerospace.toml|all"

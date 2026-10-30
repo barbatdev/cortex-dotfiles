@@ -19,7 +19,20 @@ _cortex_dotfiles_path_prepend() {
     [[ ":$PATH:" == *":$1:"* ]] || export PATH="$1:$PATH"
 }
 
+# ~/.local/bin always, even before it exists (installers create it later).
 _cortex_dotfiles_path_prepend "$HOME/.local/bin"
+
+# One list per OS; each other dir is added only if it exists. Later entries end up
+# first (each one is prepended), same order as fish/conf.d/10-core.fish.
+if [[ "$(uname)" == Darwin ]]; then
+    _cortex_tool_bins=("$HOME/.pi/agent/bin" /usr/local/bin /nix/var/nix/profiles/default/bin "$HOME/.nix-profile/bin" "$HOME/.bun/bin" "$HOME/.volta/bin" "$HOME/.opencode/bin" "$HOME/.local/bin" /opt/homebrew/sbin /opt/homebrew/bin "$HOME/.cargo/bin")
+else
+    _cortex_tool_bins=("$HOME/.pi/agent/bin" /usr/local/go/bin $HOME/.local/go-*/bin(N) "$HOME/.bun/bin" "$HOME/.local/share/pnpm/bin" /nix/var/nix/profiles/default/bin "$HOME/.nix-profile/bin" "$HOME/.opencode/bin" "$HOME/.local/bin")
+fi
+for _cortex_bin in "${_cortex_tool_bins[@]}"; do
+    [[ -d "$_cortex_bin" ]] && _cortex_dotfiles_path_prepend "$_cortex_bin"
+done
+unset _cortex_tool_bins _cortex_bin
 #endregion
 
 #region Zsh Options
@@ -58,7 +71,6 @@ export VISUAL="$EDITOR"
 
 #region Git Aliases
 alias g="git"
-gs()  { git status "$@" }
 ga()  { git add "$@" }
 gc()  { git commit -m "$@" }
 gp()  { git push "$@" }
@@ -128,7 +140,7 @@ dotfiles()    { _go_first_existing_dir "$CORTEX_DOTFILES_DIR" "$_DOTFILES_DIR"; 
 
 #region System Aliases
 alias c="clear"
-alias o="open"
+[[ "$(uname)" == Darwin ]] && alias o="open"
 alias reload="source ~/.zshrc && echo 'Profile recargado!'"
 
 # ls mejorado (usa eza si está instalado)
@@ -237,6 +249,7 @@ if [[ -d "$_SCRIPTS_DIR" ]]; then
     [[ -f "$_SCRIPTS_DIR/git-helpers.zsh" ]]    && source "$_SCRIPTS_DIR/git-helpers.zsh"
     [[ -f "$_SCRIPTS_DIR/ssh-helpers.zsh" ]]    && source "$_SCRIPTS_DIR/ssh-helpers.zsh"
     [[ -f "$_SCRIPTS_DIR/herdr-helpers.zsh" ]]  && source "$_SCRIPTS_DIR/herdr-helpers.zsh"
+    [[ -f "$_SCRIPTS_DIR/profile-helpers.zsh" ]] && source "$_SCRIPTS_DIR/profile-helpers.zsh"
     [[ -f "$_SCRIPTS_DIR/tmux-helpers.zsh" ]]   && source "$_SCRIPTS_DIR/tmux-helpers.zsh"
     [[ -f "$_SCRIPTS_DIR/worktree-helpers.zsh" ]] && source "$_SCRIPTS_DIR/worktree-helpers.zsh"
     [[ -f "$_SCRIPTS_DIR/agent-state.sh" ]] && source "$_SCRIPTS_DIR/agent-state.sh"
@@ -257,8 +270,8 @@ _LOCAL_ENV="$_DOTFILES_DIR/local/env.zsh"
 export WORKSPACE_DIR="${WORKSPACE_DIR:-$HOME/dev}"
 export BARBATDEV_DIR="${BARBATDEV_DIR:-$WORKSPACE_DIR/barbatdev}"
 export WORK_PROJECTS_DIR="${WORK_PROJECTS_DIR:-$WORKSPACE_DIR/innit-sas}"
-export PERSONAL_PROJECTS_DIR="${PERSONAL_PROJECTS_DIR:-$WORKSPACE_DIR/local}"
-export TOOLS_DIR="${TOOLS_DIR:-$PERSONAL_PROJECTS_DIR/tools}"
+export PERSONAL_PROJECTS_DIR="${PERSONAL_PROJECTS_DIR:-$BARBATDEV_DIR/products}"
+export TOOLS_DIR="${TOOLS_DIR:-$BARBATDEV_DIR/tools}"
 export WORKTREES_DIR="${WORKTREES_DIR:-$WORKSPACE_DIR/worktrees}"
 export INNIT_DIR="${INNIT_DIR:-$WORK_PROJECTS_DIR}"
 export REFACTORIA_DIR="${REFACTORIA_DIR:-$WORKSPACE_DIR/refactoria}"
@@ -270,6 +283,22 @@ export INNIT_PCSOFT_DIR="${INNIT_PCSOFT_DIR:-$INNIT_DIR/pcsoft}"
 export CORTEX_DOTFILES_DIR="${CORTEX_DOTFILES_DIR:-$BARBATDEV_DIR/cortex/cortex-dotfiles}"
 export SCREENSHOTS_DIR="${SCREENSHOTS_DIR:-$HOME/Screenshots}"
 export CLAUDE_CODE_EFFORT_LEVEL="${CLAUDE_CODE_EFFORT_LEVEL:-high}"
+export CORTEX_HOME="${CORTEX_HOME:-$HOME/.cortex}"
+export CORTEX_ROOT="${CORTEX_ROOT:-$BARBATDEV_DIR/cortex/cortex}"
+export CORTEX_MULTIPLEXER="${CORTEX_MULTIPLEXER:-herdr}"
+# gs sync installs the Gentle stack from main: every host follows the beta channel.
+export GENTLE_AI_CHANNEL="${GENTLE_AI_CHANNEL:-beta}"
+#endregion
+
+#region Herdr Clipboard
+# Herdr terminals (started by herdr-core, marked by HC_TERMINAL_ID) are watched
+# from another machine's Herdr window. herdr-core hands them this host's desktop
+# (DISPLAY, WAYLAND_DISPLAY) when it has one, so programs like Pi copy into this
+# host's clipboard and never send OSC 52 to the viewing machine. Drop the
+# desktop for those shells only; other shells on the host keep it.
+if [[ -n "${HC_TERMINAL_ID:-}" && -z "${SSH_CONNECTION:-}" ]]; then
+    unset DISPLAY WAYLAND_DISPLAY
+fi
 #endregion
 
 #region Atuin
@@ -375,4 +404,7 @@ _cortex_dotfiles_path_prepend "$BUN_INSTALL/bin"
 # bun completions
 [ -s "$BUN_INSTALL/_bun" ] && source "$BUN_INSTALL/_bun"
 _cortex_dotfiles_path_prepend "/opt/homebrew/opt/bc/bin"
+
+# gentle-ai's managed launchers (OpenCode background subagents) must win on PATH.
+[[ -d "$HOME/.gentle-ai/bin" ]] && _cortex_dotfiles_path_prepend "$HOME/.gentle-ai/bin"
 unfunction _cortex_dotfiles_path_prepend
