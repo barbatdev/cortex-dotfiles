@@ -408,3 +408,42 @@ _cortex_dotfiles_path_prepend "/opt/homebrew/opt/bc/bin"
 # gentle-ai's managed launchers (OpenCode background subagents) must win on PATH.
 [[ -d "$HOME/.gentle-ai/bin" ]] && _cortex_dotfiles_path_prepend "$HOME/.gentle-ai/bin"
 unfunction _cortex_dotfiles_path_prepend
+
+#region Syntax Highlighting
+# Command-line colors from fish/themes/refactoria.fish: typed commands, arguments,
+# strings and errors, plus fish-style suggestions. Plugins live in
+# ~/.local/share/zsh/plugins (install.sh clones them); missing ones are skipped.
+_ZSH_PLUGINS_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/zsh/plugins"
+if [[ -r "$_ZSH_PLUGINS_DIR/zsh-autosuggestions/zsh-autosuggestions.zsh" ]]; then
+    ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE="fg=#B8AEC8"
+    source "$_ZSH_PLUGINS_DIR/zsh-autosuggestions/zsh-autosuggestions.zsh"
+fi
+
+# Completion menu: the selected entry like fish's pager.
+zstyle ':completion:*' list-colors 'ma=48;2;113;39;255;38;2;255;255;255'
+
+# Last: it wraps every widget defined before it.
+if [[ -r "$_ZSH_PLUGINS_DIR/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh" ]]; then
+    source "$_ZSH_PLUGINS_DIR/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh"
+    typeset -gA ZSH_HIGHLIGHT_STYLES
+    ZSH_HIGHLIGHT_STYLES[default]="fg=#C7A6FF"
+    ZSH_HIGHLIGHT_STYLES[unknown-token]="fg=#FF6B8A,bold"
+    ZSH_HIGHLIGHT_STYLES[reserved-word]="fg=#C7A6FF,bold"
+    for _style in command builtin alias suffix-alias global-alias function precommand hashed-command autodirectory; do
+        ZSH_HIGHLIGHT_STYLES[$_style]="fg=#A477FF,bold"
+    done
+    unset _style
+    ZSH_HIGHLIGHT_STYLES[commandseparator]="fg=#FFC857"
+    ZSH_HIGHLIGHT_STYLES[redirection]="fg=#8CC8FF"
+    ZSH_HIGHLIGHT_STYLES[globbing]="fg=#8CC8FF"
+    ZSH_HIGHLIGHT_STYLES[path]="fg=#C7A6FF,underline"
+    ZSH_HIGHLIGHT_STYLES[single-hyphen-option]="fg=#C7A6FF"
+    ZSH_HIGHLIGHT_STYLES[double-hyphen-option]="fg=#C7A6FF"
+    ZSH_HIGHLIGHT_STYLES[single-quoted-argument]="fg=#FFE08A"
+    ZSH_HIGHLIGHT_STYLES[double-quoted-argument]="fg=#FFE08A"
+    ZSH_HIGHLIGHT_STYLES[dollar-quoted-argument]="fg=#FFE08A"
+    ZSH_HIGHLIGHT_STYLES[back-quoted-argument]="fg=#A477FF"
+    ZSH_HIGHLIGHT_STYLES[comment]="fg=#A39AB5"
+fi
+unset _ZSH_PLUGINS_DIR
+#endregion
