@@ -19,7 +19,10 @@ _cortex_dotfiles_path_prepend() {
     [[ ":$PATH:" == *":$1:"* ]] || export PATH="$1:$PATH"
 }
 
-# One list per OS; each dir is added only if it exists. Later entries end up
+# ~/.local/bin always, even before it exists (installers create it later).
+_cortex_dotfiles_path_prepend "$HOME/.local/bin"
+
+# One list per OS; each other dir is added only if it exists. Later entries end up
 # first (each one is prepended), same order as fish/conf.d/10-core.fish.
 if [[ "$(uname)" == Darwin ]]; then
     _cortex_tool_bins=("$HOME/.pi/agent/bin" /usr/local/bin /nix/var/nix/profiles/default/bin "$HOME/.nix-profile/bin" "$HOME/.bun/bin" "$HOME/.volta/bin" "$HOME/.opencode/bin" "$HOME/.local/bin" /opt/homebrew/sbin /opt/homebrew/bin "$HOME/.cargo/bin")
