@@ -29,7 +29,7 @@ color_accent = '#A477FF'
 color_success = '#58E6A8'
 color_info = '#8CC8FF'
 color_warning = '#FFC857'
-color_beard = '#FFDE70'
+color_beard = '#FFB547'
 color_error = '#FF6B8A'
 
 [os]
