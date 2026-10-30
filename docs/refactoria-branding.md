@@ -43,7 +43,8 @@ Selection follows the site contract: white background with the dark900 foregroun
 This section is local-only. It does not revise official RefactorIA tokens or imply a remote rollout:
 
 - Adapted legible text violet: `#A477FF`.
-- Local beard gold: `#FFDE70`, used by the local Starship default and SketchyBar beard. This is a local adaptation, not the official `brand500`; semantic status colors remain separate.
+- Local beard gold: `#FFDE70`, used by the local Starship default. This is a local adaptation, not the official `brand500`; semantic status colors remain separate.
+- The SketchyBar beard uses the official `accent-spark` amber `#FFB547`. SketchyBar keeps its palette in `sketchybar/colors.sh`, sourced by `sketchybarrc` and every plugin.
 - In the audited host plugin configuration, Neovim selects only Kanagawa (`gentleman-kanagawa-blur`); no RefactorIA highlight overlay was found, and runtime activation was not confirmed.
 - Site tokens, published source hashes, and remote behavior remain unchanged.
 

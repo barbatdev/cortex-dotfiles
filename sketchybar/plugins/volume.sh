@@ -1,8 +1,10 @@
 #!/bin/bash
 
+source "${CONFIG_DIR:-$HOME/.config/sketchybar}/colors.sh"
+
 # Neutral audio status uses the shared near-white normal-state token.
-TEXT=0xffffffff
-NORMAL=0xfff2effa
+TEXT="$COLOR_TEXT"
+NORMAL="$COLOR_NORMAL"
 
 volume=$(osascript -e 'output volume of (get volume settings)' 2>/dev/null)
 muted=$(osascript -e 'output muted of (get volume settings)' 2>/dev/null)
