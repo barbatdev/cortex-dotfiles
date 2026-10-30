@@ -37,10 +37,10 @@
               "min": 90
             },
             {
-              "id": "agents",
+              "id": "prs",
               "type": "block",
               "content": {
-                "mod": "refactoria-agents"
+                "mod": "refactoria-prs"
               },
               "size": {
                 "weight": 1
