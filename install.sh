@@ -596,8 +596,6 @@ else
     echo "  - sketchybar no disponible; se omite"
 fi
 
-# --- Configuración local ---
-echo ""
 # --- Apariencia macOS ---
 echo ""
 echo "🎨 Apariencia macOS"
@@ -607,6 +605,8 @@ else
     "$DOTFILES/scripts/macos-appearance.sh"
 fi
 
+# --- Configuración local ---
+echo ""
 if [[ ! -f "$DOTFILES/local/env.zsh" ]]; then
     if [[ "$DRY_RUN" == true ]]; then
         echo "📝 Would create local/env.zsh from local/env.zsh.example"
