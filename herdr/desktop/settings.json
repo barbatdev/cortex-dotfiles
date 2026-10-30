@@ -1,0 +1,12 @@
+{
+  "theme": "refactoria",
+  "font": "FiraCode Nerd Font Mono Beard",
+  "font_size": 14,
+  "ui_font": "Inter",
+  "telemetry": false,
+  "minimum_contrast": 1.0,
+  "sounds": {
+    "enabled": true
+  },
+  "zoom": 1.0
+}

@@ -31,6 +31,7 @@ MANAGED_LINKS=(
   "pi/themes/barbatdev.json|$HOME/.pi/agent/themes/barbatdev.json|all"
   "pi/themes/refactoria.json|$HOME/.pi/agent/themes/refactoria.json|all"
   "ghostty/config|$HOME/.config/ghostty/config|all"
+  "herdr/desktop/themes/refactoria.json|$HOME/.config/herdr-app/themes/refactoria.json|darwin"
   "ghostty/shaders|$HOME/.config/ghostty/shaders|all"
   "ghostty/profiles/barbatdev.conf|$HOME/.config/ghostty/profiles/barbatdev.conf|darwin"
   "ghostty/profiles/refactoria.conf|$HOME/.config/ghostty/profiles/refactoria.conf|darwin"
@@ -429,6 +430,15 @@ if [[ "$PLATFORM" == "Darwin" ]]; then
     install_formula_if_missing sketchybar sketchybar "barra macOS"
     install_cask_if_missing "/Applications/AeroSpace.app" aerospace nikitabobko/tap
 
+    # Inter: the RefactorIA UI sans, used by Herdr Desktop panels (ui_font).
+    if ls "$HOME/Library/Fonts"/Inter-Regular.* &>/dev/null; then
+        echo "  ✓ font-inter ya instalado"
+    elif [[ "$DRY_RUN" == true ]]; then
+        echo "  → Would install font-inter via Homebrew cask"
+    else
+        brew install --cask font-inter
+    fi
+
     if ! karabiner_cli_available && ! karabiner_app_exists; then
         if [[ "$DRY_RUN" == true ]]; then
             echo "  → Would install karabiner-elements via Homebrew cask"
@@ -547,6 +557,10 @@ done < <(manifest_entries)
 # shellcheck source=scripts/seed-file.sh
 source "$DOTFILES/scripts/seed-file.sh"
 seed_file "$DOTFILES/opencode/tui.json" "$HOME/.config/opencode/tui.json"
+# Herdr Desktop rewrites settings.json (theme picker, zoom keys): seed a copy.
+if [[ "$PLATFORM" == "Darwin" ]]; then
+    seed_file "$DOTFILES/herdr/desktop/settings.json" "$HOME/.config/herdr-app/settings.json"
+fi
 run_or_plan "chmod +x $DOTFILES/claude/statusline.sh" chmod +x "$DOTFILES/claude/statusline.sh"
 run_or_plan "chmod +x agent-state CLI" chmod +x "$DOTFILES/zsh/scripts/agent-state.sh"
 if [[ "$PLATFORM" == "Darwin" ]]; then
