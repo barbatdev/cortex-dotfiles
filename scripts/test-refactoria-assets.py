@@ -15,7 +15,6 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 STATUSLINE = ROOT / "claude/statusline-command.sh"
-HELP_PROFILE = ROOT / "fish/functions/help-profile.fish"
 EXPECTED_STATUSLINE_SHA = "8b3524b8f1c9279f19986dbef7be0e3230d9044868d6f21b44b5ad85c40e454c"
 ANSI_SGR = re.compile(r"\x1b\[[0-9;]*m")
 ACCENT = "\033[1;38;2;255;107;138m"
@@ -159,60 +158,8 @@ def test_statusline() -> None:
             assert_statusline_case(bash, workspace, used_percentage, env)
 
 
-def command_line_present(lines: list[str], command: str) -> bool:
-    return any(line.strip().startswith(command) for line in lines)
-
-
-def test_dynamic_help_filter() -> None:
-    fish = shutil.which("fish")
-    if fish is None:
-        print("SKIP dynamic Fish help filter: fish binary not found")
-        return
-
-    with tempfile.TemporaryDirectory(prefix="refactoria-help-") as temporary_directory:
-        temporary_root = Path(temporary_directory)
-        home = temporary_root / "home"
-        bin_directory = temporary_root / "bin"
-        home.mkdir()
-        bin_directory.mkdir()
-        for command in ("git-workdev", "dev", "cc"):
-            executable = bin_directory / command
-            executable.write_text("#!/bin/sh\nexit 0\n", encoding="utf-8")
-            executable.chmod(0o755)
-
-        env = os.environ.copy()
-        env.update(
-            {
-                "HOME": str(home),
-                "PATH": str(bin_directory),
-                "COLUMNS": "80",
-                "TERM": "dumb",
-                "LC_ALL": "C.UTF-8",
-                "LANG": "C.UTF-8",
-            }
-        )
-        result = run_checked(
-            [
-                fish,
-                "--no-config",
-                "-c",
-                'source "$argv[1]"; help-profile',
-                str(HELP_PROFILE),
-            ],
-            env=env,
-        )
-        lines = strip_ansi(result.stdout).splitlines()
-        for command in ("git-workdev", "dev", "cc [path]"):
-            if not command_line_present(lines, command):
-                raise TestFailure(f"available helper missing from Fish help: {command}")
-        for command in ("git-personaldev", "clone-workdev", "barbat", "oc [path]", "herdr-orient"):
-            if command_line_present(lines, command):
-                raise TestFailure(f"unavailable helper was displayed in Fish help: {command}")
-
-
 def main() -> None:
     test_statusline()
-    test_dynamic_help_filter()
     print("PASS RefactorIA asset checks")
 
 

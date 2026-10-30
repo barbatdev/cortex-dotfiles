@@ -75,21 +75,6 @@ else
 	fi
 fi
 
-fish_config="$home_directory/.config/fish"
-local_fish_config="$fish_config/conf.d/99-local.fish"
-
-if [[ -e "$fish_config" || -L "$fish_config" ]]; then
-	warn "Future Fish config path exists and will remain unmanaged: $fish_config"
-else
-	pass "Future Fish config path is absent: $fish_config"
-fi
-
-if [[ -e "$local_fish_config" || -L "$local_fish_config" ]]; then
-	warn "Future host-owned path exists and will remain unmanaged: $local_fish_config"
-else
-	pass "Reserved host-owned future path is absent: $local_fish_config"
-fi
-
 if [[ "$failures" -eq 0 ]]; then
 	pass 'W1 readiness complete: this check made no host changes.'
 	exit 0

@@ -37,10 +37,8 @@ assert_pure_home_manager_configurations() {
 	assert_contains '        homeDirectory = "/home/jbarbat";' "$repo_root/flake.nix"
 	assert_contains '        system = "x86_64-linux";' "$repo_root/flake.nix"
 	assert_contains '{ username, homeDirectory, system, pkgs, lib, ... }:' "$repo_root/nix/home.nix"
-	assert_contains '  sharedFishFiles = {' "$repo_root/nix/home.nix"
-	assert_contains '  darwinFishFiles = {' "$repo_root/nix/home.nix"
-	assert_contains '    packages = lib.optionals pkgs.stdenv.isLinux [ pkgs.fish pkgs.starship ];' "$repo_root/nix/home.nix"
-	assert_contains '    // sharedFishFiles // lib.optionalAttrs (!pkgs.stdenv.isLinux) darwinFishFiles;' "$repo_root/nix/home.nix"
+	assert_contains '    packages = lib.optionals pkgs.stdenv.isLinux [ pkgs.starship ];' "$repo_root/nix/home.nix"
+	assert_not_contains 'fish' "$repo_root/nix/home.nix"
 	assert_contains '      - name: Check Nix Home Manager preflight contracts' "$repo_root/.github/workflows/ci.yml"
 	grep -Fq 'La configuración pura para Linux es `homeConfigurations.jbarbat-linux`:' "$repo_root/README.md" ||
 		fail 'README does not document the Linux Home Manager configuration'
@@ -51,22 +49,6 @@ assert_pure_home_manager_configurations() {
 
 	for file in "$repo_root/scripts/nix-preflight.sh" "$repo_root/.github/workflows/ci.yml" "$repo_root/README.md"; do
 		assert_not_contains '--impure' "$file"
-	done
-}
-
-assert_linux_fish_exclusions() {
-	local shared_sources
-	local darwin_sources
-
-	shared_sources="$(sed -n '/  sharedFishFiles = {/,/  };/p' "$repo_root/nix/home.nix")"
-	darwin_sources="$(sed -n '/  darwinFishFiles = {/,/  };/p' "$repo_root/nix/home.nix")"
-
-	for source in '_screenshots_dir.fish' '_screenshot_files.fish' '_time_ago.fish' 'ss.fish' 'last.fish' 'ssd.fish' 'imgclip.fish' 'ccclip.fish'; do
-		if grep -Fq -- "$source" <<<"$shared_sources"; then
-			fail "Linux Fish ownership must exclude $source"
-		fi
-		grep -Fq -- "$source" <<<"$darwin_sources" ||
-			fail "Darwin Fish ownership must retain $source"
 	done
 }
 
@@ -104,7 +86,6 @@ run_preflight() {
 }
 
 assert_pure_home_manager_configurations
-assert_linux_fish_exclusions
 
 missing_nix_home="$tmp_dir/missing-nix-home"
 missing_nix_bin="$tmp_dir/missing-nix-bin"
@@ -161,11 +142,5 @@ if run_preflight "$unsupported_home" "$unsupported_bin" "$unsupported_output"; t
 	fail 'preflight unexpectedly passed on an unsupported Linux architecture'
 fi
 assert_contains 'FAIL Unsupported platform: Linux aarch64. Supported targets are Darwin arm64 and Linux x86_64.' "$unsupported_output"
-
-mkdir -p "$ready_home/.config/fish/conf.d"
-printf '%s\n' '# host-owned local configuration' >"$ready_home/.config/fish/conf.d/99-local.fish"
-collision_output="$tmp_dir/collision.out"
-NIX_FAKE_LOG="$tmp_dir/nix.log" run_preflight "$ready_home" "$ready_bin" "$collision_output"
-assert_contains "WARN Future host-owned path exists and will remain unmanaged: $ready_home/.config/fish/conf.d/99-local.fish" "$collision_output"
 
 printf '%s\n' 'nix preflight contract ok'

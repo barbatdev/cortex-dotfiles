@@ -1,5 +1,7 @@
 # RefactorIA CLI visuals on agent-gentle
 
+> **Historical record.** Fish was retired on 2026-10-30: every machine logs in with zsh and the repo no longer ships `fish/`. The Fish rows below record what was applied then; they are not current instructions.
+
 The Linux/Fish rollout is **applied and visually approved** on `agent-gentle` (2026-09-27). This is a per-tool manual recipe and recovery record, **not** an all-tool installer. Pi's guarded batch installed only the theme for `pi --use-theme refactoria`. After visual use, its saved default changed from the initially preserved `Gentleman-Sexy` to `refactoria`; the user explicitly chose to **keep RefactorIA as the saved default**. We did not write Pi settings in the guarded batch. No Zsh, Ghostty, Neovim, SketchyBar, Herdr binary patch, package installation, app restart, or broad `install.sh` was involved.
 
 > **Source availability:** Use the selected feature-branch revision containing the nine Linux replay inputs below. Until those commits are published, an ordinary remote clean clone will not contain them. The Mac `herdr/config.toml` is a separate visual-only change: local onboarding/keys/UI settings must not be copied or staged wholesale. Do not take assets from `main` by assumption, and do not run the rejected `scripts/refactoria_linux.py` or the superseded all-tool draft.

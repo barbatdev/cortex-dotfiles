@@ -23,7 +23,7 @@ _cortex_dotfiles_path_prepend() {
 _cortex_dotfiles_path_prepend "$HOME/.local/bin"
 
 # One list per OS; each other dir is added only if it exists. Later entries end up
-# first (each one is prepended), same order as fish/conf.d/10-core.fish.
+# first (each one is prepended).
 if [[ "$(uname)" == Darwin ]]; then
     _cortex_tool_bins=("$HOME/.pi/agent/bin" /usr/local/bin /nix/var/nix/profiles/default/bin "$HOME/.nix-profile/bin" "$HOME/.bun/bin" "$HOME/.volta/bin" "$HOME/.opencode/bin" "$HOME/.local/bin" /opt/homebrew/sbin /opt/homebrew/bin "$HOME/.cargo/bin")
 else
@@ -352,8 +352,8 @@ help-profile() {
     echo "  ${C}dev               ${R}cd ~/dev"
     echo "  ${C}barbat            ${R}cd ~/dev/barbatdev"
     echo "  ${C}cowork            ${R}cd ~/dev/innit-sas"
-    echo "  ${C}personal          ${R}cd ~/dev/local"
-    echo "  ${C}tools             ${R}cd ~/dev/local/tools"
+    echo "  ${C}personal          ${R}cd ~/dev/barbatdev/products"
+    echo "  ${C}tools             ${R}cd ~/dev/barbatdev/tools"
     echo "  ${C}worktrees         ${R}cd ~/dev/worktrees"
     echo "  ${C}work              ${R}cd ~/dev/innit-sas"
     echo "  ${C}innit            ${R}cd ~/dev/innit-sas"
@@ -410,8 +410,8 @@ _cortex_dotfiles_path_prepend "/opt/homebrew/opt/bc/bin"
 unfunction _cortex_dotfiles_path_prepend
 
 #region Syntax Highlighting
-# Command-line colors from fish/themes/refactoria.fish: typed commands, arguments,
-# strings and errors, plus fish-style suggestions. Plugins live in
+# RefactorIA command-line colors: typed commands, arguments, strings and errors,
+# plus inline suggestions from history. Plugins live in
 # ~/.local/share/zsh/plugins (install.sh clones them); missing ones are skipped.
 _ZSH_PLUGINS_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/zsh/plugins"
 if [[ -r "$_ZSH_PLUGINS_DIR/zsh-autosuggestions/zsh-autosuggestions.zsh" ]]; then
@@ -419,7 +419,7 @@ if [[ -r "$_ZSH_PLUGINS_DIR/zsh-autosuggestions/zsh-autosuggestions.zsh" ]]; the
     source "$_ZSH_PLUGINS_DIR/zsh-autosuggestions/zsh-autosuggestions.zsh"
 fi
 
-# Completion menu: the selected entry like fish's pager.
+# Completion menu: the selected entry in brand violet.
 zstyle ':completion:*' list-colors 'ma=48;2;113;39;255;38;2;255;255;255'
 
 # Last: it wraps every widget defined before it.
