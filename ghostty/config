@@ -6,7 +6,7 @@ font-size = 14
 # Theme: RefactorIA dark defaults from the official site tokens.
 background = #0B0714
 foreground = #FFFFFF
-cursor-color = #7127FF
+cursor-color = #FFB547
 cursor-text = #0B0714
 selection-background = #FFFFFF
 selection-foreground = #0B0714
