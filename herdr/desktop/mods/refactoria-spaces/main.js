@@ -38,8 +38,12 @@ const FALLBACK = 60000;
 const MARK = { ansi6: "#22a99a", ansi3: "#e3814f", ansi4: "#5b8def", ansi5: "#8b7cf6", ansi2: "#3fae6a", ansi1: "#d9649a" };
 
 // A space speaks up only when something in it needs you.
+export function waits(status) {
+  return status === "blocked" || status === "done";
+}
+
 export function glyph(status) {
-  return status === "blocked" || status === "done" ? "●" : "·";
+  return waits(status) ? "●" : "·";
 }
 
 export function tone(t, status) {
@@ -69,10 +73,10 @@ export default class Spaces extends View {
     // `git status` walks the whole tree, on another machine a process there:
     // only when its answer could have changed (see `due`).
     cx.timer.every(250, (cx) => this.checkNew(cx));
-    // Someone waiting on the person pulses: only while a space is blocked.
+    // Someone waiting on the person pulses: only while a space is blocked or done.
     this.pulse = false;
     cx.timer.every(600, (cx) => {
-      const waiting = spaces().some((s) => s.status === "blocked");
+      const waiting = spaces().some((s) => waits(s.status));
       if (!waiting && !this.pulse) return;
       this.pulse = waiting ? !this.pulse : false;
       cx.notify();
@@ -246,7 +250,7 @@ export default class Spaces extends View {
     const machineNames = [null, ...remote];
     return machineNames.flatMap((m) => {
       const mine = rows.filter((r) => (r.w.machine ?? null) === m);
-      const waiting = mine.filter((r) => r.w.status === "blocked").length;
+      const waiting = mine.filter((r) => waits(r.w.status)).length;
       const machine = this.machines.find(k => k.name === m);
       const connected = !m || machine?.state === "connected";
       const folded = this.folded.has(m);
@@ -315,7 +319,7 @@ export default class Spaces extends View {
     const color = colors[w.id] ?? "ansi6";
     const fill = color.startsWith("#") ? color : (MARK[color] ?? t[color]);
     const twoLines = this.hasGitTail(g, tree, w.name);
-    const waiting = w.status === "blocked";
+    const waiting = waits(w.status);
     return v_flex()
       .relative()
       .id(`space-${w.id}`)
