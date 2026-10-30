@@ -25,7 +25,8 @@ function place(s, ps) {
   const tabs = new Set((s.tabs ?? []).map((c) => c.id));
   return ps.find((p) => tabs.has(p.tab) && p.cwd)?.cwd || s.folder;
 }
-const rowHeight = ({ tree }) => (tree ? 28 : 30);
+// A row with git details shows them on a second line under the name.
+const rowHeight = ({ tree, twoLines }) => (twoLines ? 48 : tree ? 28 : 30);
 const where = (s, ps) => JSON.stringify([s.machine ?? null, place(s, ps)]);
 const base = (path) => path.replace(/\/+$/, "").split("/").pop();
 // Changes made outside Herdr (an editor's save, a commit in another app): looked
@@ -68,6 +69,14 @@ export default class Spaces extends View {
     // `git status` walks the whole tree, on another machine a process there:
     // only when its answer could have changed (see `due`).
     cx.timer.every(250, (cx) => this.checkNew(cx));
+    // Someone waiting on the person pulses: only while a space is blocked.
+    this.pulse = false;
+    cx.timer.every(600, (cx) => {
+      const waiting = spaces().some((s) => s.status === "blocked");
+      if (!waiting && !this.pulse) return;
+      this.pulse = waiting ? !this.pulse : false;
+      cx.notify();
+    });
   }
 
   checkNew(cx) {
@@ -237,12 +246,13 @@ export default class Spaces extends View {
     const machineNames = [null, ...remote];
     return machineNames.flatMap((m) => {
       const mine = rows.filter((r) => (r.w.machine ?? null) === m);
+      const waiting = mine.filter((r) => r.w.status === "blocked").length;
       const machine = this.machines.find(k => k.name === m);
       const connected = !m || machine?.state === "connected";
       const folded = this.folded.has(m);
       const head = h_flex().id(`machine-${m ?? "local"}`).h(30).mt(6).mb(2).flex_none().px(collapsed ? 2 : 8).gap(7).items_center().text_size(12).text_color(t.foreground)
-        .rounded(8).bg(t.raised).border(1).border_color(t.raised)
-        .cursor_pointer().hover(s => s.border_color(t.input))
+        .rounded(8).bg(t.raised).border(waiting ? 2 : 1).border_color(waiting ? (this.pulse ? t.blocked : t.raised) : t.raised)
+        .cursor_pointer().when(!waiting, el => el.hover(s => s.border_color(t.input)))
         .on_click((_e, cx) => {
           folded ? this.folded.delete(m) : this.folded.add(m);
           localStorage.setItem("machines.folded", JSON.stringify([...this.folded]));
@@ -250,6 +260,7 @@ export default class Spaces extends View {
         })
         .child(svg(`mods/workspace-chrome/${m ? "server" : "monitor"}.svg`).size(13).flex_none())
         .when(!collapsed, el => el.child(div().flex_1().truncate().child(m ?? "This computer"))
+          .when(waiting > 0, el => el.child(this.waitBadge(t, `\u25cf ${waiting}`)))
           .when(!connected, el => el.child(div().flex_none().child((machine?.state ?? "asleep").replace(/_/g, " "))))
           .when(connected, el => el.child(div().id(`machine-add-${m ?? "local"}`).flex_none().px(4).rounded(4).hover(s => s.bg(t.hover).text_color(t.foreground))
             .on_click((_e, cx) => { cx.stop_propagation(); run("space.new", m ? { machine: m } : {}); }).child("+")))
@@ -266,23 +277,36 @@ export default class Spaces extends View {
   // Only what's unusual, after the name: "herdr \u00b7 spike \u21912 \u21931". The repo or
   // branch goes when the name already says it (a worktree is named after its branch),
   // and master/main go: nearly every space is on one.
-  gitTail(g, tree, name, t) {
+  // A loud pill: someone is waiting on the person. Dark ink on the blocked color.
+  waitBadge(t, label) {
+    return div().flex_none().px(6).h(18).rounded(9).bg(t.blocked).text_color(t.background)
+      .text_size(11).font_bold().flex().items_center().child(label);
+  }
+
+  gitWhere(g, tree, name) {
     const raw = g.branch ?? "detached";
     const same = (a) => a.toLowerCase() === name.toLowerCase();
     const branch = same(raw) || raw === "master" || raw === "main" ? "" : raw;
     const repo = tree || same(g.name) ? "" : g.name;
-    const where = [repo, branch].filter(Boolean).join(" \u00b7 ");
+    return [repo, branch].filter(Boolean).join(" \u00b7 ");
+  }
+
+  hasGitTail(g, tree, name) {
+    return Boolean(g && (this.gitWhere(g, tree, name) || g.ahead > 0 || g.behind > 0));
+  }
+
+  gitTail(g, tree, name, t, on = false) {
+    const where = this.gitWhere(g, tree, name);
     return h_flex()
-      .flex_1()
       .min_w(0)
       .gap(5)
-      .justify_end()
       .items_center()
       .text_size(12)
-      .text_color(t.dim)
+      // On the solid active row, dim and status colors fall under 4.5:1: use its ink.
+      .text_color(on ? t.solid_foreground : t.dim)
       .when(Boolean(where), (el) => el.child(div().min_w(0).truncate().child(where)))
-      .when(g.ahead > 0, (el) => el.child(div().flex_none().text_color(t.ansi2).child(`\u2191${g.ahead}`)))
-      .when(g.behind > 0, (el) => el.child(div().flex_none().text_color(t.ansi1).child(`\u2193${g.behind}`)));
+      .when(g.ahead > 0, (el) => el.child(div().flex_none().text_color(on ? t.solid_foreground : t.ansi2).child(`\u2191${g.ahead}`)))
+      .when(g.behind > 0, (el) => el.child(div().flex_none().text_color(on ? t.solid_foreground : t.ansi1).child(`\u2193${g.behind}`)));
   }
 
   row({ w, i, g, tree }, t) {
@@ -290,16 +314,21 @@ export default class Spaces extends View {
     const colors = shared("space.colors") ?? {};
     const color = colors[w.id] ?? "ansi6";
     const fill = color.startsWith("#") ? color : (MARK[color] ?? t[color]);
+    const twoLines = this.hasGitTail(g, tree, w.name);
+    const waiting = w.status === "blocked";
     return v_flex()
       .relative()
       .id(`space-${w.id}`)
       .px(8)
-      .h(rowHeight({ tree }))
+      .h(rowHeight({ tree, twoLines }))
       .flex_none()
       .justify_center()
       .rounded(8)
-      .when(on, (el) => el.bg(t.selected))
+      // The active space is solid brand violet, like the person's own messages in gentle-shell.
+      .when(on, (el) => el.bg(t.solid))
       .when(!on, (el) => el.hover((s) => s.bg(t.hover)))
+      // Waiting on the person: a pulsing blocked-color border over any state.
+      .when(waiting, (el) => el.border(2).border_color(this.pulse ? t.blocked : (on ? t.solid : t.raised)))
       .when(this.pressed !== null && this.over === i && this.pressed !== i, (el) => el.border_t(2).border_color(t.accent))
       .on_mouse_down("left", () => {
         this.pressed = i;
@@ -319,8 +348,11 @@ export default class Spaces extends View {
           .items_center()
           .when(Boolean(tree), el => el.pl(22).child(svg("mods/workspace-chrome/branch.svg").size(13).text_color(t.dim)))
           .when(!tree, el => el.child(h_flex().size(18).flex_none().rounded(5).bg(fill).items_center().justify_center().text_size(10.5).font_bold().text_color("#ffffff").child([...w.name][0]?.toUpperCase() ?? "?")))
-          .child(div().flex_shrink(0).max_w(150).truncate().text_color(t.foreground).child(w.name))
-          .child(g ? this.gitTail(g, tree, w.name, t) : div().flex_1()),
+          .child(v_flex().flex_1().min_w(0).gap(1)
+            .child(h_flex().min_w(0).gap(6).items_center()
+              .child(div().min_w(0).truncate().text_color(on ? t.solid_foreground : t.foreground).when(on, el => el.font_semibold()).child(w.name))
+              .when(waiting, el => el.child(this.waitBadge(t, "\u25cf te espera"))))
+            .when(twoLines, el => el.child(this.gitTail(g, tree, w.name, t, on)))),
       );
   }
 
