@@ -38,6 +38,8 @@ MANAGED_LINKS=(
   "herdr/desktop/mods/refactoria-spaces/mod.json|$HOME/.config/herdr-app/mods/refactoria-spaces/mod.json|darwin"
   "herdr/desktop/mods/refactoria-agents/main.js|$HOME/.config/herdr-app/mods/refactoria-agents/main.js|darwin"
   "herdr/desktop/mods/refactoria-agents/mod.json|$HOME/.config/herdr-app/mods/refactoria-agents/mod.json|darwin"
+  "herdr/desktop/mods/refactoria-prs/main.js|$HOME/.config/herdr-app/mods/refactoria-prs/main.js|darwin"
+  "herdr/desktop/mods/refactoria-prs/mod.json|$HOME/.config/herdr-app/mods/refactoria-prs/mod.json|darwin"
   "ghostty/shaders|$HOME/.config/ghostty/shaders|all"
   "ghostty/profiles/barbatdev.conf|$HOME/.config/ghostty/profiles/barbatdev.conf|darwin"
   "ghostty/profiles/refactoria.conf|$HOME/.config/ghostty/profiles/refactoria.conf|darwin"

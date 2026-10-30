@@ -23,7 +23,8 @@ function herdr-screens --description 'Open extra Herdr Desktop screens for multi
     set -l desktop "$repo/herdr/desktop"
     set -l shared themes/refactoria.json layouts/refactoria.json \
         mods/refactoria-spaces/main.js mods/refactoria-spaces/mod.json \
-        mods/refactoria-agents/main.js mods/refactoria-agents/mod.json
+        mods/refactoria-agents/main.js mods/refactoria-agents/mod.json \
+        mods/refactoria-prs/main.js mods/refactoria-prs/mod.json
 
     for n in (seq 2 $count)
         set -l home "$HOME/.config/herdr-app-$n"
