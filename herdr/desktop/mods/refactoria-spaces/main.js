@@ -5,7 +5,7 @@
 
 import { View, div, svg } from "gpui-kit";
 import { v_flex, h_flex } from "gpui-base";
-import { spaces, machines, panes, run, openOverlay, exec, hc, theme, shared, setShared, watchFolder, window, layout } from "herdr";
+import { spaces, agents, machines, panes, run, openOverlay, exec, hc, theme, shared, setShared, watchFolder, window, layout, home, readTextFile } from "herdr";
 
 function find(node, id) {
   if (node?.id === id) return node;
@@ -42,6 +42,20 @@ export function waits(status) {
   return status === "blocked" || status === "done";
 }
 
+// Every Herdr screen (herdr-app, herdr-app-2, ...) keeps its own "seen" marks in
+// view.json, so a finished agent looked at on one screen stays done on the others.
+const SCREENS = ["", "-2", "-3", "-4", "-5", "-6"];
+
+// Whether a space waits on the person: an agent blocked, or one done that no
+// screen has looked at since. `seen`: addresses ("t4", "agent-dev/t4") some
+// screen saw as done; `ags`: agents(), read once by the caller.
+export function spaceWaits(s, seen, ags) {
+  if (!waits(s.status)) return false;
+  const mine = ags.filter((a) => a.space === s.id);
+  if (!mine.length) return true;
+  return mine.some((a) => a.status === "blocked" || (a.status === "done" && !seen.has(a.address)));
+}
+
 export function glyph(status) {
   return waits(status) ? "●" : "·";
 }
@@ -75,11 +89,35 @@ export default class Spaces extends View {
     cx.timer.every(250, (cx) => this.checkNew(cx));
     // Someone waiting on the person pulses: only while a space is blocked or done.
     this.pulse = false;
+    this.seen = new Set();
+    this.readSeen(cx);
+    cx.timer.every(2000, (cx) => this.readSeen(cx));
     cx.timer.every(600, (cx) => {
-      const waiting = spaces().some((s) => waits(s.status));
+      const waiting = spaces().some((s) => spaceWaits(s, this.seen, agents()));
       if (!waiting && !this.pulse) return;
       this.pulse = waiting ? !this.pulse : false;
       cx.notify();
+    });
+  }
+
+  // Done agents any screen has looked at, from every screen's view.json.
+  readSeen(cx) {
+    if (this.readingSeen) return;
+    this.readingSeen = true;
+    cx.spawn(async (cx) => {
+      const seen = new Set();
+      for (const n of SCREENS) {
+        try {
+          const view = JSON.parse(await readTextFile(`${home()}/.config/herdr-app${n}/view.json`));
+          for (const [addr, a] of Object.entries(view.attention ?? {})) if (a.word === "done" && a.seen) seen.add(addr);
+        } catch {
+          // No such screen, or caught mid-write: the next look reads it.
+        }
+      }
+      const changed = seen.size !== this.seen.size || [...seen].some((a) => !this.seen.has(a));
+      this.seen = seen;
+      this.readingSeen = false;
+      if (changed) cx.notify();
     });
   }
 
@@ -250,7 +288,7 @@ export default class Spaces extends View {
     const machineNames = [null, ...remote];
     return machineNames.flatMap((m) => {
       const mine = rows.filter((r) => (r.w.machine ?? null) === m);
-      const waiting = mine.filter((r) => waits(r.w.status)).length;
+      const waiting = mine.filter((r) => spaceWaits(r.w, this.seen, agents())).length;
       const machine = this.machines.find(k => k.name === m);
       const connected = !m || machine?.state === "connected";
       const folded = this.folded.has(m);
@@ -319,7 +357,7 @@ export default class Spaces extends View {
     const color = colors[w.id] ?? "ansi6";
     const fill = color.startsWith("#") ? color : (MARK[color] ?? t[color]);
     const twoLines = this.hasGitTail(g, tree, w.name);
-    const waiting = waits(w.status);
+    const waiting = spaceWaits(w, this.seen, agents());
     return v_flex()
       .relative()
       .id(`space-${w.id}`)
@@ -371,7 +409,7 @@ export default class Spaces extends View {
       .hover((s) => s.bg(t.hover))
       .on_click(() => run("space.select", { id: w.id }))
       .child(div().text_color(w.active ? t.foreground : t.muted).child(String(i + 1)))
-      .child(div().text_color(tone(t, w.status)).child(glyph(w.status)));
+      .child(div().text_color(spaceWaits(w, this.seen, agents()) ? tone(t, w.status) : t.dim).child(spaceWaits(w, this.seen, agents()) ? "●" : "·"));
   }
 
   render() {
