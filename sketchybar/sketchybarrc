@@ -42,20 +42,21 @@ if [ "$DISPLAY_COUNT" -ge 4 ]; then
     LG_DRAWING=on
     FOUR_K_DISPLAY=4
 fi
-# RefactorIA official dark surfaces and brand accent.
-BG=0xff0b0714
-PILL=0xdd17102a
-PILL_SOFT=0xaa2c2144
-TEXT=0xffffffff
-MUTED=0xffebebeb
-BRAND=0xffffde70
-BRAND_TILE=0x00000000
-SPACE_BORDER=0xffa477ff
-NORMAL=0xfff2effa
-INFO=0xff8cc8ff
-RESOURCE=0xff8cc8ff
-WARN=0xffffc857
-DANGER=0xffff6b8a
+# RefactorIA palette: one source for the bar and its plugins.
+source "${CONFIG_DIR:-$HOME/.config/sketchybar}/colors.sh"
+BG=$COLOR_BG
+PILL=$COLOR_PILL
+PILL_SOFT=$COLOR_PILL_SOFT
+TEXT=$COLOR_TEXT
+MUTED=$COLOR_MUTED
+BRAND=$COLOR_SPARK
+BRAND_TILE=$COLOR_TRANSPARENT
+SPACE_BORDER=$COLOR_ACCENT_TEXT
+NORMAL=$COLOR_NORMAL
+INFO=$COLOR_INFO
+RESOURCE=$COLOR_INFO
+WARN=$COLOR_WARN
+DANGER=$COLOR_DANGER
 
 sketchybar --remove '/.*/'
 sketchybar --add event workspace_change
@@ -166,7 +167,7 @@ sketchybar --add item front_app left \
         icon.color="$INFO" \
         label.color="$MUTED" \
         label.max_chars=28 \
-        background.color=0x00000000 \
+        background.color="$COLOR_TRANSPARENT" \
         script="$PLUGIN_DIR/front_app.sh" \
     --subscribe front_app front_app_switched
 
@@ -178,7 +179,7 @@ sketchybar --add item front_app.lg left \
         icon.color="$INFO" \
         label.color="$MUTED" \
         label.max_chars=24 \
-        background.color=0x00000000 \
+        background.color="$COLOR_TRANSPARENT" \
         script="$PLUGIN_DIR/front_app.sh" \
     --subscribe front_app.lg front_app_switched
 
@@ -190,7 +191,7 @@ sketchybar --add item front_app.vertical left \
         icon.color="$INFO" \
         label.color="$MUTED" \
         label.max_chars=18 \
-        background.color=0x00000000 \
+        background.color="$COLOR_TRANSPARENT" \
         script="$PLUGIN_DIR/front_app.sh" \
     --subscribe front_app.vertical front_app_switched
 
@@ -202,7 +203,7 @@ sketchybar --add item front_app.4k left \
         icon.color="$INFO" \
         label.color="$MUTED" \
         label.max_chars=24 \
-        background.color=0x00000000 \
+        background.color="$COLOR_TRANSPARENT" \
         script="$PLUGIN_DIR/front_app.sh" \
     --subscribe front_app.4k front_app_switched
 

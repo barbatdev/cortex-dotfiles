@@ -1,9 +1,11 @@
 #!/bin/bash
 
+source "${CONFIG_DIR:-$HOME/.config/sketchybar}/colors.sh"
+
 # RefactorIA semantic colors; normal status icons use light violet.
-TEXT=0xffffffff
-NORMAL=0xffc6adff
-ERROR=0xffff6b8a
+TEXT="$COLOR_TEXT"
+NORMAL="$COLOR_VIOLET_SOFT"
+ERROR="$COLOR_DANGER"
 
 wifi_device=$(networksetup -listallhardwareports 2>/dev/null | awk '/Wi-Fi|AirPort/ {getline; print $2; exit}')
 

@@ -1,10 +1,12 @@
 #!/bin/bash
 
+source "${CONFIG_DIR:-$HOME/.config/sketchybar}/colors.sh"
+
 # RefactorIA semantic colors; normal resource status uses the blue info icon.
-TEXT=0xffffffff
-NORMAL=0xff8cc8ff
-WARNING=0xffffc857
-ERROR=0xffff6b8a
+TEXT="$COLOR_TEXT"
+NORMAL="$COLOR_INFO"
+WARNING="$COLOR_WARN"
+ERROR="$COLOR_DANGER"
 
 page_size=$(vm_stat | awk '/page size of/ {gsub("[^0-9]", "", $8); print $8}')
 pages_anonymous=$(vm_stat | awk '/Anonymous pages/ {gsub("\\.", "", $3); print $3}')

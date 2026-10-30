@@ -1,9 +1,11 @@
 #!/bin/bash
 
+source "${CONFIG_DIR:-$HOME/.config/sketchybar}/colors.sh"
+
 # RefactorIA semantic colors; connected network status is neutral, disconnected stays warning.
-TEXT=0xffffffff
-NORMAL=0xfff2effa
-WARNING=0xffffc857
+TEXT="$COLOR_TEXT"
+NORMAL="$COLOR_NORMAL"
+WARNING="$COLOR_WARN"
 
 color=$NORMAL
 icon="󰈀"

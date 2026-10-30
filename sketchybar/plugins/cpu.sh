@@ -1,10 +1,12 @@
 #!/bin/bash
 
+source "${CONFIG_DIR:-$HOME/.config/sketchybar}/colors.sh"
+
 # RefactorIA semantic colors; normal resource status uses the blue info icon.
-TEXT=0xffffffff
-NORMAL=0xff8cc8ff
-WARNING=0xffffc857
-ERROR=0xffff6b8a
+TEXT="$COLOR_TEXT"
+NORMAL="$COLOR_INFO"
+WARNING="$COLOR_WARN"
+ERROR="$COLOR_DANGER"
 
 cores=$(sysctl -n hw.logicalcpu 2>/dev/null || printf '1')
 cpu=$(ps -A -o %cpu | awk -v cores="$cores" '{sum += $1} END {printf "%02d%%", sum / cores}')

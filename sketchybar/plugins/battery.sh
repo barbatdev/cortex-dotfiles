@@ -1,10 +1,12 @@
 #!/bin/bash
 
+source "${CONFIG_DIR:-$HOME/.config/sketchybar}/colors.sh"
+
 # RefactorIA semantic colors; normal battery status uses a neutral near-white icon.
-TEXT=0xffffffff
-NORMAL=0xfff2effa
-WARNING=0xffffc857
-ERROR=0xffff6b8a
+TEXT="$COLOR_TEXT"
+NORMAL="$COLOR_NORMAL"
+WARNING="$COLOR_WARN"
+ERROR="$COLOR_DANGER"
 
 info=$(pmset -g batt 2>/dev/null)
 percent=$(printf '%s' "$info" | grep -Eo '[0-9]+%' | head -1 | tr -d '%')
