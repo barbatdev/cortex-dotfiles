@@ -28,6 +28,7 @@ MANAGED_LINKS=(
   "fish/functions/hbarbatdev.fish|$HOME/.config/fish/functions/hbarbatdev.fish|all"
   "fish/functions/hrefactoria.fish|$HOME/.config/fish/functions/hrefactoria.fish|all"
   "fish/functions/__herdr_tab_autoname.fish|$HOME/.config/fish/functions/__herdr_tab_autoname.fish|all"
+  "fish/functions/herdr-screens.fish|$HOME/.config/fish/functions/herdr-screens.fish|darwin"
   "pi/themes/barbatdev.json|$HOME/.pi/agent/themes/barbatdev.json|all"
   "pi/themes/refactoria.json|$HOME/.pi/agent/themes/refactoria.json|all"
   "ghostty/config|$HOME/.config/ghostty/config|all"
@@ -302,6 +303,7 @@ PY
         "$DOTFILES/fish/functions/hbarbatdev.fish" \
         "$DOTFILES/fish/functions/hrefactoria.fish" \
         "$DOTFILES/fish/functions/__herdr_tab_autoname.fish" \
+        "$DOTFILES/fish/functions/herdr-screens.fish" \
         "$DOTFILES/fish/functions/gbarbatdev.fish" \
         "$DOTFILES/fish/functions/grefactoria.fish"; do
         check_shell "$path" fish
