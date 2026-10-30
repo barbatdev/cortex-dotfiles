@@ -182,3 +182,35 @@ whereami() {
 alias h='herdr'
 alias hs='herdr status'
 alias hl='herdr workspace list'
+
+#region Herdr tab auto-rename
+# hname automático: renombra la tab de Herdr al repo actual cuando cambia el
+# directorio. Solo actúa dentro de un pane de Herdr (HERDR_ENV=1) y solo si el
+# label cambió, así los shells comunes quedan identificables sin golpear la API
+# en cada prompt. El nombre sale del origin (mismo criterio que gs); si no hay
+# git usa el basename del directorio. No interfiere con gs: el label completo
+# "repo - pr/is #N" lo pisa gs después de crear el worktree.
+_herdr_tab_repo_label() {
+    local dir=${1:-$PWD} name url root
+    if url=$(git -C "$dir" remote get-url origin 2>/dev/null); then
+        name=$(basename "$url"); name=${name%.git}
+    elif root=$(git -C "$dir" rev-parse --show-toplevel 2>/dev/null); then
+        name=$(basename "$root")
+    else
+        name=$(basename "$dir")
+    fi
+    [[ "$name" == "$_HERDR_TAB_LAST_LABEL" ]] && return 0
+    _HERDR_TAB_LAST_LABEL=$name
+    herdr tab rename "${HERDR_TAB_ID:-}" "$name" >/dev/null 2>&1 || true
+}
+
+# Hook chpwd: corre en cada cd, con guard barato antes de tocar git.
+_herdr_tab_chpwd() {
+    [[ "${HERDR_ENV:-}" == 1 ]] || return 0
+    command -v herdr &>/dev/null || return 0
+    _herdr_tab_repo_label "$PWD"
+}
+autoload -Uz add-zsh-hook
+add-zsh-hook chpwd _herdr_tab_chpwd
+_herdr_tab_chpwd  # label inicial de la tab al abrir la shell
+#endregion
