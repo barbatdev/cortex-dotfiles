@@ -389,6 +389,26 @@ install_cask_if_missing() {
     fi
 }
 
+# Clone a zsh plugin at a pinned tag into ~/.local/share/zsh/plugins (no root needed).
+install_zsh_plugin() {
+    local name="$1"
+    local url="$2"
+    local tag="$3"
+    local dest="${XDG_DATA_HOME:-$HOME/.local/share}/zsh/plugins/$name"
+
+    if [[ -d "$dest/.git" ]]; then
+        echo "  ✓ $name ya instalado"
+    elif [[ "$DRY_RUN" == true ]]; then
+        echo "  → Would clone $name $tag into $dest"
+    elif command -v git &>/dev/null; then
+        echo "  → Clonando $name $tag..."
+        mkdir -p "$(dirname "$dest")"
+        git -c advice.detachedHead=false clone --quiet --depth 1 --branch "$tag" "$url" "$dest"
+    else
+        echo "  ! git no encontrado; no se pudo instalar $name"
+    fi
+}
+
 # --- Verificar dependencias base ---
 echo "📦 Verificando herramientas ($PLATFORM)..."
 
@@ -415,6 +435,10 @@ else
     echo "❌ Plataforma no soportada: $PLATFORM"
     exit 1
 fi
+
+# --- Plugins de zsh (colores de la línea de comandos, sugerencias) ---
+install_zsh_plugin zsh-autosuggestions https://github.com/zsh-users/zsh-autosuggestions.git v0.7.1
+install_zsh_plugin zsh-syntax-highlighting https://github.com/zsh-users/zsh-syntax-highlighting.git 0.8.0
 
 karabiner_app_exists() {
     [[ -d "/Applications/Karabiner-Elements.app" || -d "$HOME/Applications/Karabiner-Elements.app" ]]
