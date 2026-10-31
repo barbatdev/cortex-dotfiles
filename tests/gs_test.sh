@@ -151,7 +151,7 @@ race_stub() {
 case "\$1 \$2" in
   "issue view") printf 'OPEN\037$1\037fix: thing\037type:bug\n' ;;
   "api user") echo me ;;
-  "pr list") echo "pr list" >> "$CALLS" ;;
+  "pr list") echo "pr list" >> "$CALLS"; printf '%b' "${2:-}" ;;
 esac
 exit 0
 EOF
@@ -169,6 +169,16 @@ setup workshop; race_stub me,other
 OUT=$("$GS" issue shell 9 2>&1); rc=$?
 check "workshop: gs issue shared with someone else stops and names only them" \
   '[ "$rc" = 1 ] && [[ "$OUT" == *"#9 is assigned to other (GS_FORCE=1 to continue)"* ]]'
+
+# PRs that mention the issue: only open ones block; merged/closed ones are listed.
+setup workshop; race_stub "" '  #5 MERGED feat: slice one (#9)\n  #6 CLOSED docs: dropped (#9)\n'
+OUT=$("$GS" issue shell 9 2>&1); rc=$?
+check "workshop: gs issue with only merged or closed PRs continues and lists them" \
+  '[[ "$OUT" != *"GS_FORCE=1 to continue"* ]] && [[ "$OUT" == *"#9 already has merged or closed PRs"* ]] && [[ "$OUT" == *"#5 MERGED feat: slice one (#9)"* ]] && [[ "$OUT" == *"#6 CLOSED docs: dropped (#9)"* ]]'
+setup workshop; race_stub "" '  #5 MERGED feat: slice one (#9)\n  #7 OPEN feat: slice two (#9)\n'
+OUT=$("$GS" issue shell 9 2>&1); rc=$?
+check "workshop: gs issue with an open PR still stops and names only the open ones" \
+  '[ "$rc" = 1 ] && [[ "$OUT" == *"Open PRs may already work on #9 (GS_FORCE=1 to continue):"* ]] && [[ "$OUT" == *"#7 OPEN feat: slice two (#9)"* ]] && [[ "$OUT" != *"#5 MERGED"* ]]'
 
 # --- sync (workshop) ----------------------------------------------------------
 

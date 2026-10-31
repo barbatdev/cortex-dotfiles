@@ -25,7 +25,7 @@ gs - gentle-shell on main, plus one disposable worktree per PR
                            updated if it exists), then Pi on it for shell PRs
   gs issue [repo] <n>      One step to start issue <n>: race check (stops if the
                            issue is closed, assigned to someone other than you,
-                           or referenced by a PR; GS_FORCE=1 skips it),
+                           or referenced by an open PR; GS_FORCE=1 skips it),
                            branch <type>/<n>-<slug> from origin/main,
                            then Pi on it for shell issues
 
@@ -239,8 +239,14 @@ cmd_issue() {
     [ -z "$others" ] || die "$gh_repo#$NUM is assigned to $others (GS_FORCE=1 to continue)"
     prs=$(gh pr list -R "$gh_repo" --state all --search "$NUM in:title,body" --json number,state,title \
       --jq '.[] | "  #\(.number) \(.state) \(.title)"')
-    [ -z "$prs" ] || die "PRs may already reference #$NUM (GS_FORCE=1 to continue):
-$prs"
+    # Only open PRs mean someone may be working on it now; merged/closed ones
+    # are history (long issues ship in slices), so they are listed, not fatal.
+    local open_prs done_prs
+    open_prs=$(printf '%s\n' "$prs" | grep -E '^ *#[0-9]+ OPEN ' || true)
+    done_prs=$(printf '%s\n' "$prs" | grep -vE '^ *#[0-9]+ OPEN |^$' || true)
+    [ -z "$open_prs" ] || die "Open PRs may already work on #$NUM (GS_FORCE=1 to continue):
+$open_prs"
+    [ -z "$done_prs" ] || printf 'gs: #%s already has merged or closed PRs:\n%s\n' "$NUM" "$done_prs" >&2
   fi
   case ",$labels," in
     *,type:feature,*) prefix=feat ;;
