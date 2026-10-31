@@ -30,6 +30,8 @@ class GsOfficialTest(unittest.TestCase):
                   'if [ "$1" = version ]; then echo "  build vcs.revision=abc123"; fi')
         self.shim(self.ai_bin, "gentle-ai",
                   'if [ "$1" = version ]; then echo "gentle-ai dev"; fi')
+        self.shim(self.ai_bin, "engram",
+                  'if [ "$1" = version ]; then echo "engram 3.0.0-dev"; fi')
 
     def tearDown(self):
         self.tmp.cleanup()
@@ -76,16 +78,22 @@ class GsOfficialTest(unittest.TestCase):
         result = self.run_gs("sync")
         self.assertEqual(result.returncode, 0, result.stderr)
         ai = self.ai_bin / "gentle-ai"
+        engram = self.ai_bin / "engram"
         self.assertEqual(self.calls(), [
             "gentle-shell upgrade --channel main",
             "go install github.com/gentleman-programming/gentle-ai/v4/cmd/gentle-ai@main",
             "gentle-ai sync --agents claude-code",
+            "go install github.com/Gentleman-Programming/engram/v3/cmd/engram@main",
             "gentle-shell --version",
             "gentle-ai version",
             f"go version -m {ai}",
+            "engram version",
+            f"go version -m {engram}",
         ])
         self.assertIn("vcs.revision=abc123", result.stdout)
         self.assertIn("gentle-shell 9.9.9", result.stdout)
+        self.assertIn("engram 3.0.0-dev", result.stdout)
+        self.assertIn("restart the Engram service", result.stdout)
 
     def test_sync_installs_into_resolved_gentle_ai_dir(self):
         self.shim(self.shims, "go",
@@ -139,6 +147,41 @@ class GsOfficialTest(unittest.TestCase):
         result = self.run_gs("sync")
         self.assertEqual(result.returncode, 3)
         self.assertNotIn("gentle-ai sync --agents claude-code", self.calls())
+
+
+    # Engram follows main like Gentle AI, with the same fail-closed target.
+    def test_sync_refuses_symlinked_engram(self):
+        real = self.shim(self.shims, "engram-real", "")
+        (self.ai_bin / "engram").unlink()
+        (self.ai_bin / "engram").symlink_to(real)
+        result = self.run_gs("sync")
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("engram is a symlink", result.stderr)
+        self.assertEqual(self.calls(), [])
+
+    def test_sync_refuses_engram_outside_expected_bin(self):
+        (self.ai_bin / "engram").unlink()
+        self.shim(self.shims, "engram", "")
+        result = self.run_gs("sync")
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("engram is not in the expected directory", result.stderr)
+        self.assertEqual(self.calls(), [])
+
+    def test_sync_fails_when_engram_missing(self):
+        (self.ai_bin / "engram").unlink()
+        result = self.run_gs("sync")
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("engram not found", result.stderr)
+        self.assertEqual(self.calls(), [])
+
+    def test_sync_fails_fast_on_engram_install_failure(self):
+        self.shim(self.shims, "go",
+                  'case "$*" in *engram*) echo engram-broke >&2; exit 4;; esac')
+        result = self.run_gs("sync")
+        self.assertEqual(result.returncode, 4)
+        self.assertIn("engram-broke", result.stderr)
+        self.assertNotIn("gentle-shell --version", self.calls())
+        self.assertNotIn("restart the Engram service", result.stdout)
 
 
 if __name__ == "__main__":
