@@ -16,7 +16,7 @@ usage() {
   cat <<'EOF'
 gs - gentle-shell on main, plus one disposable worktree per PR
 
-  gs [pi args...]          Open gentle-shell (--link) in the current directory.
+  gs [pi args...]          Open gentle-shell (--isolated) in the current directory.
                            Consumer: always the main build from gs sync.
                            Workshop: inside a gentle-shell clone or worktree, Pi
                            loads that path (gs run); elsewhere the synced clone.
@@ -31,7 +31,7 @@ gs - gentle-shell on main, plus one disposable worktree per PR
   gs new <repo> <name>     New branch <name> from fresh origin/main
   gs review <repo> <pr>    Check out someone else's PR to test or review it
   gs base <repo>           Clean origin/main worktree, to compare failures
-  gs run [pi args...]      Run gentle-shell --link with this worktree as --package-root
+  gs run [pi args...]      Run gentle-shell --isolated with this worktree as --package-root
   gs sync                  Bring gentle-shell, gentle-ai and engram to main, run
                            gentle-ai sync for managed configs, and check compatibility
                            (workshop: local clones; elsewhere: GitHub)
@@ -54,7 +54,8 @@ Fastest start:
   gs done                          ->  inside the worktree, after the merge
   (claim, comment, label, push and merge stay yours)
   Each session: one worktree, Pi loads the package from it, /reload picks up edits.
-  Sessions share ~/.pi/agent (--link) and subagents use the main clone.
+  Sessions share the isolated home ~/.gentle-shell/agent (--isolated, never
+  --link) and subagents use the main clone. Workshop sync never runs pi update.
   gs sync is separate: run it with no other session open.
 
 gs and gs sync share one source of truth: workshop launches the clone it syncs;
@@ -183,17 +184,18 @@ open_or_finish() {
 
 pr_prompt() {
   # Same cortex-only rule as issue_prompt: the cortex variant is mandatory.
-  printf 'Review Gentleman-Programming/%s PR #%s using the cortex-maintainer-delivery skill, loading ~/.pi/agent/skills/cortex-maintainer-delivery/SKILL.md first (never the plain maintainer-delivery skill): read the PR, its linked issue, CI status and diff; run its preflight and race check; then report scope, risks, and what to test in Spanish. Do not comment, push, or merge.' "$1" "$2"
+  printf 'Review Gentleman-Programming/%s PR #%s using the cortex-maintainer-delivery skill, loading it first (never the plain maintainer-delivery skill): read the PR, its linked issue, CI status and diff; run its preflight and race check; then report scope, risks, and what to test in Spanish. Do not comment, push, or merge.' "$1" "$2"
 }
 
 issue_prompt() {
   # Plan-first: the session presents the kickoff and STOPS. Implementation
   # starts only after the user explicitly approves the plan (agreed workflow;
   # the previous "then work test-first" wording made sessions auto-implement).
-  # The CORTEX variant of the skill is mandatory, referenced by name and path:
+  # The CORTEX variant of the skill is mandatory, referenced by name (no legacy
+  # ~/.pi/agent path: sessions run on the isolated home):
   # there is also a plain maintainer-delivery skill and the session must not
   # pick that one.
-  printf 'Take Gentleman-Programming/%s issue #%s using the cortex-maintainer-delivery skill, loading ~/.pi/agent/skills/cortex-maintainer-delivery/SKILL.md first (never the plain maintainer-delivery skill): run its preflight, read the issue and repo conventions, then present a kickoff plan (expected behavior, approach, out of scope, branch %s) in Spanish and STOP. Do not implement, edit files, or commit: implementation starts only after the user explicitly approves the plan. Claiming, commenting, pushing, and opening the PR stay mine.' "$1" "$2" "$3"
+  printf 'Take Gentleman-Programming/%s issue #%s using the cortex-maintainer-delivery skill, loading it first (never the plain maintainer-delivery skill): run its preflight, read the issue and repo conventions, then present a kickoff plan (expected behavior, approach, out of scope, branch %s) in Spanish and STOP. Do not implement, edit files, or commit: implementation starts only after the user explicitly approves the plan. Claiming, commenting, pushing, and opening the PR stay mine.' "$1" "$2" "$3"
 }
 
 cmd_pr() {
@@ -269,7 +271,7 @@ cmd_run() {
   grep -q '"name": *"gentle-pi"' "$root/package.json" 2>/dev/null || die "$root is not gentle-shell"
   [ -d "$root/node_modules" ] || die "no node_modules in $root (pnpm install --frozen-lockfile)"
   printf 'gs: gentle-shell @ %s (%s); subagents use main\n' "$(git -C "$root" rev-parse --short HEAD)" "$root" >&2
-  cd "$root" && exec node "$root/bin/gentle-shell.mjs" --link --package-root "$root" "$@"
+  cd "$root" && exec node "$root/bin/gentle-shell.mjs" --isolated --package-root "$root" "$@"
 }
 
 # Workshop (agent-gentle): clean clones in ~/dev/gentle, Pi loads the gentle-shell clone.
@@ -365,16 +367,19 @@ sync_dotfiles() {
 
 cmd_sync() {
   local ai_files="" dot_change="" repo shell bin="$HOME/.local/share/gentle-ai/main" reg="$HOME/.pi/gentle-ai/dev-binary.json" name
+  # The dev-binary registration is install-level state: the official launcher
+  # reads it from ~/.pi/gentle-ai even in the isolated home (gentle-shell
+  # lib/gentle-shell-launcher.ts UNMIGRATED_CONFIG_FILES), so it stays there.
   # Versions before the sync power the closing message: restart only on change.
   local shell_before ai_before engram_before
   shell_before=$(shell_version); ai_before=$(ai_version); engram_before=$(engram_version)
   # Stale GOROOT/GOBIN from a removed version manager breaks every go build.
   if [ -n "${GOROOT:-}" ] && [ ! -d "$GOROOT" ]; then unset GOROOT; fi
   if [ -n "${GOBIN:-}" ] && [ ! -d "$(dirname "$GOBIN")" ]; then unset GOBIN; fi
-  # pi may live in its managed home instead of PATH (managed install schema).
-  command -v pi >/dev/null 2>&1 || export PATH="$HOME/.pi/agent/bin:$PATH"
   mkdir -p "$bin" "$HOME/.local/bin" "$(dirname "$reg")"
   if is_workshop; then
+    # Workshop runs the Pi bundled in the clone (node_modules): no legacy
+    # ~/.pi/agent runtime on PATH and no pi update.
     printf 'gs sync — %s — workshop (local clones)\n' "$(date '+%Y-%m-%d %H:%M')"
     for repo in $REPOS; do
       [ -d "$CLONES/$repo/.git" ] || die "missing clean clone $CLONES/$repo"
@@ -394,6 +399,8 @@ cmd_sync() {
   else
     printf 'gs sync — %s — consumer (official update channels)\n' "$(date '+%Y-%m-%d %H:%M')"
     command -v gentle-shell >/dev/null 2>&1 || die "consumer sync needs gentle-shell on PATH; install it first"
+    # pi may live in its managed home instead of PATH (managed install schema).
+    command -v pi >/dev/null 2>&1 || export PATH="$HOME/.pi/agent/bin:$PATH"
     # pi self-update cannot handle every installation schema (e.g. bun-compiled
     # /opt/pi binaries): a failure there must not abort the sync, the official
     # main channel below is the actual update path for Shell and AI.
@@ -519,9 +526,6 @@ cmd_sync() {
   else
     printf 'compat:     INCOMPATIBLE (gentle-ai emits %s, gentle-shell reads %s)\n' "$emits" "$reads"
   fi
-  if is_workshop && grep -qE 'npm:gentle-(pi|engram)|git:github.com/Gentleman-Programming/gentle-(pi|shell)' "$HOME/.pi/agent/settings.json" 2>/dev/null; then
-    printf 'WARN: ~/.pi/agent/settings.json lists a published gentle-pi/gentle-engram again; remove it\n'
-  fi
   if [ -n "$ai_files" ] && [ "$ai_files" -gt 0 ]; then
     changed="$changed managed configs ($ai_files files)"
   fi
@@ -581,7 +585,7 @@ cmd_launch() {
   root=$(shell_root) || die "gentle-shell not on PATH (install it, then run: gs sync)"
   [ -f "$root/bin/gentle-shell.mjs" ] || die "gentle-shell not found at $root (run: gs sync)"
   herdr_tab_repo
-  exec node "$root/bin/gentle-shell.mjs" --link "$@"
+  exec node "$root/bin/gentle-shell.mjs" --isolated "$@"
 }
 
 case "${1:-}" in
