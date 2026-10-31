@@ -22,6 +22,7 @@ go version -m ~/.local/bin/engram | grep 'engram/v3'
 - **No usar `@latest`**: en Go resuelve al último tag de release, no a `main`.
 - `go version -m` muestra una pseudo-versión como `v3.6.1-0.20261030201044-7cf4ed29b6f9`. No es un pin: los últimos 12 caracteres son el commit de `main` que se compiló. Compararlo con `git ls-remote https://github.com/Gentleman-Programming/engram.git refs/heads/main`.
 - Reemplazar el binario no reinicia el servidor que ya está corriendo; el operador decide cuándo reiniciarlo.
+- `gs sync` ([`bin/gs-official`](../bin/gs-official)) ya incluye este paso: instala Engram desde `main` en `~/.local/bin` y recuerda reiniciar el servicio.
 
 Estado observado en la Mac (2026-10-31): `~/.local/bin/engram` es el único Engram en el `PATH`, el LaunchAgent `com.gentleman-programming.engram` ejecuta ese binario y su commit `7cf4ed29b6f9` coincidía con la punta de `main`. Homebrew no tenía Engram instalado. El LaunchAgent de cloud-sync ejecuta `python3`, no un binario de Engram.
 
