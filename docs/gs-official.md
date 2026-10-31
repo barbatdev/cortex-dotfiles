@@ -32,7 +32,7 @@ Steps run in order and stop at the first failure. The failing command's output i
 
 - **Main is not a persistent channel.** `go install ...@main` builds the current `main` once. It does not pin anything for later, so each `gs sync` installs `@main` again.
 - **Identifying the installed commit.** A build from source may report its version as `dev` or as a pseudo-version. Use the `go version -m` output (the module pseudo-version and `vcs.revision`, when present) to confirm which `main` commit is installed. Do not read a semantic version number as proof that you are on `main`.
-- **Fail-closed target.** If `gentle-ai` or `engram` resolves anywhere other than `~/.local/bin` (for example, a package-managed copy or a symlink), `gs sync` refuses to run. This keeps it from updating a different copy than the one on your `PATH`.
+- **Fail-closed target.** If `gentle-ai` or `engram` resolves anywhere other than `~/.local/bin` (for example, a package-managed copy or a symlink), `gs sync` refuses to run. This keeps it from updating a different copy than the one on your `PATH`. Both binaries are required: on a host without `~/.local/bin/engram`, `gs sync` refuses before updating anything, including Gentle Shell and Gentle AI. Install Engram from `main` there first.
 - **Never `@latest`.** In Go, `@latest` resolves to the newest release tag, not `main`.
 - **Out of scope.** No Engram service restarts, no Engram data migrations, no pi self-update, no dotfiles pulls, and no custom clones. Credentials, memories, and conversations are never touched.
 - **PATH setup.** Putting `~/.local/bin` and the deployed `gs` on `PATH` for fresh zsh sessions is handled by a separate agent-dev drop-in, not by the shared zsh profile.
