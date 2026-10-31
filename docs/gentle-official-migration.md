@@ -236,3 +236,18 @@ Fuentes consultadas durante la sesión; revisar nuevamente la versión vigente a
 - Gentle AI: <https://github.com/Gentleman-Programming/gentle-ai>
 - Opciones de uninstall de Gentle AI: <https://github.com/Gentleman-Programming/gentle-ai/blob/main/internal/tui/screens/uninstall.go>
 - Engram: <https://github.com/Gentleman-Programming/engram>
+
+## macOS
+
+Script: [`scripts/migrate-mac-official.sh`](../scripts/migrate-mac-official.sh). Replica en la Mac lo hecho en `agent-dev` en una sola corrida.
+
+- **Correr fuera de Gentle Shell**, desde una terminal común con todas las sesiones cerradas: el script desinstala el Shell legacy (npm global en `~/.local`) y una sesión abierta seguiría usando ese código. El preflight lo bloquea si detecta procesos de `gentle-shell`.
+- Usa el camino oficial **npm + `gentle-shell upgrade --channel main`** (el método de instalación que ya tenía la Mac), no el wizard del navegador. Luego `gentle-shell setup`, restaura perfiles y RefactorIA en el home aislado, compila Gentle AI desde `main` en `~/.local/bin` para Claude Code y enlaza `gs-official`.
+- No usa `--include-shared`, no toca Engram ni LaunchAgents, y **mueve** los launchers legacy y las extensiones Orca a `~/gentle-mac-retirement.XXXXXX`.
+
+```bash
+bash scripts/migrate-mac-official.sh --backup ~/gentle-migration-backup.GhUgKM          # dry-run
+bash scripts/migrate-mac-official.sh --backup ~/gentle-migration-backup.GhUgKM --apply
+```
+
+`~/.pi/agent` (conversaciones, auth, settings) se preserva, pero el home aislado (`~/.gentle-shell/agent`) no lo usa: después de migrar hay que abrir una terminal nueva, correr `gs`, hacer `/login` y revisar `/gentle:profiles`.
