@@ -29,7 +29,9 @@ pkg=$(dirname "$(dirname "$1")"); shift
 if [ "${1:-}" = --version ]; then printf 'gentle-shell %s\npi 1.4.0\n' "$(cat "$pkg/VERSION")"; exit 0; fi
 echo "launch $pkg $*" >> "$CALLS"
 EOF
-  for b in pi go pnpm npm; do printf '#!/bin/sh\nexit 0\n' > "$S/$b"; done
+  printf '#!/bin/sh\necho "go PATH=$PATH" >> "$CALLS"\n' > "$S/go"
+  for b in pnpm npm; do printf '#!/bin/sh\nexit 0\n' > "$S/$b"; done
+  printf '#!/bin/sh\necho "pi $*" >> "$CALLS"\necho "PATH=$PATH" >> "$CALLS"\n' > "$S/pi"
   # Legacy pi-managed checkout that must never be launched again.
   make_pkg "$HOME/.pi/agent/git/github.com/Gentleman-Programming/gentle-pi" 4.3.0
   # gentle-ai binary registered by the main channel.
@@ -74,8 +76,8 @@ sha_of() { git -C "$GS_SHELL_REMOTE" rev-parse HEAD; }
 
 setup consumer
 OUT=$("$GS" --foo 2>&1); L=$(cat "$CALLS" 2>/dev/null)
-check "consumer: gs launches the package behind gentle-shell on PATH" \
-  '[[ "$L" == "launch $NPM --link --foo" ]]'
+check "consumer: gs launches the package behind gentle-shell on PATH, isolated" \
+  '[[ "$L" == "launch $NPM --isolated --foo" ]]'
 check "consumer: gs never launches the legacy pi git checkout" '[[ "$L" != *".pi/agent/git"* ]]'
 
 setup consumer; rm "$HOME/.local/bin/gentle-shell"
@@ -85,7 +87,7 @@ check "consumer: no gentle-shell on PATH fails instead of opening the legacy cop
 
 setup workshop
 OUT=$("$GS" x 2>&1); L=$(cat "$CALLS" 2>/dev/null)
-check "workshop: gs launches the clean clone" '[[ "$L" == "launch $HOME/dev/gentle/gentle-shell --link x" ]]'
+check "workshop: gs launches the clean clone, isolated" '[[ "$L" == "launch $HOME/dev/gentle/gentle-shell --isolated x" ]]'
 
 # A gentle-shell worktree the operator is working in (dogfooding target).
 make_worktree() {
@@ -97,12 +99,48 @@ make_worktree() {
 setup workshop; make_worktree
 OUT=$(cd "$W/bin" && "$GS" y 2>&1); L=$(cat "$CALLS" 2>/dev/null)
 check "workshop: inside a gentle-shell worktree gs loads that path" \
-  '[[ "$L" == "launch $W --link --package-root $W y" ]]'
+  '[[ "$L" == "launch $W --isolated --package-root $W y" ]]'
 
 setup consumer; make_worktree
 OUT=$(cd "$W" && "$GS" 2>&1); L=$(cat "$CALLS" 2>/dev/null)
 check "consumer: inside a gentle-shell checkout gs still opens the main build" \
-  '[[ "$L" == "launch $NPM --link" ]]'
+  '[[ "$L" == "launch $NPM --isolated" ]]'
+
+setup workshop; make_worktree
+OUT=$(cd "$W" && "$GS" run --z 2>&1); L=$(cat "$CALLS" 2>/dev/null)
+check "workshop: gs run uses the isolated home with this worktree as --package-root" \
+  '[[ "$L" == "launch $W --isolated --package-root $W --z" ]]'
+
+# gs pr / gs issue on an existing shell worktree: Pi opens on it with the kickoff.
+gh_stub() {
+  cat > "$S/gh" <<'EOF'
+#!/bin/sh
+case "$1 $2" in
+  "issue view") printf 'OPEN\037\037fix: thing\037type:bug\n' ;;
+esac
+exit 0
+EOF
+  chmod +x "$S/gh"
+}
+setup workshop; gh_stub
+W="$HOME/dev/worktrees/gentle-shell-pr-7"; make_pkg "$W" 9.9.9-pr
+git init -q "$W"; mkdir -p "$W/node_modules"; printf '{\n  "name": "gentle-pi"\n}\n' > "$W/package.json"
+git -C "$W" add -A; git -C "$W" -c user.email=t@t -c user.name=t commit -q -m pr
+OUT=$("$GS" pr shell 7 2>&1); L=$(cat "$CALLS" 2>/dev/null)
+check "workshop: gs pr opens the worktree isolated, never --link" \
+  '[[ "$L" == "launch $W --isolated --package-root $W Review Gentleman-Programming/gentle-shell PR #7 "* ]] && [[ "$L" != *--link* ]]'
+check "workshop: gs pr kickoff names the cortex skill without a legacy home path" \
+  '[[ "$L" == *"cortex-maintainer-delivery skill"* ]] && [[ "$L" != *".pi/agent"* ]]'
+
+setup workshop; gh_stub
+W="$HOME/dev/worktrees/gentle-shell-issue-8"; make_pkg "$W" 9.9.9-is
+git init -q "$W"; mkdir -p "$W/node_modules"; printf '{\n  "name": "gentle-pi"\n}\n' > "$W/package.json"
+git -C "$W" add -A; git -C "$W" -c user.email=t@t -c user.name=t commit -q -m is
+OUT=$("$GS" issue shell 8 2>&1); L=$(cat "$CALLS" 2>/dev/null)
+check "workshop: gs issue reuses the worktree and opens it isolated, never --link" \
+  '[[ "$OUT" == *"reusing $W"* ]] && [[ "$L" == "launch $W --isolated --package-root $W Take Gentleman-Programming/gentle-shell issue #8 "* ]] && [[ "$L" != *--link* ]]'
+check "workshop: gs issue kickoff names the cortex skill without a legacy home path" \
+  '[[ "$L" == *"cortex-maintainer-delivery skill"* ]] && [[ "$L" != *".pi/agent"* ]]'
 
 # --- sync (workshop) ----------------------------------------------------------
 
@@ -117,11 +155,25 @@ for r in gentle-shell gentle-ai engram; do
   git -C "$c" fetch -q origin
 done
 git -C "$HOME/dev/gentle/gentle-shell" checkout -q --detach
+mkdir -p "$HOME/dev/gentle/engram/plugin/pi"
+rm "$S/pi"  # workshop needs no Pi runtime of its own on PATH
 mkdir -p "$HOME/dev/gentle/gentle-shell/.engram" "$HOME/dev/gentle/gentle-shell/odd/checks"
 touch "$HOME/dev/gentle/gentle-shell/.engram/x" "$HOME/dev/gentle/gentle-shell/odd/checks/y"
 OUT=$("$GS" sync 2>&1); rc=$?
 check "workshop sync: untracked session files and detached HEAD do not block it" \
   '[[ "$OUT" != *"clean clones only"* ]] && [ "$(git -C "$HOME/dev/gentle/gentle-shell" branch --show-current)" = main ] && [ -e "$HOME/dev/gentle/gentle-shell/.engram/x" ]'
+REG="$HOME/.gentle-shell/gentle-ai/dev-binary.json"
+check "workshop sync: registers gentle-ai main in the isolated config home (file 0600, dir 0700)" \
+  '[ "$(cat "$REG")" = "{\"schema\":\"gentle-pi.dev-binary/v1\",\"path\":\"$HOME/.local/share/gentle-ai/main/gentle-ai\"}" ] && [ "$(stat -f %Lp "$REG" 2>/dev/null || stat -c %a "$REG")" = 600 ] && [ "$(stat -f %Lp "$(dirname "$REG")" 2>/dev/null || stat -c %a "$(dirname "$REG")")" = 700 ]'
+check "workshop sync: leaves the legacy ~/.pi/gentle-ai registration untouched" \
+  '[ "$(cat "$HOME/.pi/gentle-ai/dev-binary.json")" = "{\"path\":\"$HOME/ai\"}" ]'
+check "workshop sync: never runs pi update nor adds ~/.pi/agent/bin to PATH" \
+  '! grep -q "^pi " "$CALLS" 2>/dev/null && grep -q "^go PATH=" "$CALLS" && ! grep -q "PATH=.*\.pi/agent/bin" "$CALLS"'
+mkdir -p "$HOME/.gentle-shell/agent"; printf '{"packages":["npm:gentle-pi","npm:gentle-engram"]}\n' > "$HOME/.gentle-shell/agent/settings.json"
+OUT=$("$GS" sync 2>&1)
+check "workshop sync: isolated home packages the official Shell requires raise no warning" \
+  '[[ "$OUT" != *"WARN:"*"settings.json"* ]]'
+rm "$HOME/.gentle-shell/agent/settings.json"
 echo tracked >> "$HOME/dev/gentle/gentle-shell/VERSION"; git -C "$HOME/dev/gentle/gentle-shell" add VERSION
 OUT=$("$GS" sync 2>&1); rc=$?
 check "workshop sync: tracked edits in a clone still stop it" '[ $rc -ne 0 ] && [[ "$OUT" == *"clean clones only"* ]]'
@@ -133,6 +185,8 @@ OUT=$(UPGRADE_TO="4.5.2-main.${main:0:12}" "$GS" sync 2>&1); rc=$?
 check "sync: reports the version gs opens, from the same package" \
   '[ $rc -eq 0 ] && [[ "$OUT" == *"gs opens:  4.5.2-main.${main:0:12} ($NPM)"* ]]'
 check "sync: a real update asks for a restart" '[[ "$OUT" == *"shell (4.5.1-main.feee99d88dae -> 4.5.2-main"* ]]'
+check "consumer sync: still runs pi update and pi update --extensions" \
+  'grep -qx "pi update" "$CALLS" && grep -qx "pi update --extensions" "$CALLS"'
 check "sync: warns about the unused legacy checkout without deleting it" \
   '[[ "$OUT" == *"stale legacy checkout"* ]] && [ -d "$HOME/.pi/agent/git/github.com/Gentleman-Programming/gentle-pi" ]'
 
