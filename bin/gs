@@ -24,8 +24,9 @@ gs - gentle-shell on main, plus one disposable worktree per PR
   gs pr [repo] <n>         One step to review PR <n>: worktree (reused and
                            updated if it exists), then Pi on it for shell PRs
   gs issue [repo] <n>      One step to start issue <n>: race check (stops if the
-                           issue is closed, assigned, or referenced by a PR; GS_FORCE=1
-                           skips it), branch <type>/<n>-<slug> from origin/main,
+                           issue is closed, assigned to someone other than you,
+                           or referenced by a PR; GS_FORCE=1 skips it),
+                           branch <type>/<n>-<slug> from origin/main,
                            then Pi on it for shell issues
 
   gs new <repo> <name>     New branch <name> from fresh origin/main
@@ -35,8 +36,10 @@ gs - gentle-shell on main, plus one disposable worktree per PR
   gs sync                  Bring gentle-shell, gentle-ai and engram to main, run
                            gentle-ai sync for managed configs, and check compatibility
                            (workshop: local clones; elsewhere: GitHub)
+                           Workshop: gentle-ai sync --agents claude-code, then
+                           gentle-shell --isolated setup (re-provisions the isolated home)
                            GS_SYNC_AGENTS=a,b scopes gentle-ai sync to those runtimes;
-                           GS_SKIP_AI_SYNC=1 skips it (binaries only)
+                           GS_SKIP_AI_SYNC=1 skips both steps (binaries only)
                            Then pulls the dotfiles clone (clean, on main only); the
                            shell profile reads it in place. GS_SKIP_DOTFILES=1
                            skips this step
@@ -229,7 +232,11 @@ cmd_issue() {
   fi
   if [ "${GS_FORCE:-}" != 1 ]; then
     [ "$state" = OPEN ] || die "$gh_repo#$NUM is $state (GS_FORCE=1 to continue)"
-    [ -z "$assignees" ] || die "$gh_repo#$NUM is assigned to $assignees (GS_FORCE=1 to continue)"
+    # Your own assignment is your claim, not a race: only others block.
+    local me others=""
+    me=$(gh api user --jq .login 2>/dev/null || true)
+    others=$(printf '%s' "$assignees" | tr ',' '\n' | grep -vxF -- "${me:-}" | paste -sd, - || true)
+    [ -z "$others" ] || die "$gh_repo#$NUM is assigned to $others (GS_FORCE=1 to continue)"
     prs=$(gh pr list -R "$gh_repo" --state all --search "$NUM in:title,body" --json number,state,title \
       --jq '.[] | "  #\(.number) \(.state) \(.title)"')
     [ -z "$prs" ] || die "PRs may already reference #$NUM (GS_FORCE=1 to continue):
@@ -458,12 +465,17 @@ cmd_sync() {
 
   # New binaries are not enough: gentle-ai sync materializes the managed configs
   # (agents, skills, plugins, engram instructions) every runtime reads.
-  # GS_SYNC_AGENTS scopes runtimes per host (local env); empty = gentle-ai default.
+  # GS_SYNC_AGENTS scopes runtimes per host (local env). Workshop defaults to
+  # claude-code (Shell runs on the isolated home, provisioned below by
+  # gentle-shell setup); consumer empty = gentle-ai default.
+  local sync_agents="${GS_SYNC_AGENTS:-}"
+  is_workshop && sync_agents="${GS_SYNC_AGENTS:-claude-code}"
   if [ "${GS_SKIP_AI_SYNC:-}" = 1 ]; then
     printf '  %-34s skipped (GS_SKIP_AI_SYNC=1)\n' 'gentle-ai sync'
+    is_workshop && printf '  %-34s skipped (GS_SKIP_AI_SYNC=1)\n' 'gentle-shell setup (isolated home)'
   else
     local ai_sync=(sync)
-    [ -n "${GS_SYNC_AGENTS:-}" ] && ai_sync+=(--agents "$GS_SYNC_AGENTS")
+    [ -n "$sync_agents" ] && ai_sync+=(--agents "$sync_agents")
     # Like run_quiet, but keeps the output: its file count feeds the restart hint.
     local ai_out; ai_out=$(mktemp)
     if "$ai_bin" "${ai_sync[@]}" >"$ai_out" 2>&1; then
@@ -475,6 +487,9 @@ cmd_sync() {
     fi
     ai_files=$(sed -n 's/^Sync actions executed: \([0-9][0-9]*\) files* changed.*/\1/p' "$ai_out" | head -1)
     rm -f "$ai_out"
+    # Official re-provisioning of the isolated home (~/.gentle-shell/agent) from the clone.
+    is_workshop && run_quiet 'gentle-shell setup (isolated home)' \
+      node "$CLONES/gentle-shell/bin/gentle-shell.mjs" --isolated setup
   fi
   sync_dotfiles
   # gs sync is the only upgrade path; older homemade scripts drift the hosts apart.

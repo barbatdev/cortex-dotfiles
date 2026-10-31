@@ -265,7 +265,7 @@ Corrección del usuario, textual:
 - Shell mantiene su mecanismo oficial `gentle-shell upgrade --channel main`. No asumir que ese comando actualiza el Gentle AI externo que usa Claude Code.
 - Después de actualizar, comprobar qué binario externo resuelve el PATH y qué versión/commit quedó instalado; evitar actualizar una copia y ejecutar otra. Definir y verificar el mecanismo oficial de sincronización de assets de Claude Code cuando se implemente.
 - Implementado en [`bin/gs-official`](../bin/gs-official) ([doc](gs-official.md)), desplegado solo en hosts migrados como `~/.local/bin/gs`. El `bin/gs` legacy de Mac y workshop no cambia. El PATH permanente se activa con el fragmento opt-in [`zsh/scripts/official-gentle-path.zsh`](../zsh/scripts/official-gentle-path.zsh), enlazado en `~/.config/cortex-dotfiles/shell/official-gentle-path.zsh`.
-- Workshop (agent-gentle): el `bin/gs` de workshop conserva sus accesorios (`gs issue`, `gs pr`, `gs review`, `gs new`, `gs base`, `gs ls`, `gs done`, `gs sync`), pero todo arranque usa el home aislado (`--isolated`, nunca `--link`) y, desde un clon o worktree, `--package-root <root>`. `gs sync` en workshop no agrega `~/.pi/agent/bin` al PATH ni ejecuta `pi update`; registra Gentle AI de main en `~/.pi/gentle-ai/dev-binary.json`: es estado de instalación y el lanzador oficial lo lee ahí también con el home aislado, así que no se mueve ni se retira. Ver [gs-sync.md](gs-sync.md). `gs-official` y Mac/agent-dev no cambian por esto.
+- Workshop (agent-gentle): el `bin/gs` de workshop conserva sus accesorios (`gs issue`, `gs pr`, `gs review`, `gs new`, `gs base`, `gs ls`, `gs done`, `gs sync`), pero todo arranque usa el home aislado (`--isolated`, nunca `--link`) y, desde un clon o worktree, `--package-root <root>`. `gs sync` en workshop no agrega `~/.pi/agent/bin` al PATH ni ejecuta `pi update`; registra Gentle AI de main en `~/.pi/gentle-ai/dev-binary.json`: es estado de instalación y el lanzador oficial lo lee ahí también con el home aislado, así que no se mueve ni se retira. Luego ejecuta `gentle-ai sync --agents claude-code` (solo Claude Code; `GS_SYNC_AGENTS` lo sobrescribe) y `node ~/dev/gentle/gentle-shell/bin/gentle-shell.mjs --isolated setup`, que reaprovisiona el home aislado `~/.gentle-shell/agent`; si un paso falla, el sync queda `INCOMPLETE`. `GS_SKIP_AI_SYNC=1` omite ambos pasos. El sync de consumidor no cambia. Ver [gs-sync.md](gs-sync.md). `gs-official` y Mac/agent-dev no cambian por esto.
 - El instalador oficial `install.sh --channel beta` falló en esta sesión: `get_main_commit_sha` emite un mensaje informativo en stdout y su captura mezcla ese mensaje con el SHA, causando una URL inválida al buscar `go.mod`. Se comprobó en el script remoto. No parchear el instalador ni desactivar verificaciones como workaround.
 - También hubo un error de pegado independiente (`\\ |` en una misma línea). Corregir el pegado no arregla el bug del instalador.
 
@@ -320,3 +320,38 @@ Primera corrida: el paso 1 falló en la limpieza de `conductor` porque intentó 
 - Paso 6: `profiles.json` ya era idéntico al backup tras la copia de `setup`; se instaló `refactoria.json` y se fijó el theme.
 - Paso 7: `gentle-ai 4.3.2-0.20261031025914-c60a4b6d5675` compilado desde `main`, instalado solo para Claude Code (25/25 checks). La pregunta del allowlist de Engram se salta sola en modo no interactivo.
 - Paso 9: `gs`, `gentle-shell`, `gentle-ai` y `codegraph` resuelven en `~/.local/bin`, y `go` en `/opt/homebrew/bin`.
+
+## MCP (brains) en el home aislado
+
+**Pi 1.4.0 trae MCP incorporado: lee los servidores de `mcp.json` en el home del agente.** Para Gentle Shell ese archivo es `~/.gentle-shell/agent/mcp.json`. **No instalar `pi-mcp-adapter`**: Gentle AI lo considera retirado y lo borra en cada `gentle-shell setup` (`internal/agents/pi/adapter.go`), y mientras está instalado tapa el MCP incorporado.
+
+Procedimiento aplicado el 2026-10-31 en la Mac, `agent-dev` y `agent-gentle`, sin abrir el archivo:
+
+```bash
+cp -p ~/.config/mcp/mcp.json ~/.gentle-shell/agent/mcp.json   # no pisar uno existente
+chmod 600 ~/.gentle-shell/agent/mcp.json
+gentle-shell --isolated remove npm:pi-mcp-adapter               # solo si estaba instalado
+gentle-shell --isolated mcp list                                # mirar solo nombres y estado
+```
+
+Resultado en los tres equipos: `work-brain` (26 tools), `life-brain` (14) y `second-brain` (17) `connected`. En `agent-dev` la misma configuración incluye un servidor `codegraph` que figura `failed`; pendiente de revisar (probable PATH).
+
+## agent-gentle (workshop)
+
+`agent-gentle` es dogfooding: Shell corre desde el clon `~/dev/gentle/gentle-shell` y `gs` es el `bin/gs` de workshop, con sus accesorios (`gs issue`, `gs pr`, `gs review`, `gs new`, `gs base`, `gs ls`, `gs done`). **No se usa el instalador oficial ni `gs-official`**: borrarían esos accesorios. Spec y log completos: [`odd/tasks/agent-gentle-official-home.md`](../odd/tasks/agent-gentle-official-home.md).
+
+| Paso (2026-10-31) | Resultado |
+|---|---|
+| Backup previo | Backup diario cifrado al NAS (`agent-gentle-backup.timer`) de las 03:44 con `Result=success`. |
+| `bin/gs` (PR #101, #102) | Arranques con `--isolated` y `--package-root`, nunca `--link`; `gs sync` workshop sincroniza solo Claude Code y corre `gentle-shell --isolated setup`. |
+| Skills | 12 skills `cortex-*` copiados de `~/.pi/agent/skills` a `~/.agents/skills` (Pi los lee ahí con cualquier home). Originales intactos. |
+| Wrapper `~/.local/bin/gentle-shell` | Sin `GENTLE_SHELL_PI=~/.pi/agent/bin/pi`; mantiene `GENTLE_SHELL_NO_AUTO_SETUP=1`. |
+| `gs sync` real | `gentle-ai sync` ok, `gentle-shell setup (isolated home)` ok, compat `v9` OK. Shell `4.5.1`, Gentle AI `c60a4b6d5675`, Engram `7cf4ed29b6f9`. |
+| Pi legacy | `~/.pi/agent/bin/pi` y el symlink `~/.local/bin/pi` movidos a `~/gentle-workshop-retirement.ufAbAo`, junto con el wrapper original. |
+| Worktrees viejos | Un launcher anterior (p. ej. `gentle-shell 3.7.0` en `pr-1520`) busca `pi` en el `PATH`: `~/.local/bin/pi` apunta ahora al Pi del clon `main` (`~/dev/gentle/gentle-shell/node_modules/.bin/pi`). Los launchers nuevos usan el Pi de su propio worktree. |
+| Theme RefactorIA | `pi/themes/refactoria.json` del repo (idéntico al del home legacy) copiado a `~/.gentle-shell/agent/themes/` y `"theme": "refactoria"` en `~/.gentle-shell/agent/settings.json`; settings previo en el backup. `gentle-shell setup` conserva el theme elegido. |
+| Verificación | `pi` legacy ausente; `gs --version` fuera de un clon y desde un worktree: home `isolated`; brains `connected`. |
+
+**Se conservan a propósito:** `~/.pi/gentle-ai/dev-binary.json` y `channel.json` (estado de instalación que el lanzador oficial lee ahí), worktrees con cambios sin commitear, Engram y Herdr.
+
+**Pendiente:** el paso de dotfiles de `gs sync` usa `CORTEX_DOTFILES_DIR=~/.local/share/cortex-dotfiles`, un clon distinto del que usa `gs` (`~/dev/barbatdev/cortex/cortex-dotfiles`), y lo saltea porque tiene cambios locales. Unificar o decidir cuál queda.
