@@ -29,6 +29,7 @@ MANAGED_LINKS=(
   "ghostty/config|$HOME/.config/ghostty/config|all"
   "herdr/desktop/themes/refactoria.json|$HOME/.config/herdr-app/themes/refactoria.json|darwin"
   "herdr/desktop/layouts/refactoria.json|$HOME/.config/herdr-app/layouts/refactoria.json|darwin"
+  "herdr/desktop/keys.json|$HOME/.config/herdr-app/keys.json|darwin"
   "herdr/desktop/mods/refactoria-spaces/main.js|$HOME/.config/herdr-app/mods/refactoria-spaces/main.js|darwin"
   "herdr/desktop/mods/refactoria-spaces/mod.json|$HOME/.config/herdr-app/mods/refactoria-spaces/mod.json|darwin"
   "herdr/desktop/mods/refactoria-agents/main.js|$HOME/.config/herdr-app/mods/refactoria-agents/main.js|darwin"
