@@ -4,6 +4,14 @@ Runbook para retirar el stack Gentle legacy (launchers, wrappers, declaraciones 
 
 > **Estado honesto (2026-10-31):** el usuario confirmó que el instalador oficial terminó los 11 pasos en `agent-dev`: instaló Pi/Shell, verificó paquetes/comandos/Gentle AI, compiló Gentle AI desde `main`, instaló Shell desde `main`, guardó el canal y ejecutó setup. **El canal requerido es siempre `main`, no release.** El usuario mostró un arranque de Shell con extensiones cargadas y aviso de falta de modelos; decidió autenticarse otra vez. También confirmó setup de Claude Code completado (1 agente, 8 componentes), con aviso de integración Pi CodeGraph pendiente. Claude Code ya reportó instrucciones cargadas, detección de proyecto Engram y consulta real CodeGraph; la lectura de memorias anteriores y registro de sesión no se probaron. El usuario confirmó login y modelos disponibles en Shell. Los perfiles de macOS fueron restaurados y verificados por hash en el home aislado; el usuario confirmó que cargaron perfectamente en la interfaz. RefactorIA fue copiado al home aislado y verificado por hash; selección y comprobación visual pendientes. Quedan residuos preservados a propósito (ver [Residuos](#residuos-preservados)); no se afirma que el equipo esté "en cero".
 
+## Política de instalación y actualización: siempre `main`
+
+**Gentle Shell, Gentle AI y Engram deben instalarse y actualizarse siempre desde `main`, nunca desde release, tags estables ni `@latest`.** Este requisito también aplica a futuras actualizaciones mediante `gs sync`.
+
+Para Engram, comprobar por separado el origen y commit del binario compartido y de cualquier copia administrada por Shell: actualizar Shell o Gentle AI no demuestra que Engram haya quedado en `main`. El mecanismo concreto de actualización de Engram está pendiente de verificar; esta política no afirma que la instalación actual ya la cumpla.
+
+Esta aclaración es documental: no autoriza cambios en memorias, conversaciones, credenciales ni en los LaunchAgents `com.gentleman-programming.engram` y `dev.barbat.engram-cloud-sync`.
+
 ## Resumen rápido
 
 | Pregunta | Respuesta |
@@ -172,6 +180,7 @@ Los fallos de guardas que aparecieron en el camino quedan como historia, no como
 - [ ] RefactorIA restaurado y seleccionado; comprobación visual por el usuario.
 - [ ] Gentle AI configurado en los agentes elegidos y comprobado por separado de Shell.
 - [ ] Memorias, conversaciones y credenciales anteriores conservadas; no afirmar que el entorno aislado las importó automáticamente.
+- [ ] Engram instalado desde `main`, con origen y commit comprobados para cada binario utilizado; no inferirlo del canal de Shell o Gentle AI.
 - [ ] Compatibilidad del servidor Engram comprobada por el flujo oficial; si no puede verificarse, detener la parte de memoria sin borrar datos ni forzar migraciones.
 - [ ] Arranque de `gs` delegado directamente a Shell, sin el script legacy. Futuro `gs sync` actualiza Shell y Gentle AI externo desde main y no vuelve silenciosamente a release; pendiente implementar y verificar.
 - [ ] Orca sin integraciones activas; Herdr/Moshi conservados.
