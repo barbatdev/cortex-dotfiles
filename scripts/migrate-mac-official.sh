@@ -74,8 +74,8 @@ echo "Backup:   $BACKUP"
 echo
 echo "Preflight:"
 [ "$(uname -s)" = "Darwin" ] || blocker "not macOS"
-if pgrep -f 'gentle-shell\.mjs|node_modules/gentle-pi' >/dev/null 2>&1; then
-  blocker "gentle-shell processes are running (close every session): $(pgrep -f 'gentle-shell\.mjs|node_modules/gentle-pi' | tr '\n' ' ')"
+if pgrep -f '/gentle-shell(\.mjs)?( |$)|node_modules/gentle-pi' >/dev/null 2>&1; then
+  blocker "gentle-shell processes are running (close every session): $(pgrep -f '/gentle-shell(\.mjs)?( |$)|node_modules/gentle-pi' | tr '\n' ' ')"
 fi
 for c in npm go pnpm python3 zsh; do
   command -v "$c" >/dev/null 2>&1 || blocker "command not found: $c"
