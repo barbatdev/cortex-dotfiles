@@ -1,0 +1,86 @@
+#!/usr/bin/env bash
+# gs-official — minimal launcher for the official Gentle Shell (agent-dev only).
+#
+# Usage:
+#   gs [args...]   Run `gentle-shell` with the arguments forwarded unchanged.
+#   gs sync        Update Gentle Shell and external Gentle AI from main, then
+#                  sync Gentle AI assets for Claude Code only.
+#   gs help        Show this help (`gs --help` and `gs -h` also work).
+#
+# The legacy bin/gs (Mac/workshop) is a separate script and is not affected.
+
+set -uo pipefail
+
+AI_MODULE="github.com/gentleman-programming/gentle-ai/v4/cmd/gentle-ai@main"
+# Only a gentle-ai binary inside this directory may be replaced by `gs sync`.
+EXPECTED_AI_BIN="$HOME/.local/bin"
+
+usage() {
+  sed -n '2,10s/^# \{0,1\}//p' "$0"
+}
+
+die() {
+  echo "gs: $*" >&2
+  exit 1
+}
+
+# Run one step; on failure report it and exit with the step's status.
+step() {
+  "$@"
+  local status=$?
+  if [ "$status" -ne 0 ]; then
+    echo "gs: '$*' failed with exit $status (no fallback attempted)" >&2
+    exit "$status"
+  fi
+}
+
+# Verify every tool and the gentle-ai target before changing anything.
+preflight() {
+  command -v gentle-shell >/dev/null 2>&1 || die "gentle-shell not found in PATH"
+  command -v go >/dev/null 2>&1 || die "go not found in PATH"
+  AI_PATH="$(command -v gentle-ai)" || die "gentle-ai not found in PATH"
+
+  local ai_dir
+  ai_dir="$(cd "$(dirname "$AI_PATH")" && pwd -P)"
+  local expected_dir
+  expected_dir="$(cd "$EXPECTED_AI_BIN" 2>/dev/null && pwd -P)" \
+    || die "expected gentle-ai directory $EXPECTED_AI_BIN does not exist"
+
+  [ -L "$AI_PATH" ] && die "$AI_PATH is a symlink; refusing to replace it"
+  [ "$ai_dir" = "$expected_dir" ] \
+    || die "$AI_PATH is not in the expected directory $EXPECTED_AI_BIN; refusing to replace it"
+  [ -f "$AI_PATH" ] && [ -x "$AI_PATH" ] || die "$AI_PATH is not an executable file"
+  [ -O "$AI_PATH" ] || die "$AI_PATH is not owned by the current user"
+  [ -w "$ai_dir" ] || die "$ai_dir is not writable"
+  AI_DIR="$ai_dir"
+}
+
+sync_main() {
+  preflight
+  echo "==> gentle-shell upgrade --channel main"
+  step gentle-shell upgrade --channel main
+  echo "==> go install $AI_MODULE (GOBIN=$AI_DIR)"
+  step env GOBIN="$AI_DIR" go install "$AI_MODULE"
+  echo "==> $AI_PATH sync --agents claude-code"
+  step "$AI_PATH" sync --agents claude-code
+
+  # Source builds from main report version "dev"; the build info revision is
+  # what identifies the installed main commit.
+  echo "==> installed versions"
+  step gentle-shell --version
+  step "$AI_PATH" version
+  step go version -m "$AI_PATH"
+}
+
+case "${1:-}" in
+  sync)
+    [ "$#" -eq 1 ] || { echo "gs: sync takes no arguments" >&2; exit 2; }
+    sync_main
+    ;;
+  help | -h | --help)
+    usage
+    ;;
+  *)
+    exec gentle-shell "$@"
+    ;;
+esac

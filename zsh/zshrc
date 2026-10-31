@@ -16,6 +16,8 @@ _CORTEX_SHELL_PATH="${CORTEX_SHELL_INTEGRATION:-${CORTEX_HOME:-$HOME/.cortex}/sh
 
 _cortex_dotfiles_source_optional "cortex-dotfiles" "$_CORTEX_DOTFILES_SHELL_PATH"
 _cortex_dotfiles_source_optional "Cortex" "$_CORTEX_SHELL_PATH"
+# Opt-in: only hosts migrated to the official Gentle main installers link this.
+_cortex_dotfiles_source_optional "official Gentle PATH" "$HOME/.config/cortex-dotfiles/shell/official-gentle-path.zsh"
 
 unset _CORTEX_DOTFILES_SHELL_PATH _CORTEX_SHELL_PATH
 unfunction _cortex_dotfiles_source_optional
