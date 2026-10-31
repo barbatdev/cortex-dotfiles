@@ -5,7 +5,7 @@
 
 import { View, div, svg } from "gpui-kit";
 import { v_flex, h_flex } from "gpui-base";
-import { spaces, agents, machines, panes, run, openOverlay, exec, hc, theme, shared, setShared, watchFolder, window, layout, home, readTextFile } from "herdr";
+import { spaces, agents, machines, panes, run, openOverlay, exec, hc, theme, shared, setShared, watchFolder, window, layout, home, readTextFile, nextCommand } from "herdr";
 
 function find(node, id) {
   if (node?.id === id) return node;
@@ -36,6 +36,12 @@ const FALLBACK = 60000;
 // What a stored color name looks like on an avatar (the same in every mod
 // that draws space avatars): one strong color per hue, light and dark alike.
 const MARK = { ansi6: "#22a99a", ansi3: "#e3814f", ansi4: "#5b8def", ansi5: "#8b7cf6", ansi2: "#3fae6a", ansi1: "#d9649a" };
+
+// The agent a space jumps to: the one that needs you most, then the latest to change.
+const URGENCY = { blocked: 3, done: 2, working: 1, idle: 0 };
+export function pickAgent(list) {
+  return [...list].sort((x, y) => (URGENCY[y.status] ?? 0) - (URGENCY[x.status] ?? 0) || y.seq - x.seq)[0] ?? null;
+}
 
 // A space speaks up only when something in it needs you.
 export function waits(status) {
@@ -91,6 +97,7 @@ export default class Spaces extends View {
     this.pulse = false;
     this.seen = new Set();
     this.readSeen(cx);
+    this.listenKeys(cx);
     cx.timer.every(2000, (cx) => this.readSeen(cx));
     cx.timer.every(600, (cx) => {
       const waiting = spaces().some((s) => spaceWaits(s, this.seen, agents()));
@@ -98,6 +105,32 @@ export default class Spaces extends View {
       this.pulse = waiting ? !this.pulse : false;
       cx.notify();
     });
+  }
+
+  // keys.json "refactoria-spaces.agent-N" (Ctrl+A Ctrl+N, as in Herdr TUI): go to
+  // the agent of the Nth space as this list numbers them; a space without one is shown.
+  listenKeys(cx) {
+    cx.spawn(async (cx) => {
+      for (;;) {
+        const m = /^agent-([1-9])$/.exec(await nextCommand());
+        if (m) this.focusAgent(Number(m[1]));
+        cx.notify();
+      }
+    });
+  }
+
+  // Spaces in the order the list shows them: this computer first, then machines by name.
+  spaceOrder() {
+    const rows = this.ordered();
+    const remote = [...new Set(rows.map((r) => r.w.machine).filter(Boolean))].sort();
+    return [null, ...remote].flatMap((m) => rows.filter((r) => (r.w.machine ?? null) === m).map((r) => r.w));
+  }
+
+  focusAgent(n) {
+    const w = this.spaceOrder()[n - 1];
+    if (!w) return;
+    const best = pickAgent(agents().filter((a) => a.space === w.id));
+    best ? run("pane.focus", { pane: best.pane }) : run("space.select", { id: w.id });
   }
 
   // Done agents any screen has looked at, from every screen's view.json.
