@@ -3,8 +3,8 @@
 #
 # Usage:
 #   gs [args...]   Run `gentle-shell` with the arguments forwarded unchanged.
-#   gs sync        Update Gentle Shell and external Gentle AI from main, then
-#                  sync Gentle AI assets for Claude Code only.
+#   gs sync        Update Gentle Shell, external Gentle AI and Engram from main,
+#                  then sync Gentle AI assets for Claude Code only.
 #   gs help        Show this help (`gs --help` and `gs -h` also work).
 #
 # The legacy bin/gs (Mac/workshop) is a separate script and is not affected.
@@ -12,7 +12,8 @@
 set -uo pipefail
 
 AI_MODULE="github.com/gentleman-programming/gentle-ai/v4/cmd/gentle-ai@main"
-# Only a gentle-ai binary inside this directory may be replaced by `gs sync`.
+ENGRAM_MODULE="github.com/Gentleman-Programming/engram/v3/cmd/engram@main"
+# Only gentle-ai and engram binaries inside this directory may be replaced.
 EXPECTED_AI_BIN="$HOME/.local/bin"
 
 usage() {
@@ -34,25 +35,32 @@ step() {
   fi
 }
 
-# Verify every tool and the gentle-ai target before changing anything.
+# Resolve a binary that `gs sync` may replace and print its real directory.
+# Refuses anything that is not a user-owned regular file in EXPECTED_AI_BIN.
+owned_bin_dir() {
+  local name="$1" path dir expected_dir
+  path="$(command -v "$name")" || die "$name not found in PATH"
+  dir="$(cd "$(dirname "$path")" && pwd -P)"
+  expected_dir="$(cd "$EXPECTED_AI_BIN" 2>/dev/null && pwd -P)" \
+    || die "expected $name directory $EXPECTED_AI_BIN does not exist"
+
+  [ -L "$path" ] && die "$path is a symlink; refusing to replace it"
+  [ "$dir" = "$expected_dir" ] \
+    || die "$path is not in the expected directory $EXPECTED_AI_BIN; refusing to replace it"
+  [ -f "$path" ] && [ -x "$path" ] || die "$path is not an executable file"
+  [ -O "$path" ] || die "$path is not owned by the current user"
+  [ -w "$dir" ] || die "$dir is not writable"
+  echo "$dir"
+}
+
+# Verify every tool and every replaced target before changing anything.
 preflight() {
   command -v gentle-shell >/dev/null 2>&1 || die "gentle-shell not found in PATH"
   command -v go >/dev/null 2>&1 || die "go not found in PATH"
-  AI_PATH="$(command -v gentle-ai)" || die "gentle-ai not found in PATH"
-
-  local ai_dir
-  ai_dir="$(cd "$(dirname "$AI_PATH")" && pwd -P)"
-  local expected_dir
-  expected_dir="$(cd "$EXPECTED_AI_BIN" 2>/dev/null && pwd -P)" \
-    || die "expected gentle-ai directory $EXPECTED_AI_BIN does not exist"
-
-  [ -L "$AI_PATH" ] && die "$AI_PATH is a symlink; refusing to replace it"
-  [ "$ai_dir" = "$expected_dir" ] \
-    || die "$AI_PATH is not in the expected directory $EXPECTED_AI_BIN; refusing to replace it"
-  [ -f "$AI_PATH" ] && [ -x "$AI_PATH" ] || die "$AI_PATH is not an executable file"
-  [ -O "$AI_PATH" ] || die "$AI_PATH is not owned by the current user"
-  [ -w "$ai_dir" ] || die "$ai_dir is not writable"
-  AI_DIR="$ai_dir"
+  AI_DIR="$(owned_bin_dir gentle-ai)" || exit 1
+  AI_PATH="$(command -v gentle-ai)"
+  ENGRAM_DIR="$(owned_bin_dir engram)" || exit 1
+  ENGRAM_PATH="$(command -v engram)"
 }
 
 sync_main() {
@@ -63,6 +71,8 @@ sync_main() {
   step env GOBIN="$AI_DIR" go install "$AI_MODULE"
   echo "==> $AI_PATH sync --agents claude-code"
   step "$AI_PATH" sync --agents claude-code
+  echo "==> go install $ENGRAM_MODULE (GOBIN=$ENGRAM_DIR)"
+  step env GOBIN="$ENGRAM_DIR" go install "$ENGRAM_MODULE"
 
   # Source builds from main report version "dev"; the build info revision is
   # what identifies the installed main commit.
@@ -70,6 +80,11 @@ sync_main() {
   step gentle-shell --version
   step "$AI_PATH" version
   step go version -m "$AI_PATH"
+  step "$ENGRAM_PATH" version
+  step go version -m "$ENGRAM_PATH"
+
+  # The running server keeps the old binary until its service restarts.
+  echo "==> Engram binary updated; restart the Engram service to run it"
 }
 
 case "${1:-}" in

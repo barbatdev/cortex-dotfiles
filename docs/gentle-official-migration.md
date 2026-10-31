@@ -4,6 +4,60 @@ Runbook para retirar el stack Gentle legacy (launchers, wrappers, declaraciones 
 
 > **Estado honesto (2026-10-31):** el usuario confirmó que el instalador oficial terminó los 11 pasos en `agent-dev`: instaló Pi/Shell, verificó paquetes/comandos/Gentle AI, compiló Gentle AI desde `main`, instaló Shell desde `main`, guardó el canal y ejecutó setup. **El canal requerido es siempre `main`, no release.** El usuario mostró un arranque de Shell con extensiones cargadas y aviso de falta de modelos; decidió autenticarse otra vez. También confirmó setup de Claude Code completado (1 agente, 8 componentes), con aviso de integración Pi CodeGraph pendiente. Claude Code ya reportó instrucciones cargadas, detección de proyecto Engram y consulta real CodeGraph; la lectura de memorias anteriores y registro de sesión no se probaron. El usuario confirmó login y modelos disponibles en Shell. Los perfiles de macOS fueron restaurados y verificados por hash en el home aislado; el usuario confirmó que cargaron perfectamente en la interfaz. RefactorIA fue copiado al home aislado y verificado por hash; selección y comprobación visual pendientes. Quedan residuos preservados a propósito (ver [Residuos](#residuos-preservados)); no se afirma que el equipo esté "en cero".
 
+## Política de instalación y actualización: siempre `main`
+
+**Gentle Shell, Gentle AI y Engram deben instalarse y actualizarse siempre desde `main`, nunca desde release, tags estables ni `@latest`.** Este requisito también aplica a futuras actualizaciones mediante `gs sync`.
+
+Para Engram, comprobar por separado el origen y commit del binario compartido y de cualquier copia administrada por Shell: actualizar Shell o Gentle AI no demuestra que Engram haya quedado en `main`. El mecanismo se detalla abajo.
+
+### Engram desde `main`
+
+Instalar o actualizar con el sufijo `@main`, que siempre resuelve al último commit de `main`:
+
+```zsh
+GOBIN=~/.local/bin go install github.com/Gentleman-Programming/engram/v3/cmd/engram@main
+go version -m ~/.local/bin/engram | grep 'engram/v3'
+```
+
+- **No usar `@latest`**: en Go resuelve al último tag de release, no a `main`.
+- `go version -m` muestra una pseudo-versión como `v3.6.1-0.20261030201044-7cf4ed29b6f9`. No es un pin: los últimos 12 caracteres son el commit de `main` que se compiló. Compararlo con `git ls-remote https://github.com/Gentleman-Programming/engram.git refs/heads/main`.
+- Reemplazar el binario no reinicia el servidor que ya está corriendo; el operador decide cuándo reiniciarlo.
+- `gs sync` ([`bin/gs-official`](../bin/gs-official)) ya incluye este paso: instala Engram desde `main` en `~/.local/bin` y recuerda reiniciar el servicio.
+
+Estado observado en la Mac (2026-10-31): `~/.local/bin/engram` es el único Engram en el `PATH`, el LaunchAgent `com.gentleman-programming.engram` ejecuta ese binario y su commit `7cf4ed29b6f9` coincidía con la punta de `main`. Homebrew no tenía Engram instalado. El LaunchAgent de cloud-sync ejecuta `python3`, no un binario de Engram.
+
+### Engram viejo: Shell no levanta contexto
+
+**Síntoma:** Gentle Shell no carga el contexto de memoria. **Causa:** el servidor Engram es anterior a v3 y no expone `/compatibility`, el contrato que Shell exige.
+
+Diagnóstico de solo lectura:
+
+```bash
+curl -s http://127.0.0.1:7437/compatibility    # 404 = Engram viejo; "status":"ready" = correcto
+go version -m "$(command -v engram)" | grep -E '^\s*mod\s'
+```
+
+Un módulo `github.com/Gentleman-Programming/engram` **sin `/v3`** es la versión vieja. La ruta de instalación también cambió: v1 usaba `.../engram/cmd/engram`; v3 usa `.../engram/v3/cmd/engram`.
+
+Procedimiento (Linux con unidad `engram.service` de systemd del usuario, aplicado en `agent-dev`):
+
+```bash
+bk=$(mktemp -d ~/engram-upgrade-backup.XXXXXX)
+systemctl --user stop engram.service          # parar antes de copiar: copia consistente de SQLite
+cp -a ~/.local/bin/engram "$bk/engram.v1"
+cp -a ~/.engram "$bk/dot-engram"
+GOBIN=$HOME/.local/bin go install github.com/Gentleman-Programming/engram/v3/cmd/engram@main
+systemctl --user start engram.service
+curl -s http://127.0.0.1:7437/compatibility    # esperar "status":"ready"
+```
+
+- Instalar en la **misma ruta** que usa el `ExecStart` del servicio (`systemctl --user show engram.service -p ExecStart`).
+- Respaldar `~/.engram` completo antes del primer arranque de v3: puede convertir la base al formato nuevo y eso no se deshace solo. Copiar no implica leer memorias.
+- Un `engram mcp` de una sesión anterior sigue con el binario viejo en memoria hasta cerrar esa sesión; no matarlo desde el procedimiento.
+- En macOS el servicio es un LaunchAgent: lo reinicia el operador, no un script.
+
+Esta aclaración es documental: no autoriza cambios en memorias, conversaciones, credenciales ni en los LaunchAgents `com.gentleman-programming.engram` y `dev.barbat.engram-cloud-sync`.
+
 ## Resumen rápido
 
 | Pregunta | Respuesta |
@@ -137,6 +191,7 @@ Revisar cada ruta que aparezca; la ausencia de comandos no prueba por sí sola q
 | Agentes legacy | 10 agentes + `4r-review.chain.md` retirados. | `/home/jbarbat/gentle-agent-resources-retirement.vzef5ye9` |
 | Orca | 3 extensiones retiradas y verificadas por el agente; el usuario confirmó mover el drop-in a `systemd-drop-in/` y ejecutar `daemon-reload`. | `/home/jbarbat/orca-retirement.90qcqnd4` |
 | Unidades Orca | No se observaron unidades registradas. **Sin prueba completa** de que no queden procesos. | — |
+| Engram v1 sin `/compatibility` (Shell no levantaba contexto) | Servicio detenido, binario y `~/.engram` (1.8 GB) respaldados, reinstalado v3 desde `main` (`7cf4ed29b6f9`) y reiniciado. Verificación independiente: `/compatibility` `ready`, `/health` `ok`, backup idéntico al vivo (bytes y 113 archivos). El usuario confirmó que Shell levanta. | `/home/jbarbat/engram-upgrade-backup.DySWxB` |
 | Instalador Linux nuevo | El usuario confirmó descarga/checksum y los 11 pasos completados en canal `main`, incluido setup. Arranque interactivo posterior pendiente. | — |
 
 Los fallos de guardas que aparecieron en el camino quedan como historia, no como receta.
@@ -172,6 +227,7 @@ Los fallos de guardas que aparecieron en el camino quedan como historia, no como
 - [ ] RefactorIA restaurado y seleccionado; comprobación visual por el usuario.
 - [ ] Gentle AI configurado en los agentes elegidos y comprobado por separado de Shell.
 - [ ] Memorias, conversaciones y credenciales anteriores conservadas; no afirmar que el entorno aislado las importó automáticamente.
+- [ ] Engram instalado desde `main`, con origen y commit comprobados para cada binario utilizado; no inferirlo del canal de Shell o Gentle AI.
 - [ ] Compatibilidad del servidor Engram comprobada por el flujo oficial; si no puede verificarse, detener la parte de memoria sin borrar datos ni forzar migraciones.
 - [ ] Arranque de `gs` delegado directamente a Shell, sin el script legacy. Futuro `gs sync` actualiza Shell y Gentle AI externo desde main y no vuelve silenciosamente a release; pendiente implementar y verificar.
 - [ ] Orca sin integraciones activas; Herdr/Moshi conservados.
@@ -236,3 +292,30 @@ Fuentes consultadas durante la sesión; revisar nuevamente la versión vigente a
 - Gentle AI: <https://github.com/Gentleman-Programming/gentle-ai>
 - Opciones de uninstall de Gentle AI: <https://github.com/Gentleman-Programming/gentle-ai/blob/main/internal/tui/screens/uninstall.go>
 - Engram: <https://github.com/Gentleman-Programming/engram>
+
+## macOS
+
+Script: [`scripts/migrate-mac-official.sh`](../scripts/migrate-mac-official.sh). Replica en la Mac lo hecho en `agent-dev` en una sola corrida.
+
+- **Correr fuera de Gentle Shell**, desde una terminal común con todas las sesiones cerradas: el script desinstala el Shell legacy (npm global en `~/.local`) y una sesión abierta seguiría usando ese código. El preflight lo bloquea si detecta procesos de `gentle-shell`.
+- Usa el camino oficial **npm + `gentle-shell upgrade --channel main`** (el método de instalación que ya tenía la Mac), no el wizard del navegador. Luego `gentle-shell setup`, restaura perfiles y RefactorIA en el home aislado, compila Gentle AI desde `main` en `~/.local/bin` para Claude Code y enlaza `gs-official`.
+- No usa `--include-shared`, no toca Engram ni LaunchAgents, y **mueve** los launchers legacy y las extensiones Orca a `~/gentle-mac-retirement.XXXXXX`.
+
+```bash
+bash scripts/migrate-mac-official.sh --backup ~/gentle-migration-backup.GhUgKM          # dry-run
+bash scripts/migrate-mac-official.sh --backup ~/gentle-migration-backup.GhUgKM --apply
+```
+
+`~/.pi/agent` (conversaciones, auth, settings) se preserva, pero el home aislado (`~/.gentle-shell/agent`) no lo usa: después de migrar hay que abrir una terminal nueva, correr `gs`, hacer `/login` y revisar `/gentle:profiles`.
+
+### Resultado observado (2026-10-31)
+
+Primera corrida: el paso 1 falló en la limpieza de `conductor` porque intentó borrar `.` en una carpeta temporal vacía. Se corrigió en c07913f: la carpeta temporal ahora lleva un `.keep`. La segunda corrida de `--apply` completó los 9 pasos:
+
+- Paso 1: `gentle-ai uninstall --all --yes` no tenía nada más que borrar (0 cambios); dejó backup en `~/.gentle-ai/backups/` y listó carpetas con archivos no gestionados para revisión manual (no se tocaron).
+- Paso 2: `self-uninstall` conservó la config compartida de `~/.pi/gentle-ai` (perfiles, persona, banner).
+- Paso 3: se movieron `gs`, `gentle-ai`, `~/.pi/agent/bin/pi` y las 3 extensiones `orca-*.ts` a `~/gentle-mac-retirement.XXXXXX`.
+- Pasos 4–5: Gentle Shell `4.5.1-main.49b3bff8c154` (pi 1.4.0, home aislado `~/.gentle-shell/agent`). `setup` copió 23 archivos de `~/.pi/gentle-ai` a `~/.gentle-shell/gentle-ai`.
+- Paso 6: `profiles.json` ya era idéntico al backup tras la copia de `setup`; se instaló `refactoria.json` y se fijó el theme.
+- Paso 7: `gentle-ai 4.3.2-0.20261031025914-c60a4b6d5675` compilado desde `main`, instalado solo para Claude Code (25/25 checks). La pregunta del allowlist de Engram se salta sola en modo no interactivo.
+- Paso 9: `gs`, `gentle-shell`, `gentle-ai` y `codegraph` resuelven en `~/.local/bin`, y `go` en `/opt/homebrew/bin`.
