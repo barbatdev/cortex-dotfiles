@@ -10,6 +10,31 @@
 The launcher loads its extensions and its bundled Pi from its own package root,
 so the package it starts from decides what you see.
 
+## Isolated home, never `--link`
+
+Every launch (`gs`, `gs run`, and the Pi session opened by `gs pr` / `gs issue`)
+passes `--isolated`, so Shell uses the official isolated home
+`~/.gentle-shell/agent`; from a clone or worktree it also passes
+`--package-root <root>`. `gs` never passes `--link` and never loads `~/.pi/agent`.
+
+Workshop `gs sync` also stays off the legacy Pi home:
+
+- It does not add `~/.pi/agent/bin` to PATH and does not run `pi update` or
+  `pi update --extensions`; Shell runs the Pi bundled in the clone
+  (`node_modules/@earendil-works/pi-coding-agent`).
+- It registers Gentle AI main in `~/.pi/gentle-ai/dev-binary.json` (file
+  `0600`, atomic write) with
+  `{"schema":"gentle-pi.dev-binary/v1","path":"~/.local/share/gentle-ai/main/gentle-ai"}`.
+  This path is install-level state: the official launcher reads it there even
+  for the isolated home, so it is not moved to `~/.gentle-shell/gentle-ai`.
+- It no longer warns about `gentle-pi`/`gentle-engram` in the isolated home's
+  `settings.json`: the official Shell declares and requires them there, and the
+  `--package-root` take-over loads the clone instead of the published gentle-pi.
+
+The `gs pr` / `gs issue` kickoff prompts name the `cortex-maintainer-delivery`
+skill without a home path. Consumer sync keeps its official update steps
+(`pi update`, `gentle-shell upgrade --channel main`, `pi update --extensions`).
+
 ## Why this changed
 
 Before, consumer `gs` started
@@ -51,4 +76,5 @@ Run these on each machine. A machine counts as aligned only after step 3 passes 
 ## Tests
 
 `tests/gs_test.sh` runs offline in a throwaway HOME with stub binaries and covers
-the launcher (consumer and workshop) and the sync result messages.
+the launcher (consumer and workshop, `gs run`, `gs pr`, `gs issue`), the isolated
+registration, and the sync result messages.
