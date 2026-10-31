@@ -25,6 +25,36 @@ go version -m ~/.local/bin/engram | grep 'engram/v3'
 
 Estado observado en la Mac (2026-10-31): `~/.local/bin/engram` es el único Engram en el `PATH`, el LaunchAgent `com.gentleman-programming.engram` ejecuta ese binario y su commit `7cf4ed29b6f9` coincidía con la punta de `main`. Homebrew no tenía Engram instalado. El LaunchAgent de cloud-sync ejecuta `python3`, no un binario de Engram.
 
+### Engram viejo: Shell no levanta contexto
+
+**Síntoma:** Gentle Shell no carga el contexto de memoria. **Causa:** el servidor Engram es anterior a v3 y no expone `/compatibility`, el contrato que Shell exige.
+
+Diagnóstico de solo lectura:
+
+```bash
+curl -s http://127.0.0.1:7437/compatibility    # 404 = Engram viejo; "status":"ready" = correcto
+go version -m "$(command -v engram)" | grep -E '^\s*mod\s'
+```
+
+Un módulo `github.com/Gentleman-Programming/engram` **sin `/v3`** es la versión vieja. La ruta de instalación también cambió: v1 usaba `.../engram/cmd/engram`; v3 usa `.../engram/v3/cmd/engram`.
+
+Procedimiento (Linux con unidad `engram.service` de systemd del usuario, aplicado en `agent-dev`):
+
+```bash
+bk=$(mktemp -d ~/engram-upgrade-backup.XXXXXX)
+systemctl --user stop engram.service          # parar antes de copiar: copia consistente de SQLite
+cp -a ~/.local/bin/engram "$bk/engram.v1"
+cp -a ~/.engram "$bk/dot-engram"
+GOBIN=$HOME/.local/bin go install github.com/Gentleman-Programming/engram/v3/cmd/engram@main
+systemctl --user start engram.service
+curl -s http://127.0.0.1:7437/compatibility    # esperar "status":"ready"
+```
+
+- Instalar en la **misma ruta** que usa el `ExecStart` del servicio (`systemctl --user show engram.service -p ExecStart`).
+- Respaldar `~/.engram` completo antes del primer arranque de v3: puede convertir la base al formato nuevo y eso no se deshace solo. Copiar no implica leer memorias.
+- Un `engram mcp` de una sesión anterior sigue con el binario viejo en memoria hasta cerrar esa sesión; no matarlo desde el procedimiento.
+- En macOS el servicio es un LaunchAgent: lo reinicia el operador, no un script.
+
 Esta aclaración es documental: no autoriza cambios en memorias, conversaciones, credenciales ni en los LaunchAgents `com.gentleman-programming.engram` y `dev.barbat.engram-cloud-sync`.
 
 ## Resumen rápido
@@ -160,6 +190,7 @@ Revisar cada ruta que aparezca; la ausencia de comandos no prueba por sí sola q
 | Agentes legacy | 10 agentes + `4r-review.chain.md` retirados. | `/home/jbarbat/gentle-agent-resources-retirement.vzef5ye9` |
 | Orca | 3 extensiones retiradas y verificadas por el agente; el usuario confirmó mover el drop-in a `systemd-drop-in/` y ejecutar `daemon-reload`. | `/home/jbarbat/orca-retirement.90qcqnd4` |
 | Unidades Orca | No se observaron unidades registradas. **Sin prueba completa** de que no queden procesos. | — |
+| Engram v1 sin `/compatibility` (Shell no levantaba contexto) | Servicio detenido, binario y `~/.engram` (1.8 GB) respaldados, reinstalado v3 desde `main` (`7cf4ed29b6f9`) y reiniciado. Verificación independiente: `/compatibility` `ready`, `/health` `ok`, backup idéntico al vivo (bytes y 113 archivos). El usuario confirmó que Shell levanta. | `/home/jbarbat/engram-upgrade-backup.DySWxB` |
 | Instalador Linux nuevo | El usuario confirmó descarga/checksum y los 11 pasos completados en canal `main`, incluido setup. Arranque interactivo posterior pendiente. | — |
 
 Los fallos de guardas que aparecieron en el camino quedan como historia, no como receta.
