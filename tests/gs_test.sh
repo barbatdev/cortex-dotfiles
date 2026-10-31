@@ -144,6 +144,32 @@ check "workshop: gs issue reuses the worktree and opens it isolated, never --lin
 check "workshop: gs issue kickoff names the cortex skill without a legacy home path" \
   '[[ "$L" == *"cortex-maintainer-delivery skill"* ]] && [[ "$L" != *".pi/agent"* ]]'
 
+# gs issue race check: only someone else's assignment blocks a new worktree.
+race_stub() {
+  cat > "$S/gh" <<EOF
+#!/bin/sh
+case "\$1 \$2" in
+  "issue view") printf 'OPEN\037$1\037fix: thing\037type:bug\n' ;;
+  "api user") echo me ;;
+  "pr list") echo "pr list" >> "$CALLS" ;;
+esac
+exit 0
+EOF
+  chmod +x "$S/gh"
+}
+setup workshop; race_stub me
+OUT=$("$GS" issue shell 9 2>&1); L=$(cat "$CALLS" 2>/dev/null)
+check "workshop: gs issue assigned only to you passes the race check" \
+  '[[ "$OUT" != *"is assigned"* ]] && [[ "$L" == *"pr list"* ]]'
+setup workshop; race_stub other
+OUT=$("$GS" issue shell 9 2>&1); rc=$?
+check "workshop: gs issue assigned to someone else still stops" \
+  '[ "$rc" = 1 ] && [[ "$OUT" == *"#9 is assigned to other (GS_FORCE=1 to continue)"* ]]'
+setup workshop; race_stub me,other
+OUT=$("$GS" issue shell 9 2>&1); rc=$?
+check "workshop: gs issue shared with someone else stops and names only them" \
+  '[ "$rc" = 1 ] && [[ "$OUT" == *"#9 is assigned to other (GS_FORCE=1 to continue)"* ]]'
+
 # --- sync (workshop) ----------------------------------------------------------
 
 setup workshop

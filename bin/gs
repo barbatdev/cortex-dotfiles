@@ -24,8 +24,9 @@ gs - gentle-shell on main, plus one disposable worktree per PR
   gs pr [repo] <n>         One step to review PR <n>: worktree (reused and
                            updated if it exists), then Pi on it for shell PRs
   gs issue [repo] <n>      One step to start issue <n>: race check (stops if the
-                           issue is closed, assigned, or referenced by a PR; GS_FORCE=1
-                           skips it), branch <type>/<n>-<slug> from origin/main,
+                           issue is closed, assigned to someone other than you,
+                           or referenced by a PR; GS_FORCE=1 skips it),
+                           branch <type>/<n>-<slug> from origin/main,
                            then Pi on it for shell issues
 
   gs new <repo> <name>     New branch <name> from fresh origin/main
@@ -231,7 +232,11 @@ cmd_issue() {
   fi
   if [ "${GS_FORCE:-}" != 1 ]; then
     [ "$state" = OPEN ] || die "$gh_repo#$NUM is $state (GS_FORCE=1 to continue)"
-    [ -z "$assignees" ] || die "$gh_repo#$NUM is assigned to $assignees (GS_FORCE=1 to continue)"
+    # Your own assignment is your claim, not a race: only others block.
+    local me others=""
+    me=$(gh api user --jq .login 2>/dev/null || true)
+    others=$(printf '%s' "$assignees" | tr ',' '\n' | grep -vxF -- "${me:-}" | paste -sd, - || true)
+    [ -z "$others" ] || die "$gh_repo#$NUM is assigned to $others (GS_FORCE=1 to continue)"
     prs=$(gh pr list -R "$gh_repo" --state all --search "$NUM in:title,body" --json number,state,title \
       --jq '.[] | "  #\(.number) \(.state) \(.title)"')
     [ -z "$prs" ] || die "PRs may already reference #$NUM (GS_FORCE=1 to continue):
