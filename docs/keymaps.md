@@ -47,6 +47,8 @@ This table favors the shortcuts used by these dotfiles and Herdr defaults. It is
 | Herdr | `Ctrl+A r` | Resize mode. |
 | Herdr | `Ctrl+A b` | Toggle sidebar. |
 | Herdr remote | `Ctrl+V` | Remote image paste. |
+| Herdr Desktop | `Ctrl+A` + Herdr TUI key | Same prefix keys as Herdr TUI (`herdr/desktop/keys.json`): `v`, `-`, `x`, `z`, `h/j/k/l`, `c`, `n/p`, `1..9`, `Shift+X/T/N/W/D`, `b`, `s`, `?`, `Option+K/J`. |
+| Herdr Desktop | not mapped | No equivalent for TUI detach, workspace picker, pane cycling, pane rename, resize mode, or focus agent 1–9 (`agent.focus` needs a terminal id). |
 
 ## AI CLIs
 
