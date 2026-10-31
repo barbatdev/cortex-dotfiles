@@ -117,13 +117,16 @@ fi
 #endregion
 
 #region 1. Managed uninstall (gentle-ai)
-step "1. gentle-ai uninstall --all --yes (from an empty temp dir)"
+step "1. gentle-ai uninstall --all --yes (from a scratch temp dir)"
 if command -v gentle-ai >/dev/null 2>&1 && [ -x "$(command -v gentle-ai)" ]; then
   if [ "$APPLY" -eq 1 ]; then
-    EMPTY="$(mktemp -d)" || fail "mktemp"
-    cd "$EMPTY" || fail "cd $EMPTY"
+    # Not empty on purpose: the conductor cleanup removes "." when it is empty,
+    # which fails with "invalid argument" and aborts the uninstall.
+    SCRATCH="$(mktemp -d)" || fail "mktemp"
+    : >"$SCRATCH/.keep" || fail "placeholder in $SCRATCH"
+    cd "$SCRATCH" || fail "cd $SCRATCH"
   else
-    echo "  \$ cd \"\$(mktemp -d)\""
+    echo "  \$ cd \"\$(mktemp -d)\"  # with a .keep placeholder"
   fi
   run gentle-ai uninstall --all --yes
   cd "$HOME" || fail "cd $HOME"
