@@ -162,11 +162,11 @@ touch "$HOME/dev/gentle/gentle-shell/.engram/x" "$HOME/dev/gentle/gentle-shell/o
 OUT=$("$GS" sync 2>&1); rc=$?
 check "workshop sync: untracked session files and detached HEAD do not block it" \
   '[[ "$OUT" != *"clean clones only"* ]] && [ "$(git -C "$HOME/dev/gentle/gentle-shell" branch --show-current)" = main ] && [ -e "$HOME/dev/gentle/gentle-shell/.engram/x" ]'
-REG="$HOME/.gentle-shell/gentle-ai/dev-binary.json"
-check "workshop sync: registers gentle-ai main in the isolated config home (file 0600, dir 0700)" \
-  '[ "$(cat "$REG")" = "{\"schema\":\"gentle-pi.dev-binary/v1\",\"path\":\"$HOME/.local/share/gentle-ai/main/gentle-ai\"}" ] && [ "$(stat -f %Lp "$REG" 2>/dev/null || stat -c %a "$REG")" = 600 ] && [ "$(stat -f %Lp "$(dirname "$REG")" 2>/dev/null || stat -c %a "$(dirname "$REG")")" = 700 ]'
-check "workshop sync: leaves the legacy ~/.pi/gentle-ai registration untouched" \
-  '[ "$(cat "$HOME/.pi/gentle-ai/dev-binary.json")" = "{\"path\":\"$HOME/ai\"}" ]'
+REG="$HOME/.pi/gentle-ai/dev-binary.json"
+check "workshop sync: registers gentle-ai main where the launcher reads it (~/.pi/gentle-ai, file 0600)" \
+  '[ "$(cat "$REG")" = "{\"schema\":\"gentle-pi.dev-binary/v1\",\"path\":\"$HOME/.local/share/gentle-ai/main/gentle-ai\"}" ] && [ "$(stat -f %Lp "$REG" 2>/dev/null || stat -c %a "$REG")" = 600 ]'
+check "workshop sync: writes no registration into the isolated config home" \
+  '[ ! -e "$HOME/.gentle-shell/gentle-ai/dev-binary.json" ]'
 check "workshop sync: never runs pi update nor adds ~/.pi/agent/bin to PATH" \
   '! grep -q "^pi " "$CALLS" 2>/dev/null && grep -q "^go PATH=" "$CALLS" && ! grep -q "PATH=.*\.pi/agent/bin" "$CALLS"'
 mkdir -p "$HOME/.gentle-shell/agent"; printf '{"packages":["npm:gentle-pi","npm:gentle-engram"]}\n' > "$HOME/.gentle-shell/agent/settings.json"

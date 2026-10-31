@@ -22,11 +22,11 @@ Workshop `gs sync` also stays off the legacy Pi home:
 - It does not add `~/.pi/agent/bin` to PATH and does not run `pi update` or
   `pi update --extensions`; Shell runs the Pi bundled in the clone
   (`node_modules/@earendil-works/pi-coding-agent`).
-- It registers Gentle AI main in the isolated config home:
-  `~/.gentle-shell/gentle-ai/dev-binary.json` (directory created `0700`,
-  file `0600`, atomic write) with
+- It registers Gentle AI main in `~/.pi/gentle-ai/dev-binary.json` (file
+  `0600`, atomic write) with
   `{"schema":"gentle-pi.dev-binary/v1","path":"~/.local/share/gentle-ai/main/gentle-ai"}`.
-  The legacy `~/.pi/gentle-ai/dev-binary.json` is neither written nor removed.
+  This path is install-level state: the official launcher reads it there even
+  for the isolated home, so it is not moved to `~/.gentle-shell/gentle-ai`.
 - It no longer warns about `gentle-pi`/`gentle-engram` in the isolated home's
   `settings.json`: the official Shell declares and requires them there, and the
   `--package-root` take-over loads the clone instead of the published gentle-pi.

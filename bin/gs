@@ -367,20 +367,19 @@ sync_dotfiles() {
 
 cmd_sync() {
   local ai_files="" dot_change="" repo shell bin="$HOME/.local/share/gentle-ai/main" reg="$HOME/.pi/gentle-ai/dev-binary.json" name
-  # Workshop registers gentle-ai main in the isolated config home; the official
-  # launcher never migrates the legacy ~/.pi/gentle-ai registration.
-  local iso_reg="$HOME/.gentle-shell/gentle-ai/dev-binary.json"
+  # The dev-binary registration is install-level state: the official launcher
+  # reads it from ~/.pi/gentle-ai even in the isolated home (gentle-shell
+  # lib/gentle-shell-launcher.ts UNMIGRATED_CONFIG_FILES), so it stays there.
   # Versions before the sync power the closing message: restart only on change.
   local shell_before ai_before engram_before
   shell_before=$(shell_version); ai_before=$(ai_version); engram_before=$(engram_version)
   # Stale GOROOT/GOBIN from a removed version manager breaks every go build.
   if [ -n "${GOROOT:-}" ] && [ ! -d "$GOROOT" ]; then unset GOROOT; fi
   if [ -n "${GOBIN:-}" ] && [ ! -d "$(dirname "$GOBIN")" ]; then unset GOBIN; fi
-  mkdir -p "$bin" "$HOME/.local/bin"
+  mkdir -p "$bin" "$HOME/.local/bin" "$(dirname "$reg")"
   if is_workshop; then
     # Workshop runs the Pi bundled in the clone (node_modules): no legacy
     # ~/.pi/agent runtime on PATH and no pi update.
-    (umask 077 && mkdir -p "$(dirname "$iso_reg")")
     printf 'gs sync — %s — workshop (local clones)\n' "$(date '+%Y-%m-%d %H:%M')"
     for repo in $REPOS; do
       [ -d "$CLONES/$repo/.git" ] || die "missing clean clone $CLONES/$repo"
@@ -402,7 +401,6 @@ cmd_sync() {
     command -v gentle-shell >/dev/null 2>&1 || die "consumer sync needs gentle-shell on PATH; install it first"
     # pi may live in its managed home instead of PATH (managed install schema).
     command -v pi >/dev/null 2>&1 || export PATH="$HOME/.pi/agent/bin:$PATH"
-    mkdir -p "$(dirname "$reg")"
     # pi self-update cannot handle every installation schema (e.g. bun-compiled
     # /opt/pi binaries): a failure there must not abort the sync, the official
     # main channel below is the actual update path for Shell and AI.
@@ -446,9 +444,9 @@ cmd_sync() {
   done
   local ai_bin
   if is_workshop; then
-    local tmp; tmp=$(mktemp "$(dirname "$iso_reg")/.dev-binary.XXXXXX")
+    local tmp; tmp=$(mktemp "$(dirname "$reg")/.dev-binary.XXXXXX")
     printf '{"schema":"gentle-pi.dev-binary/v1","path":"%s"}\n' "$bin/gentle-ai" > "$tmp"
-    chmod 600 "$tmp"; mv -f "$tmp" "$iso_reg"
+    chmod 600 "$tmp"; mv -f "$tmp" "$reg"
     ai_bin="$bin/gentle-ai"
   else
     # The official main channel owns the dev-binary registration; reuse its path.
