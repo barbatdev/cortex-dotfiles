@@ -251,3 +251,15 @@ bash scripts/migrate-mac-official.sh --backup ~/gentle-migration-backup.GhUgKM -
 ```
 
 `~/.pi/agent` (conversaciones, auth, settings) se preserva, pero el home aislado (`~/.gentle-shell/agent`) no lo usa: después de migrar hay que abrir una terminal nueva, correr `gs`, hacer `/login` y revisar `/gentle:profiles`.
+
+### Resultado observado (2026-10-31)
+
+Primera corrida: el paso 1 falló en la limpieza de `conductor` porque intentó borrar `.` en una carpeta temporal vacía. Se corrigió en c07913f: la carpeta temporal ahora lleva un `.keep`. La segunda corrida de `--apply` completó los 9 pasos:
+
+- Paso 1: `gentle-ai uninstall --all --yes` no tenía nada más que borrar (0 cambios); dejó backup en `~/.gentle-ai/backups/` y listó carpetas con archivos no gestionados para revisión manual (no se tocaron).
+- Paso 2: `self-uninstall` conservó la config compartida de `~/.pi/gentle-ai` (perfiles, persona, banner).
+- Paso 3: se movieron `gs`, `gentle-ai`, `~/.pi/agent/bin/pi` y las 3 extensiones `orca-*.ts` a `~/gentle-mac-retirement.XXXXXX`.
+- Pasos 4–5: Gentle Shell `4.5.1-main.49b3bff8c154` (pi 1.4.0, home aislado `~/.gentle-shell/agent`). `setup` copió 23 archivos de `~/.pi/gentle-ai` a `~/.gentle-shell/gentle-ai`.
+- Paso 6: `profiles.json` ya era idéntico al backup tras la copia de `setup`; se instaló `refactoria.json` y se fijó el theme.
+- Paso 7: `gentle-ai 4.3.2-0.20261031025914-c60a4b6d5675` compilado desde `main`, instalado solo para Claude Code (25/25 checks). La pregunta del allowlist de Engram se salta sola en modo no interactivo.
+- Paso 9: `gs`, `gentle-shell`, `gentle-ai` y `codegraph` resuelven en `~/.local/bin`, y `go` en `/opt/homebrew/bin`.
