@@ -8,7 +8,22 @@ Runbook para retirar el stack Gentle legacy (launchers, wrappers, declaraciones 
 
 **Gentle Shell, Gentle AI y Engram deben instalarse y actualizarse siempre desde `main`, nunca desde release, tags estables ni `@latest`.** Este requisito también aplica a futuras actualizaciones mediante `gs sync`.
 
-Para Engram, comprobar por separado el origen y commit del binario compartido y de cualquier copia administrada por Shell: actualizar Shell o Gentle AI no demuestra que Engram haya quedado en `main`. El mecanismo concreto de actualización de Engram está pendiente de verificar; esta política no afirma que la instalación actual ya la cumpla.
+Para Engram, comprobar por separado el origen y commit del binario compartido y de cualquier copia administrada por Shell: actualizar Shell o Gentle AI no demuestra que Engram haya quedado en `main`. El mecanismo se detalla abajo.
+
+### Engram desde `main`
+
+Instalar o actualizar con el sufijo `@main`, que siempre resuelve al último commit de `main`:
+
+```zsh
+GOBIN=~/.local/bin go install github.com/Gentleman-Programming/engram/v3/cmd/engram@main
+go version -m ~/.local/bin/engram | grep 'engram/v3'
+```
+
+- **No usar `@latest`**: en Go resuelve al último tag de release, no a `main`.
+- `go version -m` muestra una pseudo-versión como `v3.6.1-0.20261030201044-7cf4ed29b6f9`. No es un pin: los últimos 12 caracteres son el commit de `main` que se compiló. Compararlo con `git ls-remote https://github.com/Gentleman-Programming/engram.git refs/heads/main`.
+- Reemplazar el binario no reinicia el servidor que ya está corriendo; el operador decide cuándo reiniciarlo.
+
+Estado observado en la Mac (2026-10-31): `~/.local/bin/engram` es el único Engram en el `PATH`, el LaunchAgent `com.gentleman-programming.engram` ejecuta ese binario y su commit `7cf4ed29b6f9` coincidía con la punta de `main`. Homebrew no tenía Engram instalado. El LaunchAgent de cloud-sync ejecuta `python3`, no un binario de Engram.
 
 Esta aclaración es documental: no autoriza cambios en memorias, conversaciones, credenciales ni en los LaunchAgents `com.gentleman-programming.engram` y `dev.barbat.engram-cloud-sync`.
 
