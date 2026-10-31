@@ -1,0 +1,553 @@
+{
+  "kind": "gentle-pi.agent_model_profiles",
+  "version": 1,
+  "active": "openai",
+  "profiles": {
+    "openai": {
+      "orchestrator": {
+        "model": "openai/gpt-6.1-sol",
+        "thinking": "low"
+      },
+      "gentle-ai-worker": {
+        "model": "openai/gpt-6.1-sol",
+        "thinking": "high"
+      },
+      "jd-fix-agent": {
+        "model": "openai/gpt-6.1-sol",
+        "thinking": "high"
+      },
+      "gentle-ai-explore": {
+        "model": "openai/gpt-6-luna",
+        "thinking": "high"
+      },
+      "review-readability": {
+        "model": "openai/gpt-6-luna",
+        "thinking": "medium"
+      },
+      "gentle-ai-verify": {
+        "model": "openai/gpt-6.1-terra",
+        "thinking": "high"
+      },
+      "review-validator": {
+        "model": "openai/gpt-6.1-sol",
+        "thinking": "high"
+      },
+      "review-risk": {
+        "model": "openai/gpt-6-astra",
+        "thinking": "high"
+      },
+      "review-reliability": {
+        "model": "openai/gpt-6.1-terra",
+        "thinking": "high"
+      },
+      "review-resilience": {
+        "model": "openai/gpt-6.1-terra",
+        "thinking": "high"
+      },
+      "review-refuter": {
+        "model": "openai/gpt-6.1-sol",
+        "thinking": "xhigh"
+      },
+      "jd-judge-a": {
+        "model": "openai/gpt-6.1-terra",
+        "thinking": "high"
+      },
+      "jd-judge-b": {
+        "model": "openai/gpt-6-luna",
+        "thinking": "max"
+      },
+      "cortex-adversarial-tester": {
+        "model": "openai/gpt-6.1-terra",
+        "thinking": "high"
+      },
+      "cortex-requirements-analyst": {
+        "model": "openai/gpt-6.1-terra",
+        "thinking": "high"
+      },
+      "cortex-evidence-auditor": {
+        "model": "openai/gpt-6-luna",
+        "thinking": "medium"
+      },
+      "cortex-test-designer": {
+        "model": "openai/gpt-6-luna",
+        "thinking": "medium"
+      },
+      "cortex-exploratory-tester": {
+        "model": "openai/gpt-6-luna",
+        "thinking": "medium"
+      },
+      "cortex-test-runner": {
+        "model": "openai/gpt-6-luna",
+        "thinking": "low"
+      }
+    },
+    "nan": {
+      "orchestrator": {
+        "model": "nan/glm5.3",
+        "thinking": "low"
+      },
+      "gentle-ai-worker": {
+        "model": "nan/deepseek-v4-flash",
+        "thinking": "high"
+      },
+      "jd-fix-agent": {
+        "model": "nan/deepseek-v4-flash",
+        "thinking": "high"
+      },
+      "review-risk": {
+        "model": "nan/glm5.3",
+        "thinking": "high"
+      },
+      "review-refuter": {
+        "model": "nan/deepseek-v4-flash",
+        "thinking": "high"
+      },
+      "review-validator": {
+        "model": "nan/glm5.3",
+        "thinking": "high"
+      },
+      "review-reliability": {
+        "model": "nan/deepseek-v4-flash",
+        "thinking": "high"
+      },
+      "review-resilience": {
+        "model": "nan/glm5.3-flash",
+        "thinking": "medium"
+      },
+      "review-readability": {
+        "model": "nan/qwen3.8-flash",
+        "thinking": "medium"
+      },
+      "jd-judge-a": {
+        "model": "nan/glm5.3",
+        "thinking": "high"
+      },
+      "jd-judge-b": {
+        "model": "nan/deepseek-v4-flash",
+        "thinking": "high"
+      },
+      "gentle-ai-verify": {
+        "model": "nan/glm5.3-flash",
+        "thinking": "medium"
+      },
+      "gentle-ai-explore": {
+        "model": "nan/qwen3.8-flash",
+        "thinking": "medium"
+      },
+      "cortex-adversarial-tester": {
+        "model": "nan/deepseek-v4-flash",
+        "thinking": "high"
+      },
+      "cortex-requirements-analyst": {
+        "model": "nan/glm5.3",
+        "thinking": "high"
+      },
+      "cortex-evidence-auditor": {
+        "model": "nan/glm5.3",
+        "thinking": "medium"
+      },
+      "cortex-test-designer": {
+        "model": "nan/deepseek-v4-flash",
+        "thinking": "medium"
+      },
+      "cortex-exploratory-tester": {
+        "model": "nan/glm5.3-flash",
+        "thinking": "medium"
+      },
+      "cortex-test-runner": {
+        "model": "nan/mimo-v2.6-flash",
+        "thinking": "low"
+      }
+    },
+    "openai-nan": {
+      "orchestrator": {
+        "model": "openai/gpt-6.1-sol",
+        "thinking": "low"
+      },
+      "gentle-ai-worker": {
+        "model": "openai/gpt-6.1-sol",
+        "thinking": "high"
+      },
+      "jd-fix-agent": {
+        "model": "openai/gpt-6.1-sol",
+        "thinking": "high"
+      },
+      "gentle-ai-explore": {
+        "model": "nan/qwen3.8-flash",
+        "thinking": "medium"
+      },
+      "gentle-ai-verify": {
+        "model": "nan/glm5.3-flash",
+        "thinking": "medium"
+      },
+      "review-readability": {
+        "model": "nan/qwen3.8-flash",
+        "thinking": "medium"
+      },
+      "review-risk": {
+        "model": "nan/glm5.3",
+        "thinking": "high"
+      },
+      "review-reliability": {
+        "model": "nan/deepseek-v4-flash",
+        "thinking": "high"
+      },
+      "review-resilience": {
+        "model": "nan/glm5.3-flash",
+        "thinking": "medium"
+      },
+      "review-refuter": {
+        "model": "nan/deepseek-v4-flash",
+        "thinking": "high"
+      },
+      "review-validator": {
+        "model": "nan/glm5.3",
+        "thinking": "high"
+      },
+      "jd-judge-a": {
+        "model": "nan/glm5.3",
+        "thinking": "high"
+      },
+      "jd-judge-b": {
+        "model": "nan/deepseek-v4-flash",
+        "thinking": "high"
+      },
+      "cortex-adversarial-tester": {
+        "model": "nan/deepseek-v4-flash",
+        "thinking": "high"
+      },
+      "cortex-requirements-analyst": {
+        "model": "openai/gpt-6.1-terra",
+        "thinking": "high"
+      },
+      "cortex-evidence-auditor": {
+        "model": "openai/gpt-6-luna",
+        "thinking": "medium"
+      },
+      "cortex-test-designer": {
+        "model": "nan/deepseek-v4-flash",
+        "thinking": "medium"
+      },
+      "cortex-exploratory-tester": {
+        "model": "nan/glm5.3-flash",
+        "thinking": "medium"
+      },
+      "cortex-test-runner": {
+        "model": "nan/mimo-v2.6-flash",
+        "thinking": "low"
+      }
+    },
+    "claude": {
+      "orchestrator": {
+        "model": "claude-bridge/claude-opus-5-5",
+        "thinking": "low"
+      },
+      "gentle-ai-worker": {
+        "model": "claude-bridge/claude-opus-5-5",
+        "thinking": "high"
+      },
+      "jd-fix-agent": {
+        "model": "claude-bridge/claude-opus-5-5",
+        "thinking": "high"
+      },
+      "review-risk": {
+        "model": "claude-bridge/claude-opus-5-5",
+        "thinking": "high"
+      },
+      "jd-judge-a": {
+        "model": "claude-bridge/claude-opus-5-5",
+        "thinking": "high"
+      },
+      "gentle-ai-verify": {
+        "model": "claude-bridge/claude-opus-5-5",
+        "thinking": "medium"
+      },
+      "review-validator": {
+        "model": "claude-bridge/claude-opus-5-5",
+        "thinking": "medium"
+      },
+      "review-refuter": {
+        "model": "claude-bridge/claude-opus-5-5",
+        "thinking": "xhigh"
+      },
+      "gentle-ai-explore": {
+        "model": "claude-bridge/claude-sonnet-5-5",
+        "thinking": "high"
+      },
+      "review-readability": {
+        "model": "claude-bridge/claude-sonnet-5-5",
+        "thinking": "medium"
+      },
+      "review-reliability": {
+        "model": "claude-bridge/claude-sonnet-5-5",
+        "thinking": "high"
+      },
+      "review-resilience": {
+        "model": "claude-bridge/claude-sonnet-5-5",
+        "thinking": "high"
+      },
+      "jd-judge-b": {
+        "model": "claude-bridge/claude-sonnet-5-5",
+        "thinking": "high"
+      },
+      "cortex-adversarial-tester": {
+        "model": "claude-bridge/claude-opus-5-5",
+        "thinking": "high"
+      },
+      "cortex-requirements-analyst": {
+        "model": "claude-bridge/claude-opus-5-5",
+        "thinking": "high"
+      },
+      "cortex-evidence-auditor": {
+        "model": "claude-bridge/claude-sonnet-5-5",
+        "thinking": "medium"
+      },
+      "cortex-test-designer": {
+        "model": "claude-bridge/claude-sonnet-5-5",
+        "thinking": "medium"
+      },
+      "cortex-exploratory-tester": {
+        "model": "claude-bridge/claude-sonnet-5-5",
+        "thinking": "medium"
+      },
+      "cortex-test-runner": {
+        "model": "claude-bridge/claude-sonnet-5-5",
+        "thinking": "low"
+      }
+    },
+    "claude-nan": {
+      "orchestrator": {
+        "model": "claude-bridge/claude-opus-5-5",
+        "thinking": "low"
+      },
+      "gentle-ai-worker": {
+        "model": "claude-bridge/claude-opus-5-5",
+        "thinking": "high"
+      },
+      "jd-fix-agent": {
+        "model": "claude-bridge/claude-opus-5-5",
+        "thinking": "high"
+      },
+      "review-readability": {
+        "model": "nan/qwen3.8-flash",
+        "thinking": "medium"
+      },
+      "gentle-ai-explore": {
+        "model": "nan/qwen3.8-flash",
+        "thinking": "medium"
+      },
+      "review-refuter": {
+        "model": "nan/deepseek-v4-flash",
+        "thinking": "high"
+      },
+      "gentle-ai-verify": {
+        "model": "nan/glm5.3-flash",
+        "thinking": "medium"
+      },
+      "review-resilience": {
+        "model": "nan/glm5.3-flash",
+        "thinking": "medium"
+      },
+      "jd-judge-b": {
+        "model": "nan/deepseek-v4-flash",
+        "thinking": "high"
+      },
+      "review-risk": {
+        "model": "nan/glm5.3",
+        "thinking": "high"
+      },
+      "review-validator": {
+        "model": "nan/glm5.3",
+        "thinking": "high"
+      },
+      "jd-judge-a": {
+        "model": "nan/glm5.3",
+        "thinking": "high"
+      },
+      "review-reliability": {
+        "model": "nan/deepseek-v4-flash",
+        "thinking": "high"
+      },
+      "cortex-adversarial-tester": {
+        "model": "nan/deepseek-v4-flash",
+        "thinking": "high"
+      },
+      "cortex-requirements-analyst": {
+        "model": "claude-bridge/claude-opus-5-5",
+        "thinking": "high"
+      },
+      "cortex-evidence-auditor": {
+        "model": "claude-bridge/claude-sonnet-5-5",
+        "thinking": "medium"
+      },
+      "cortex-test-designer": {
+        "model": "nan/deepseek-v4-flash",
+        "thinking": "medium"
+      },
+      "cortex-exploratory-tester": {
+        "model": "nan/glm5.3-flash",
+        "thinking": "medium"
+      },
+      "cortex-test-runner": {
+        "model": "nan/mimo-v2.6-flash",
+        "thinking": "low"
+      }
+    },
+    "claude-openai": {
+      "orchestrator": {
+        "model": "claude-bridge/claude-opus-5-5",
+        "thinking": "low"
+      },
+      "gentle-ai-worker": {
+        "model": "claude-bridge/claude-opus-5-5",
+        "thinking": "high"
+      },
+      "jd-fix-agent": {
+        "model": "claude-bridge/claude-opus-5-5",
+        "thinking": "high"
+      },
+      "gentle-ai-explore": {
+        "model": "claude-bridge/claude-sonnet-5-5",
+        "thinking": "medium"
+      },
+      "review-readability": {
+        "model": "openai/gpt-6-luna",
+        "thinking": "medium"
+      },
+      "review-risk": {
+        "model": "claude-bridge/claude-opus-5-5",
+        "thinking": "high"
+      },
+      "jd-judge-a": {
+        "model": "claude-bridge/claude-opus-5-5",
+        "thinking": "high"
+      },
+      "gentle-ai-verify": {
+        "model": "openai/gpt-6.1-terra",
+        "thinking": "high"
+      },
+      "review-reliability": {
+        "model": "openai/gpt-6.1-terra",
+        "thinking": "high"
+      },
+      "review-resilience": {
+        "model": "openai/gpt-6.1-terra",
+        "thinking": "high"
+      },
+      "review-refuter": {
+        "model": "openai/gpt-6.1-sol",
+        "thinking": "xhigh"
+      },
+      "review-validator": {
+        "model": "claude-bridge/claude-opus-5-5",
+        "thinking": "medium"
+      },
+      "jd-judge-b": {
+        "model": "openai/gpt-6.1-sol",
+        "thinking": "high"
+      },
+      "cortex-adversarial-tester": {
+        "model": "claude-bridge/claude-opus-5-5",
+        "thinking": "high"
+      },
+      "cortex-requirements-analyst": {
+        "model": "claude-bridge/claude-opus-5-5",
+        "thinking": "high"
+      },
+      "cortex-evidence-auditor": {
+        "model": "claude-bridge/claude-sonnet-5-5",
+        "thinking": "medium"
+      },
+      "cortex-test-designer": {
+        "model": "claude-bridge/claude-sonnet-5-5",
+        "thinking": "medium"
+      },
+      "cortex-exploratory-tester": {
+        "model": "claude-bridge/claude-sonnet-5-5",
+        "thinking": "medium"
+      },
+      "cortex-test-runner": {
+        "model": "claude-bridge/claude-sonnet-5-5",
+        "thinking": "low"
+      }
+    },
+    "nan-qa-reliability-sol": {
+      "orchestrator": {
+        "model": "nan/glm5.3",
+        "thinking": "low"
+      },
+      "gentle-ai-worker": {
+        "model": "nan/deepseek-v4-flash",
+        "thinking": "high"
+      },
+      "jd-fix-agent": {
+        "model": "nan/deepseek-v4-flash",
+        "thinking": "high"
+      },
+      "review-risk": {
+        "model": "nan/glm5.3",
+        "thinking": "high"
+      },
+      "review-refuter": {
+        "model": "nan/deepseek-v4-flash",
+        "thinking": "high"
+      },
+      "review-validator": {
+        "model": "nan/glm5.3",
+        "thinking": "high"
+      },
+      "review-reliability": {
+        "model": "openai/gpt-6.1-sol",
+        "thinking": "high"
+      },
+      "review-resilience": {
+        "model": "nan/glm5.3-flash",
+        "thinking": "medium"
+      },
+      "review-readability": {
+        "model": "nan/qwen3.8-flash",
+        "thinking": "medium"
+      },
+      "jd-judge-a": {
+        "model": "nan/glm5.3",
+        "thinking": "high"
+      },
+      "jd-judge-b": {
+        "model": "nan/deepseek-v4-flash",
+        "thinking": "high"
+      },
+      "gentle-ai-verify": {
+        "model": "nan/glm5.3-flash",
+        "thinking": "medium"
+      },
+      "gentle-ai-explore": {
+        "model": "nan/qwen3.8-flash",
+        "thinking": "medium"
+      },
+      "cortex-adversarial-tester": {
+        "model": "nan/deepseek-v4-flash",
+        "thinking": "high"
+      },
+      "cortex-requirements-analyst": {
+        "model": "nan/glm5.3",
+        "thinking": "high"
+      },
+      "cortex-evidence-auditor": {
+        "model": "nan/glm5.3",
+        "thinking": "medium"
+      },
+      "cortex-test-designer": {
+        "model": "nan/deepseek-v4-flash",
+        "thinking": "medium"
+      },
+      "cortex-exploratory-tester": {
+        "model": "nan/glm5.3-flash",
+        "thinking": "medium"
+      },
+      "cortex-test-runner": {
+        "model": "nan/mimo-v2.6-flash",
+        "thinking": "low"
+      }
+    }
+  }
+}

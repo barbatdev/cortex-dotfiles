@@ -583,8 +583,14 @@ if command -v python3 &>/dev/null; then
     [[ "$DRY_RUN" == true ]] && pi_appearance_args+=(--dry-run)
     python3 -I "$DOTFILES/scripts/pi_appearance.py" "${pi_appearance_args[@]}" \
         || echo "  ! Pi appearance not merged; fix ~/.pi/agent/settings.json and rerun"
+    # gentle-pi model routing: merge pi/gentle-ai/profiles.json into ~/.pi and
+    # ~/.gentle-shell and materialize the active profile.
+    pi_profiles_args=()
+    [[ "$DRY_RUN" == true ]] && pi_profiles_args+=(--dry-run)
+    python3 -I "$DOTFILES/scripts/sync-pi-model-profiles.py" "${pi_profiles_args[@]}" \
+        || echo "  ! Pi model profiles not synced; fix the gentle-ai profile files and rerun"
 else
-    echo "  ! python3 unavailable; skipped Pi appearance merge"
+    echo "  ! python3 unavailable; skipped Pi appearance merge and model profiles"
 fi
 run_or_plan "chmod +x $DOTFILES/claude/statusline.sh" chmod +x "$DOTFILES/claude/statusline.sh"
 run_or_plan "chmod +x agent-state CLI" chmod +x "$DOTFILES/zsh/scripts/agent-state.sh"
