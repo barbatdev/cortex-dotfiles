@@ -11,11 +11,12 @@ S5. "gs lo único que tiene que hacer ahora es iniciar gentle-shell, sería un a
 S6. "no borramos memorias.\nno borramos conversaciones ni credenciales." — do not read/copy/delete protected data, change permissions mode, stop sessions or mutate memory stores.
 
 ## Tasks
-T1 | S1-S6 | delegated | in_progress | implement minimal opt-in launcher, focused tests and docs; no changes to legacy gs or shared profile | commit pending.
-T2 | S1,S2,S6 | inline | pending | persistent PATH and deploy verified launcher to agent-dev with rollback backup, preserve remote unrelated changes | commit pending.
-T3 | S1-S6 | inline + independent verifier | pending | assess item 5, run public checks and real sync, record outcomes and close | commit pending.
+T1 | S1-S6 | delegated | done | launcher, opt-in PATH fragment, 14 tests (RED observed, GREEN) and docs | 2121ea4, 07248f6.
+T2 | S1,S2,S6 | inline | done | deployed gs + fragment on agent-dev without overwriting; marked ~/.zshenv bridge until the remote clone pulls the merge | no repo commit (host deploy).
+T3 | S1-S6 | inline + independent verifier | done | real gs sync exit 0; verifier PASS S1-S6, no defects | this commit.
 
 ## Log
 L1. User request: "dale cokn eso ... no me hagas iterar mas contigo hasta que termines ... es cansador esto"
 L2. Preceding accepted scope: permanent CodeGraph PATH and new gs/gs sync updating Shell and external AI always main. agent-dev only; no migration of Mac or workshop. Preserve old bin/gs on other hosts by adding bin/gs-official deployed as ~/.local/bin/gs only on migrated agent-dev. Root main has three untracked documentation/retirement files from prior authorized work; preserve them, work in separate feature worktree.
+L4. Deploy evidence: fresh interactive zsh on agent-dev resolves gs=~/.local/bin/gs, gentle-shell=pnpm bin, gentle-ai=~/.local/bin, codegraph=~/npm-global/bin, go=/usr/local/go/bin. Real `gs sync` exit 0: Shell already latest main 49b3bff8c154 (internal AI c60a4b6d5675); external AI @main c60a4b6d5675 (go version -m pseudo-version); `sync --agents claude-code` changed 3 files. Bridge line in ~/.zshenv carries the marker '# official-gentle-path bridge (remove after dotfiles merge)'. Push/PR/merge left to the user; slice 765 lines in 2 work-unit commits.
 L3. Risk item 5: official upgrades and environment PATH. Default-launch contract and workshop preserved by separate launcher, no shared helper changes. Forecast about 300 authored lines for launcher/tests/docs; no broad legacy removal.
