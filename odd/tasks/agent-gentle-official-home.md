@@ -18,7 +18,7 @@ Shell keeps running from the gentle-shell clone; only the home, Pi runtime and G
 
 - T1 (S2-S6) worker + parent fixes: change `bin/gs` + tests + docs. Done. Commit: e89c3d1
 - T3 (S8) worker: workshop sync scope + isolated setup. Done. Commit: see branch feat/agent-gentle-sync-scope
-- T2 (S7) parent: deploy and verify on agent-gentle. Commit: n/a (host)
+- T2 (S7) parent: deploy and verify on agent-gentle. Done 2026-10-31 (see docs/gentle-official-migration.md#agent-gentle-workshop). Commit: n/a (host)
 
 ## Log
 
@@ -28,3 +28,4 @@ Shell keeps running from the gentle-shell clone; only the home, Pi runtime and G
 - L4 Parent review: removed the isolated-settings gentle-pi/gentle-engram warning; on agent-gentle the official Shell declares both there (gentle-engram is its required companion), so it would fire on every sync. Skill cortex-maintainer-delivery exists only in ~/.pi/agent/skills on agent-gentle; T2 must expose it to the isolated home before retiring legacy.
 - L5 Verifier FAIL on S4: the launcher reads dev-binary.json from ~/.pi/gentle-ai, not the isolated config home (confirmed on agent-gentle clone 14f44d11c, lib/gentle-ai-binary.ts:218). S4 rewritten: keep writing ~/.pi/gentle-ai/dev-binary.json; T1 reopened and fixed.
 - L6 User asked whether gs sync also runs gentle-ai sync and whether gentle-shell has its own: "en el gs sync metimos también un gentle-ai sync? porque eso es lo que esta documentado en el proceso de actualizacion. Hay que revisar si gentle-shell no tiene algo de esto también". Finding: workshop runs bare `gentle-ai sync`; installed_agents on agent-gentle = claude-code, opencode, pi, so it keeps syncing the legacy ~/.pi/agent (gentle-shell README: `gentle-ai sync` is Path B, gentle-pi inside an existing pi) and never the isolated home; `gentle-shell setup` re-provisions the isolated home; the agent-gentle wrapper sets GENTLE_SHELL_NO_AUTO_SETUP=1. User decision on agents: "solo claude code".
+- L7 Deploy findings: Pi 1.4.0 has built-in MCP reading <agentDir>/mcp.json; gentle-ai retires pi-mcp-adapter on setup, so brains moved to ~/.gentle-shell/agent/mcp.json on Mac, agent-dev and agent-gentle and the adapter was removed. Old worktree launchers look for pi on PATH: ~/.local/bin/pi now points to the main clone Pi.
