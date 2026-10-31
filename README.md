@@ -82,6 +82,15 @@ find ~ -maxdepth 4 -name '*.bak_[0-9]*' -print
 Si un destino es un directorio real (no symlink), el instalador aborta antes de
 tocar nada: movelo o borralo y volvé a correr `install.sh`.
 
+## Routing de modelos de Pi (gentle-pi profiles)
+
+`pi/gentle-ai/profiles.json` versiona los profiles de modelos de gentle-pi (`/gentle:profiles`): qué modelo usa el orquestador y cada subagente. `./install.sh` corre `scripts/sync-pi-model-profiles.py`, que:
+
+- mezcla esos profiles en `~/.pi/gentle-ai/profiles.json` y `~/.gentle-shell/gentle-ai/profiles.json`. Los profiles del repo reemplazan a los locales con el mismo nombre; los profiles que sólo existen en local se conservan, igual que `current`;
+- materializa el profile activo en `agent/settings.json` (orquestador), `agent/subagents.json` y el frontmatter de `agent/agents/*.md`.
+
+Cada archivo que cambia queda con backup `*.bak-profiles-<fecha>`. Correrlo dos veces no cambia nada. Para editar el routing, modificá el JSON del repo y corré `python3 scripts/sync-pi-model-profiles.py` (`--dry-run` muestra qué cambiaría).
+
 ## Perfiles visuales opt-in
 
 `./install.sh` instala estos assets mediante symlinks individuales. No cambia el theme activo de Pi, Herdr o Ghostty; tampoco modifica Starship.
