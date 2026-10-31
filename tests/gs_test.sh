@@ -164,7 +164,7 @@ check "workshop sync: untracked session files and detached HEAD do not block it"
   '[[ "$OUT" != *"clean clones only"* ]] && [ "$(git -C "$HOME/dev/gentle/gentle-shell" branch --show-current)" = main ] && [ -e "$HOME/dev/gentle/gentle-shell/.engram/x" ]'
 REG="$HOME/.pi/gentle-ai/dev-binary.json"
 check "workshop sync: registers gentle-ai main where the launcher reads it (~/.pi/gentle-ai, file 0600)" \
-  '[ "$(cat "$REG")" = "{\"schema\":\"gentle-pi.dev-binary/v1\",\"path\":\"$HOME/.local/share/gentle-ai/main/gentle-ai\"}" ] && [ "$(stat -f %Lp "$REG" 2>/dev/null || stat -c %a "$REG")" = 600 ]'
+  '[ "$(cat "$REG")" = "{\"schema\":\"gentle-pi.dev-binary/v1\",\"path\":\"$HOME/.local/share/gentle-ai/main/gentle-ai\"}" ] && [ "$(stat -c %a "$REG" 2>/dev/null || stat -f %Lp "$REG")" = 600 ]'
 check "workshop sync: writes no registration into the isolated config home" \
   '[ ! -e "$HOME/.gentle-shell/gentle-ai/dev-binary.json" ]'
 check "workshop sync: never runs pi update nor adds ~/.pi/agent/bin to PATH" \
