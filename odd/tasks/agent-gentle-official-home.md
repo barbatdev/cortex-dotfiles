@@ -15,7 +15,7 @@ Shell keeps running from the gentle-shell clone; only the home, Pi runtime and G
 
 ## Tasks
 
-- T1 (S2-S6) inline worker: change `bin/gs` + tests + docs. Status: done, review pending. Commit: pending (uncommitted)
+- T1 (S2-S6) worker + parent fix: change `bin/gs` + tests + docs. Done. Commit: e89c3d1
 - T2 (S7) parent: deploy and verify on agent-gentle. Commit: n/a (host)
 
 ## Log
@@ -23,3 +23,4 @@ Shell keeps running from the gentle-shell clone; only the home, Pi runtime and G
 - L1 User: "bueno ahora tenemos que hacer la que para mi es la mas complicada ... capaz no lo es. Agent-gentle es un entorno tipo dogfooding ... yo siendo vos primero miraría bien quehace. Ahí lo que hacemos es trabajar directo con gentle-shell, gentle-ai y engram. Con eso en mente tenemos una serie de accesorios tipo gs issue shell 1234 para revisar un issue o un pr ... revisalo bien antes de arrancar"
 - L2 User approved the approach "mantener el gs de workshop y migrar solo su arranque al home aislado": "si".
 - L3 Evidence: official launcher (clone 14f44d11c) accepts `--isolated` with `--package-root` (only `--link`+`--isolated` and `--isolated`+`--home` conflict, `lib/gentle-shell-launcher.ts:169-174`); clone has adjacent Pi 1.4.0; isolated home `~/.gentle-shell/agent` already holds pi-mcp-adapter and brains; Engram already at main tip `7cf4ed29b6f9`.
+- L4 Parent review: removed the isolated-settings gentle-pi/gentle-engram warning; on agent-gentle the official Shell declares both there (gentle-engram is its required companion), so it would fire on every sync. Skill cortex-maintainer-delivery exists only in ~/.pi/agent/skills on agent-gentle; T2 must expose it to the isolated home before retiring legacy.
