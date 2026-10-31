@@ -349,6 +349,7 @@ Resultado en los tres equipos: `work-brain` (26 tools), `life-brain` (14) y `sec
 | `gs sync` real | `gentle-ai sync` ok, `gentle-shell setup (isolated home)` ok, compat `v9` OK. Shell `4.5.1`, Gentle AI `c60a4b6d5675`, Engram `7cf4ed29b6f9`. |
 | Pi legacy | `~/.pi/agent/bin/pi` y el symlink `~/.local/bin/pi` movidos a `~/gentle-workshop-retirement.ufAbAo`, junto con el wrapper original. |
 | Worktrees viejos | Un launcher anterior (p. ej. `gentle-shell 3.7.0` en `pr-1520`) busca `pi` en el `PATH`: `~/.local/bin/pi` apunta ahora al Pi del clon `main` (`~/dev/gentle/gentle-shell/node_modules/.bin/pi`). Los launchers nuevos usan el Pi de su propio worktree. |
+| Theme RefactorIA | `pi/themes/refactoria.json` del repo (idéntico al del home legacy) copiado a `~/.gentle-shell/agent/themes/` y `"theme": "refactoria"` en `~/.gentle-shell/agent/settings.json`; settings previo en el backup. `gentle-shell setup` conserva el theme elegido. |
 | Verificación | `pi` legacy ausente; `gs --version` fuera de un clon y desde un worktree: home `isolated`; brains `connected`. |
 
 **Se conservan a propósito:** `~/.pi/gentle-ai/dev-binary.json` y `channel.json` (estado de instalación que el lanzador oficial lee ahí), worktrees con cambios sin commitear, Engram y Herdr.
