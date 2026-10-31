@@ -30,10 +30,17 @@ Workshop `gs sync` also stays off the legacy Pi home:
 - It no longer warns about `gentle-pi`/`gentle-engram` in the isolated home's
   `settings.json`: the official Shell declares and requires them there, and the
   `--package-root` take-over loads the clone instead of the published gentle-pi.
+- It runs `gentle-ai sync --agents claude-code` (Claude Code only; never the
+  legacy `pi` agent nor `opencode`). `GS_SYNC_AGENTS=a,b` overrides the agents.
+- It then runs `node ~/dev/gentle/gentle-shell/bin/gentle-shell.mjs --isolated setup`
+  (`gentle-shell setup (isolated home)`), the official re-provisioning of
+  `~/.gentle-shell/agent`. A failure marks the sync `INCOMPLETE` and shows its output.
+- `GS_SKIP_AI_SYNC=1` skips both steps and prints a `skipped` line for each.
 
 The `gs pr` / `gs issue` kickoff prompts name the `cortex-maintainer-delivery`
 skill without a home path. Consumer sync keeps its official update steps
-(`pi update`, `gentle-shell upgrade --channel main`, `pi update --extensions`).
+(`pi update`, `gentle-shell upgrade --channel main`, `pi update --extensions`)
+and runs `gentle-ai sync` with `--agents` only when `GS_SYNC_AGENTS` is set.
 
 ## Why this changed
 

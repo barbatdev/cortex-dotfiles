@@ -17,7 +17,7 @@ Shell keeps running from the gentle-shell clone; only the home, Pi runtime and G
 ## Tasks
 
 - T1 (S2-S6) worker + parent fixes: change `bin/gs` + tests + docs. Done. Commit: e89c3d1
-- T3 (S8) worker: workshop sync scope + isolated setup. Commit: pending
+- T3 (S8) worker: workshop sync scope + isolated setup. Done. Commit: see branch feat/agent-gentle-sync-scope
 - T2 (S7) parent: deploy and verify on agent-gentle. Commit: n/a (host)
 
 ## Log
