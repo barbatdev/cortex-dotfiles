@@ -101,6 +101,11 @@ for link in "$LBIN/gs" "$SHELL_SNIPPET_DIR/official-gentle-path.zsh"; do
     blocker "$link already exists"
   fi
 done
+# Retire candidates are checked here too, so a bad type blocks before any uninstall.
+for src in "$LBIN/gs" "$LBIN/gentle-ai" "$HOME/.pi/agent/bin/pi" "$HOME"/.pi/agent/extensions/orca-*.ts; do
+  [ -e "$src" ] || [ -L "$src" ] || continue
+  [ -L "$src" ] || [ -f "$src" ] || blocker "$src is not a file or symlink; cannot retire it"
+done
 [ ${#BLOCKERS[@]} -eq 0 ] && echo "  all checks passed"
 
 if [ "$APPLY" -eq 1 ] && [ ${#BLOCKERS[@]} -gt 0 ]; then
@@ -259,6 +264,8 @@ if [ "$APPLY" -eq 1 ]; then
   resolved="$(zsh -ic 'whence -p gs gentle-shell gentle-ai codegraph go' 2>/dev/null | grep '^/')"
   while IFS= read -r line; do echo "  $line"; done <<<"$resolved"
   [ "$(echo "$resolved" | grep -c '^/')" -eq 5 ] || fail "not every command resolves in zsh"
+  echo "$resolved" | grep -qx "$LBIN/gs" || fail "gs does not resolve to $LBIN/gs"
+  echo "$resolved" | grep -qx "$LBIN/gentle-ai" || fail "gentle-ai does not resolve to $LBIN/gentle-ai"
   gentle-shell --version || fail "gentle-shell --version"
   "$LBIN/gentle-ai" version || fail "gentle-ai version"
   go version -m "$LBIN/gentle-ai" | grep -E '^\s*(path|mod)'
