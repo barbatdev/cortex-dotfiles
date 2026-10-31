@@ -28,6 +28,8 @@ setup() { # mode: consumer | workshop
 pkg=$(dirname "$(dirname "$1")"); shift
 if [ "${1:-}" = --version ]; then printf 'gentle-shell %s\npi 1.4.0\n' "$(cat "$pkg/VERSION")"; exit 0; fi
 echo "launch $pkg $*" >> "$CALLS"
+[ "${2:-}" = setup ] && exit "${SETUP_RC:-0}"
+exit 0
 EOF
   printf '#!/bin/sh\necho "go PATH=$PATH" >> "$CALLS"\n' > "$S/go"
   for b in pnpm npm; do printf '#!/bin/sh\nexit 0\n' > "$S/$b"; done
@@ -173,6 +175,22 @@ mkdir -p "$HOME/.gentle-shell/agent"; printf '{"packages":["npm:gentle-pi","npm:
 OUT=$("$GS" sync 2>&1)
 check "workshop sync: isolated home packages the official Shell requires raise no warning" \
   '[[ "$OUT" != *"WARN:"*"settings.json"* ]]'
+# S8: workshop gentle-ai sync is Claude Code only, then the isolated home is provisioned.
+AI="$HOME/.local/share/gentle-ai/main/gentle-ai"
+printf '#!/bin/sh\n[ "$1" = --version ] && { echo "gentle-ai 1.0.0"; exit 0; }\necho "gentle-ai $*" >> "$CALLS"\n' > "$AI"; chmod +x "$AI"
+SHELL_CLONE="$HOME/dev/gentle/gentle-shell"
+: > "$CALLS"; OUT=$(env -u GS_SKIP_AI_SYNC "$GS" sync 2>&1); rc=$?
+check "workshop sync: gentle-ai sync targets claude-code only, then gentle-shell setup on the isolated home" \
+  '[ $rc -eq 0 ] && [ "$(grep -E "^gentle-ai sync|--isolated setup" "$CALLS")" = "$(printf "gentle-ai sync --agents claude-code\nlaunch %s --isolated setup" "$SHELL_CLONE")" ] && [[ "$OUT" == *"gentle-shell setup (isolated home)"*ok* ]]'
+: > "$CALLS"; OUT=$(env -u GS_SKIP_AI_SYNC GS_SYNC_AGENTS=x "$GS" sync 2>&1)
+check "workshop sync: GS_SYNC_AGENTS overrides the claude-code default" \
+  'grep -qx "gentle-ai sync --agents x" "$CALLS"'
+: > "$CALLS"; OUT=$(GS_SKIP_AI_SYNC=1 "$GS" sync 2>&1)
+check "workshop sync: GS_SKIP_AI_SYNC=1 skips gentle-ai sync and gentle-shell setup" \
+  '! grep -qE "^gentle-ai sync|--isolated setup" "$CALLS" && [[ "$OUT" == *"gentle-ai sync"*"skipped (GS_SKIP_AI_SYNC=1)"* ]] && [[ "$OUT" == *"gentle-shell setup (isolated home)"*"skipped (GS_SKIP_AI_SYNC=1)"* ]]'
+OUT=$(env -u GS_SKIP_AI_SYNC SETUP_RC=1 "$GS" sync 2>&1); rc=$?
+check "workshop sync: failed gentle-shell setup is INCOMPLETE, exit 1" \
+  '[ $rc -eq 1 ] && [[ "$OUT" == *"INCOMPLETE"*"gentle-shell setup (isolated home)"* ]]'
 rm "$HOME/.gentle-shell/agent/settings.json"
 echo tracked >> "$HOME/dev/gentle/gentle-shell/VERSION"; git -C "$HOME/dev/gentle/gentle-shell" add VERSION
 OUT=$("$GS" sync 2>&1); rc=$?
@@ -189,6 +207,12 @@ check "consumer sync: still runs pi update and pi update --extensions" \
   'grep -qx "pi update" "$CALLS" && grep -qx "pi update --extensions" "$CALLS"'
 check "sync: warns about the unused legacy checkout without deleting it" \
   '[[ "$OUT" == *"stale legacy checkout"* ]] && [ -d "$HOME/.pi/agent/git/github.com/Gentleman-Programming/gentle-pi" ]'
+
+setup consumer; remote_main HEAD
+printf '#!/bin/sh\n[ "$1" = --version ] && { echo "gentle-ai 1.0.0"; exit 0; }\necho "gentle-ai $*" >> "$CALLS"\n' > "$HOME/ai"
+OUT=$(env -u GS_SKIP_AI_SYNC "$GS" sync 2>&1)
+check "consumer sync: still runs bare gentle-ai sync (no --agents) and no gentle-shell setup" \
+  'grep -qx "gentle-ai sync" "$CALLS" && ! grep -q -- "--isolated setup" "$CALLS" && [[ "$OUT" != *"gentle-shell setup"* ]]'
 
 setup consumer; remote_main HEAD; main=$(sha_of)
 echo "4.5.2-main.${main:0:12}" > "$NPM/VERSION"
