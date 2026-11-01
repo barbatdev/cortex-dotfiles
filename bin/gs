@@ -20,6 +20,10 @@ gs - gentle-shell on main, plus one disposable worktree per PR
                            Consumer: always the main build from gs sync.
                            Workshop: inside a gentle-shell clone or worktree, Pi
                            loads that path (gs run); elsewhere the synced clone.
+                           Pi subcommands pass through to the isolated home:
+                           gs install npm:<pkg> (e.g. npm:pi-claude-bridge),
+                           gs list. Run them outside a
+                           gentle-shell checkout, or they go through gs run.
 
   gs pr [repo] <n>         One step to review PR <n>: worktree (reused and
                            updated if it exists), then Pi on it for shell PRs
