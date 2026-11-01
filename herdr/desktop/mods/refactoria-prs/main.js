@@ -4,7 +4,19 @@
 
 import { View, div } from "gpui-kit";
 import { v_flex, h_flex } from "gpui-base";
-import { spaces, panes, exec, theme } from "herdr";
+import { spaces, panes, exec, theme, layout } from "herdr";
+
+function find(node, id) {
+  if (node?.id === id) return node;
+  for (const child of node?.children ?? []) {
+    const found = find(child, id);
+    if (found) return found;
+  }
+  return null;
+}
+
+// Same rail test as refactoria-chrome: the collapsed sidebar is under 160px.
+const narrow = () => (find(layout(), "sidebar")?.size?.px ?? Infinity) < 160;
 
 // GitHub's rate limit is generous, but every space switch and this fallback ask again.
 const EVERY = 60000;
@@ -99,9 +111,12 @@ export default class PullRequests extends View {
     else body = [];
     if (this.error) body.push(note(this.error));
     return v_flex().size_full().min_h(0).bg(t.chrome).text_size(13)
-      .child(h_flex().h(31).pl(16).pr(10).items_center().justify_between().text_size(12).text_color(t.dim)
-        .child("Pull requests")
-        .when(Boolean(this.repo), (el) => el.child(div().truncate().child(this.repo))))
+      .child(narrow()
+        // On the rail the full title and repo get cut off: a short label only.
+        ? h_flex().h(31).items_center().justify_center().text_size(12).text_color(t.dim).child("PRs")
+        : h_flex().h(31).pl(16).pr(10).items_center().justify_between().text_size(12).text_color(t.dim)
+          .child("Pull requests")
+          .when(Boolean(this.repo), (el) => el.child(div().truncate().child(this.repo))))
       .child(v_flex().flex_1().min_h(0).px(8).pb(14).overflow_y_scrollbar().mode("always").children(body));
   }
 }
