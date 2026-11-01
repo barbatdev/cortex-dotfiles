@@ -1,5 +1,6 @@
 // Clone of the shipped workspace-chrome mod: same header and footer, with the
-// Refactoria beard and wordmark in place of the Herdr logo and name.
+// Refactoria beard and wordmark in place of the Herdr logo and name. On the
+// macOS rail the header grows so the beard alone fits under the traffic lights.
 import { View, div, image, svg } from "gpui-kit";
 import { h_flex, v_flex } from "gpui-base";
 import { theme, run, props, window, shared, setShared, updates, layout } from "herdr";
@@ -25,6 +26,21 @@ function toggleSidebar() {
   run("layout.resize", { id: "sidebar", px: narrow() ? (shared("sidebar.width") ?? 268) : window()?.platform === "macos" ? 76 : 44 });
 }
 
+// Header height: the shipped 46px, taller on the macOS rail to hold the beard.
+const BRAND_PX = 46;
+const BRAND_RAIL_PX = 84;
+
+// Keep the brand block's height in step with the rail, whichever way it narrowed
+// (the toggle button or dragging the edge). Asks once per change.
+let pendingBrandPx = null;
+function syncBrandHeight(want) {
+  const current = find(layout(), "brand")?.size?.px;
+  if (current === undefined || current === want) { pendingBrandPx = null; return; }
+  if (pendingBrandPx === want) return;
+  pendingBrandPx = want;
+  run("layout.resize", { id: "brand", px: want });
+}
+
 export default class RefactoriaChrome extends View {
   button(id, label, action) {
     const t = theme();
@@ -43,6 +59,13 @@ export default class RefactoriaChrome extends View {
         .child(row("settings", "settings", "Settings", false, () => run("app.settings"))
           .when(Boolean(updates().app.ready), el => el.child(div().size(6).rounded_full().bg(t.accent))))
         .child(row("machine", "plus", "Add machine", true, () => run("mod.open", { name: "machine-add" })));
+    }
+    const macRail = collapsed && window()?.platform === "macos";
+    syncBrandHeight(macRail ? BRAND_RAIL_PX : BRAND_PX);
+    if (macRail) {
+      // The traffic lights fill the top row; the beard sits under them.
+      return v_flex().size_full().bg(t.chrome).items_center().justify_end().pb(10)
+        .child(image("mods/refactoria-chrome/logo.png").size(28).rounded(6));
     }
     return h_flex().size_full().bg(t.chrome).pl(collapsed ? 6 : 14).pr(10).gap(4).items_center().text_size(13.5)
       .when(window()?.platform === "macos" && !collapsed, el => el.pl(76))
