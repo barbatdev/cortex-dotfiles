@@ -80,6 +80,22 @@ Run these on each machine. A machine counts as aligned only after step 3 passes 
    (confirm first that `~/.pi/agent/settings.json` does not list `git:github.com/Gentleman-Programming/gentle-pi`).
 5. Open `gs`, then the models screen: profiles appear as tabs.
 
+## Startup auto-setup is off
+
+`zsh/cortex-dotfiles.zsh` exports `GENTLE_SHELL_NO_AUTO_SETUP=1` by default.
+On startup, gentle-shell would otherwise reprovision companions, and the gentle-ai
+bundled with it (v4.3.1) replaces the active `engram` with v1.
+
+- Tradeoff: companions are no longer provisioned automatically.
+- Opt back in for one invocation with `GENTLE_SHELL_NO_AUTO_SETUP=0 gs`, or export
+  the override from `local/env.zsh`.
+- Explicit setup and installer lifecycle steps are not covered by this startup
+  guard and may still install Engram v1 until the upstream fix ships. Check
+  `engram version` afterwards. Existing terminals need `export GENTLE_SHELL_NO_AUTO_SETUP=1`
+  or a profile reload; new shells inherit the default.
+
+Check: `scripts/test-engram-auto-setup.sh`.
+
 ## Tests
 
 `tests/gs_test.sh` runs offline in a throwaway HOME with stub binaries and covers
