@@ -218,6 +218,20 @@ SHELL_CLONE="$HOME/dev/gentle/gentle-shell"
 : > "$CALLS"; OUT=$(env -u GS_SKIP_AI_SYNC "$GS" sync 2>&1); rc=$?
 check "workshop sync: gentle-ai sync targets claude-code only, then gentle-shell setup on the isolated home" \
   '[ $rc -eq 0 ] && [ "$(grep -E "^gentle-ai sync|--isolated setup" "$CALLS")" = "$(printf "gentle-ai sync --agents claude-code\nlaunch %s --isolated setup" "$SHELL_CLONE")" ] && [[ "$OUT" == *"gentle-shell setup (isolated home)"*ok* ]]'
+# gentle-ai and gentle-shell setup must use the Engram gs just built, even when the
+# calling shell never exported GENTLE_AI_ENGRAM_BIN (else beta installs the pre-v3 path).
+printf '#!/bin/sh\n[ "$1" = --version ] && { echo "gentle-ai 1.0.0"; exit 0; }\necho "gentle-ai engram=${GENTLE_AI_ENGRAM_BIN:-unset}" >> "$CALLS"\n' > "$AI"
+cp "$S/node" "$T/node.real"
+printf '#!/bin/sh\necho "setup engram=${GENTLE_AI_ENGRAM_BIN:-unset}" >> "$CALLS"\nexec %s "$@"\n' "$T/node.real" > "$S/node"
+: > "$CALLS"; OUT=$(env -u GS_SKIP_AI_SYNC -u GENTLE_AI_ENGRAM_BIN "$GS" sync 2>&1)
+EB="$HOME/.local/share/gentle-ai/main/engram"
+check "workshop sync: gentle-ai sync and gentle-shell setup get GENTLE_AI_ENGRAM_BIN on the built engram" \
+  'grep -qx "gentle-ai engram=$EB" "$CALLS" && grep -qx "setup engram=$EB" "$CALLS"'
+: > "$CALLS"; OUT=$(env -u GS_SKIP_AI_SYNC GENTLE_AI_ENGRAM_BIN=/opt/e "$GS" sync 2>&1)
+check "workshop sync: an explicit GENTLE_AI_ENGRAM_BIN wins" \
+  'grep -qx "gentle-ai engram=/opt/e" "$CALLS" && grep -qx "setup engram=/opt/e" "$CALLS"'
+cp "$T/node.real" "$S/node"
+printf '#!/bin/sh\n[ "$1" = --version ] && { echo "gentle-ai 1.0.0"; exit 0; }\necho "gentle-ai $*" >> "$CALLS"\n' > "$AI"
 : > "$CALLS"; OUT=$(env -u GS_SKIP_AI_SYNC GS_SYNC_AGENTS=x "$GS" sync 2>&1)
 check "workshop sync: GS_SYNC_AGENTS overrides the claude-code default" \
   'grep -qx "gentle-ai sync --agents x" "$CALLS"'

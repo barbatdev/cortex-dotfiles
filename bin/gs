@@ -472,6 +472,10 @@ cmd_sync() {
   fi
   ln -sfn "$ai_bin" "$HOME/.local/bin/gentle-ai"
   ln -sfn "$bin/engram" "$HOME/.local/bin/engram"
+  # gentle-ai sync and gentle-shell setup must use the Engram built above: without
+  # it, gentle-ai's beta channel runs its own go install of the pre-v3 module path,
+  # which fails. Set here so the sync never depends on the calling shell's env.
+  export GENTLE_AI_ENGRAM_BIN="${GENTLE_AI_ENGRAM_BIN:-$bin/engram}"
 
   # New binaries are not enough: gentle-ai sync materializes the managed configs
   # (agents, skills, plugins, engram instructions) every runtime reads.
