@@ -100,10 +100,15 @@ Check: `scripts/test-engram-auto-setup.sh`.
 
 On the beta channel, `gentle-ai sync` and installs run
 `go install github.com/Gentleman-Programming/engram/cmd/engram@main`. That is the
-pre-v3 module path, so it installs Engram v1 over the v3 binary.
-`zsh/cortex-dotfiles.zsh` exports `GENTLE_AI_ENGRAM_BIN=$HOME/.local/bin/engram`,
-which makes gentle-ai use that binary instead of installing one. `gs sync`
-installs v3 at that path.
+pre-v3 module path: it fails (`missing .../cmd/engram/go.mod`) or installs
+Engram v1 over the v3 binary. `GENTLE_AI_ENGRAM_BIN` makes gentle-ai use a given
+binary instead of installing one.
+
+`gs sync` sets `GENTLE_AI_ENGRAM_BIN` to the Engram it just built before it runs
+`gentle-ai sync` and `gentle-shell --isolated setup`, so the sync does not depend
+on the calling shell (a shell opened before a dotfiles update, or a host that
+does not load them). A value already set in the environment wins.
+`zsh/cortex-dotfiles.zsh` also exports it for `gentle-ai` runs outside `gs sync`.
 
 Check: `engram version` reports 3.x after `gs sync` and after starting Pi.
 
