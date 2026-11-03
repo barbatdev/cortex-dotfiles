@@ -96,6 +96,17 @@ bundled with it (v4.3.1) replaces the active `engram` with v1.
 
 Check: `scripts/test-engram-auto-setup.sh`.
 
+## gentle-ai uses our Engram binary
+
+On the beta channel, `gentle-ai sync` and installs run
+`go install github.com/Gentleman-Programming/engram/cmd/engram@main`. That is the
+pre-v3 module path, so it installs Engram v1 over the v3 binary.
+`zsh/cortex-dotfiles.zsh` exports `GENTLE_AI_ENGRAM_BIN=$HOME/.local/bin/engram`,
+which makes gentle-ai use that binary instead of installing one. `gs sync`
+installs v3 at that path.
+
+Check: `engram version` reports 3.x after `gs sync` and after starting Pi.
+
 ## Tests
 
 `tests/gs_test.sh` runs offline in a throwaway HOME with stub binaries and covers
