@@ -298,6 +298,10 @@ export GENTLE_AI_CHANNEL="${GENTLE_AI_CHANNEL:-beta}"
 # Stop gentle-shell startup auto-setup: it reprovisions companions and its
 # bundled gentle-ai replaces Engram with v1. Set to 0 to opt back in.
 export GENTLE_SHELL_NO_AUTO_SETUP="${GENTLE_SHELL_NO_AUTO_SETUP:-1}"
+# On the beta channel gentle-ai installs Engram with `go install .../engram/cmd/engram@main`,
+# the pre-v3 module path, which yields Engram v1. Pointing it at our own binary
+# makes gentle-ai use that one instead of installing; gs sync keeps it on v3.
+export GENTLE_AI_ENGRAM_BIN="${GENTLE_AI_ENGRAM_BIN:-$HOME/.local/bin/engram}"
 #endregion
 
 #region Herdr Clipboard
