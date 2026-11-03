@@ -33,6 +33,13 @@ for _cortex_bin in "${_cortex_tool_bins[@]}"; do
     [[ -d "$_cortex_bin" ]] && _cortex_dotfiles_path_prepend "$_cortex_bin"
 done
 unset _cortex_tool_bins _cortex_bin
+
+# pnpm needs PNPM_HOME (or global-bin-dir) for global installs; without it
+# `pnpm add -g` fails with ERR_PNPM_NO_GLOBAL_BIN_DIR.
+if [[ -z "$PNPM_HOME" && -d "$HOME/.local/share/pnpm" ]]; then
+    export PNPM_HOME="$HOME/.local/share/pnpm"
+fi
+[[ -n "$PNPM_HOME" && -d "$PNPM_HOME" ]] && _cortex_dotfiles_path_prepend "$PNPM_HOME"
 #endregion
 
 #region Zsh Options
