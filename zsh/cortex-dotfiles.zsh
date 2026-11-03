@@ -33,6 +33,13 @@ for _cortex_bin in "${_cortex_tool_bins[@]}"; do
     [[ -d "$_cortex_bin" ]] && _cortex_dotfiles_path_prepend "$_cortex_bin"
 done
 unset _cortex_tool_bins _cortex_bin
+
+# pnpm needs PNPM_HOME (or global-bin-dir) for global installs; without it
+# `pnpm add -g` fails with ERR_PNPM_NO_GLOBAL_BIN_DIR.
+if [[ -z "$PNPM_HOME" && -d "$HOME/.local/share/pnpm" ]]; then
+    export PNPM_HOME="$HOME/.local/share/pnpm"
+fi
+[[ -n "$PNPM_HOME" && -d "$PNPM_HOME" ]] && _cortex_dotfiles_path_prepend "$PNPM_HOME"
 #endregion
 
 #region Zsh Options
@@ -288,6 +295,9 @@ export CORTEX_ROOT="${CORTEX_ROOT:-$BARBATDEV_DIR/cortex/cortex}"
 export CORTEX_MULTIPLEXER="${CORTEX_MULTIPLEXER:-herdr}"
 # gs sync installs the Gentle stack from main: every host follows the beta channel.
 export GENTLE_AI_CHANNEL="${GENTLE_AI_CHANNEL:-beta}"
+# Stop gentle-shell startup auto-setup: it reprovisions companions and its
+# bundled gentle-ai replaces Engram with v1. Set to 0 to opt back in.
+export GENTLE_SHELL_NO_AUTO_SETUP="${GENTLE_SHELL_NO_AUTO_SETUP:-1}"
 #endregion
 
 #region Herdr Clipboard
