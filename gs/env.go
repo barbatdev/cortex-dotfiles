@@ -49,10 +49,10 @@ func newEnv() *Env {
 	return &Env{Home: home, Stdout: os.Stdout, Stderr: os.Stderr}
 }
 
-func (e *Env) BinDir() string    { return filepath.Join(e.Home, ".local", "bin") }
-func (e *Env) StateDir() string  { return filepath.Join(e.Home, ".local", "share", "gs") }
-func (e *Env) Clones() string    { return filepath.Join(e.Home, "dev", "gentle") }
-func (e *Env) Trees() string     { return filepath.Join(e.Home, "dev", "worktrees") }
+func (e *Env) BinDir() string     { return filepath.Join(e.Home, ".local", "bin") }
+func (e *Env) StateDir() string   { return filepath.Join(e.Home, ".local", "share", "gs") }
+func (e *Env) Clones() string     { return filepath.Join(e.Home, "dev", "gentle") }
+func (e *Env) Trees() string      { return filepath.Join(e.Home, "dev", "worktrees") }
 func (e *Env) Quarantine() string { return filepath.Join(e.StateDir(), "quarantine") }
 
 // DotfilesDir is the dotfiles clone gs sync pulls (CORTEX_DOTFILES_DIR overrides).
