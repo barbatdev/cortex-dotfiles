@@ -79,8 +79,7 @@ func cmdSync(e *Env) error {
 		sources = s.pullClones()
 	} else {
 		sources = s.resolveMain()
-		out, err := e.Output("", "gentle-shell", "upgrade", "--channel", "main")
-		s.step("gentle-shell upgrade (main)", err, out)
+		s.upgradeShell(before["gentle-shell"])
 	}
 
 	engramChanged := false
@@ -404,18 +403,48 @@ func (s *syncRun) syncAppRepos() {
 	}
 }
 
+// upgradeShell runs `gentle-shell upgrade --channel main` only when the shell
+// is behind GitHub main. The upgrade asks the GitHub API without a token (60
+// requests/hour per IP), so it must not run when there is nothing to do.
+func (s *syncRun) upgradeShell(version string) {
+	const label = "gentle-shell upgrade (main)"
+	built := mainBuildSHA(version)
+	if remote := s.shellMain(); built != "" && remote != "" && strings.HasPrefix(remote, built) {
+		s.skip(label, "already at main "+built)
+		return
+	}
+	out, err := s.e.Output("", "gentle-shell", "upgrade", "--channel", "main")
+	if err != nil && strings.Contains(out, "HTTP 403") {
+		out += "\n(gentle-shell queries GitHub without a token: unauthenticated rate limit; gs sync again later)"
+	}
+	s.step(label, err, out)
+}
+
+func (s *syncRun) shellMain() string {
+	sha, err := s.e.StdoutOf("", "gh", "api", "repos/"+Org+"/gentle-pi/commits/main", "--jq", ".sha")
+	if err != nil {
+		return ""
+	}
+	return sha
+}
+
+// mainBuildSHA extracts <sha> from a main-channel version x.y.z-main.<sha>.
+func mainBuildSHA(version string) string {
+	if i := strings.LastIndex(version, "-main."); i >= 0 {
+		return version[i+len("-main."):]
+	}
+	return ""
+}
+
 // checkShellFresh compares the main-channel build SHA with GitHub main (gh).
 func (s *syncRun) checkShellFresh(version string) {
-	built := ""
-	if i := strings.LastIndex(version, "-main."); i >= 0 {
-		built = version[i+len("-main."):]
-	}
+	built := mainBuildSHA(version)
 	if built == "" {
 		s.failed = append(s.failed, fmt.Sprintf("gentle-shell %q is not a main-channel build", version))
 		return
 	}
-	remote, err := s.e.StdoutOf("", "gh", "api", "repos/"+Org+"/gentle-pi/commits/main", "--jq", ".sha")
-	if err != nil || remote == "" {
+	remote := s.shellMain()
+	if remote == "" {
 		fmt.Fprintln(s.e.Stdout, "WARN: could not read gentle-pi main through gh; freshness unverified")
 		return
 	}

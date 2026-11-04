@@ -37,10 +37,14 @@ case "$2" in
   *gentle-ai*) printf '#!/bin/sh\ncase "$1" in --version|version) echo "gentle-ai 4.4.0";; *) echo "gentle-ai $* engram=$GENTLE_AI_ENGRAM_BIN GOBIN=$GOBIN" >> "$CALLS";; esac\n' > "$GOBIN/gentle-ai" ;;
 esac
 chmod +x "$GOBIN"/*`)
+	// gentle-shell reports the version in $HOME/shellver; upgrade moves it to main.
+	ver := filepath.Join(s.home, "shellver")
+	os.WriteFile(ver, []byte("4.5.1-main.111111111111\n"), 0o644)
 	s.stub("gentle-shell", `case "$1" in
-  --version) echo "gentle-shell 4.5.1-main.abcdef123456" ;;
+  --version) echo "gentle-shell $(cat "$HOME/shellver")" ;;
   upgrade) echo "upgrade GOBIN=$GOBIN token=${GH_TOKEN:-}" >> "$CALLS"
     [ -n "${UPGRADE_STRAY:-}" ] && { mkdir -p "$GOBIN"; echo v1 > "$GOBIN/engram"; }
+    [ "${UPGRADE_RC:-0}" = 0 ] && echo "4.5.1-main.abcdef123456" > "$HOME/shellver"
     exit "${UPGRADE_RC:-0}" ;;
 esac`)
 	return s
@@ -176,4 +180,14 @@ func TestSyncSecondRunChangesNothing(t *testing.T) {
 		t.Fatalf("second sync failed: %v\n%s", err, s.out.String())
 	}
 	contains(t, s.out.String(), "nothing changed")
+}
+
+func TestSyncSkipsShellUpgradeWhenAlreadyOnMain(t *testing.T) {
+	s := consumerHost(t)
+	os.WriteFile(filepath.Join(s.home, "shellver"), []byte("4.5.1-main.abcdef123456\n"), 0o644)
+	if err := runSync(s); err != nil {
+		t.Fatalf("sync failed: %v\n%s", err, s.out.String())
+	}
+	notContains(t, s.readCalls(), "upgrade")
+	contains(t, s.out.String(), "skipped (already at main abcdef123456)")
 }
