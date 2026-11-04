@@ -154,6 +154,7 @@ dotfiles/
 ├── claude/                   # Claude Code statusline y themes
 ├── docs/                     # Referencias operativas y keymaps
 ├── ghostty/                  # Config, perfiles visuales, muxy legado y shaders
+├── gs/                       # gs: binario Go (sync, doctor, worktrees) → ~/.local/bin/gs
 ├── herdr/                    # Config base y perfiles visuales
 ├── pi/                       # Themes de Pi
 ├── fonts/                    # Fuente RefactorIA y script de regeneración

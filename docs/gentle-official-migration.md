@@ -1,5 +1,7 @@
 # Migración a Gentle oficial: retiro del stack legacy
 
+> Nota (2026-11-04): `bin/gs` y `bin/gs-official` fueron reemplazados por un único binario Go, `gs/` ([gs.md](gs.md)). Las menciones de abajo son historia.
+
 Runbook para retirar el stack Gentle legacy (launchers, wrappers, declaraciones de Pi, agentes y Orca) de un equipo **sin perder memoria, conversaciones ni credenciales**, y dejarlo listo para una instalación oficial posterior. Documenta lo que se hizo en `agent-dev`, el estado real y el plan para los demás equipos.
 
 > **Estado honesto (2026-10-31):** el usuario confirmó que el instalador oficial terminó los 11 pasos en `agent-dev`: instaló Pi/Shell, verificó paquetes/comandos/Gentle AI, compiló Gentle AI desde `main`, instaló Shell desde `main`, guardó el canal y ejecutó setup. **El canal requerido es siempre `main`, no release.** El usuario mostró un arranque de Shell con extensiones cargadas y aviso de falta de modelos; decidió autenticarse otra vez. También confirmó setup de Claude Code completado (1 agente, 8 componentes), con aviso de integración Pi CodeGraph pendiente. Claude Code ya reportó instrucciones cargadas, detección de proyecto Engram y consulta real CodeGraph; la lectura de memorias anteriores y registro de sesión no se probaron. El usuario confirmó login y modelos disponibles en Shell. Los perfiles de macOS fueron restaurados y verificados por hash en el home aislado; el usuario confirmó que cargaron perfectamente en la interfaz. RefactorIA fue copiado al home aislado y verificado por hash; selección y comprobación visual pendientes. Quedan residuos preservados a propósito (ver [Residuos](#residuos-preservados)); no se afirma que el equipo esté "en cero".
@@ -22,7 +24,7 @@ go version -m ~/.local/bin/engram | grep 'engram/v3'
 - **No usar `@latest`**: en Go resuelve al último tag de release, no a `main`.
 - `go version -m` muestra una pseudo-versión como `v3.6.1-0.20261030201044-7cf4ed29b6f9`. No es un pin: los últimos 12 caracteres son el commit de `main` que se compiló. Compararlo con `git ls-remote https://github.com/Gentleman-Programming/engram.git refs/heads/main`.
 - Reemplazar el binario no reinicia el servidor que ya está corriendo; el operador decide cuándo reiniciarlo.
-- `gs sync` ([`bin/gs-official`](../bin/gs-official)) ya incluye este paso: instala Engram desde `main` en `~/.local/bin` y recuerda reiniciar el servicio.
+- `gs sync` ([`gs/`](../gs), ver [gs.md](gs.md)) ya incluye este paso: instala Engram desde `main` en `~/.local/bin` y recuerda reiniciar el servicio.
 
 Estado observado en la Mac (2026-10-31): `~/.local/bin/engram` es el único Engram en el `PATH`, el LaunchAgent `com.gentleman-programming.engram` ejecuta ese binario y su commit `7cf4ed29b6f9` coincidía con la punta de `main`. Homebrew no tenía Engram instalado. El LaunchAgent de cloud-sync ejecuta `python3`, no un binario de Engram.
 

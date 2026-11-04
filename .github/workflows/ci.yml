@@ -69,11 +69,13 @@ jobs:
       - name: Check installer symlink safety
         run: ./scripts/check-install-symlinks.sh
 
-      - name: Check gs sync runs gentle-ai sync
-        run: bash scripts/test-gs-sync.sh
-
-      - name: Check gs launches what gs sync updates
-        run: bash tests/gs_test.sh
+      - name: Check gs (Go)
+        working-directory: gs
+        run: |
+          go version
+          test -z "$(gofmt -l .)" || { gofmt -l .; exit 1; }
+          go vet ./...
+          go test ./...
 
       - name: Check Pi model profiles sync
         run: python3 tests/sync_pi_model_profiles_test.py
