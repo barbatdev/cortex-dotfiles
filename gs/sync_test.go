@@ -191,3 +191,40 @@ func TestSyncSkipsShellUpgradeWhenAlreadyOnMain(t *testing.T) {
 	notContains(t, s.readCalls(), "upgrade")
 	contains(t, s.out.String(), "skipped (already at main abcdef123456)")
 }
+
+// dotfilesClone is a clean dotfiles clone on main with a bare origin.
+func dotfilesClone(t *testing.T, s *sandbox) string {
+	dir := filepath.Join(s.home, "dotfiles")
+	os.MkdirAll(filepath.Join(dir, "gs"), 0o755)
+	git(t, dir, "init", "-q", "-b", "main")
+	os.WriteFile(filepath.Join(dir, "gs", "main.go"), []byte("package main\n"), 0o644)
+	git(t, dir, "add", ".")
+	git(t, dir, "commit", "-q", "-m", "init")
+	bare := filepath.Join(s.home, "dotfiles.git")
+	git(t, dir, "clone", "-q", "--bare", dir, bare)
+	git(t, dir, "remote", "add", "origin", bare)
+	git(t, dir, "fetch", "-q", "origin")
+	t.Setenv("CORTEX_DOTFILES_DIR", dir)
+	t.Setenv("GS_SKIP_DOTFILES", "")
+	return dir
+}
+
+func TestSyncRebuildsItselfFromTheDotfilesCloneOnMain(t *testing.T) {
+	s := consumerHost(t)
+	dir := dotfilesClone(t, s)
+	prev := strings.TrimPrefix(fileBody(t, filepath.Join(s.stubs, "go")), "#!/bin/sh\n")
+	s.stub("go", `if [ "$1" = build ]; then echo "go $*" >> "$CALLS"; printf '#!/bin/sh\necho gs-built\n' > "$5"; chmod +x "$5"; exit 0; fi
+`+prev)
+	if err := runSync(s); err != nil {
+		t.Fatalf("sync failed: %v\n%s", err, s.out.String())
+	}
+	contains(t, s.readCalls(), "go build -trimpath -buildvcs=false -o")
+	contains(t, fileBody(t, s.env.Target("gs")), "gs-built")
+	// A feature branch is never installed as gs.
+	os.Remove(s.env.Target("gs"))
+	git(t, dir, "checkout", "-q", "-b", "feat/x")
+	runSync(s)
+	if exists(s.env.Target("gs")) {
+		t.Fatal("gs must not be rebuilt from a branch other than main")
+	}
+}

@@ -93,7 +93,7 @@ if [ -f "$BACKUP/refactoria.json" ]; then
 else
   blocker "missing $BACKUP/refactoria.json"
 fi
-for f in bin/gs-official zsh/scripts/official-gentle-path.zsh; do
+for f in gs/main.go zsh/scripts/official-gentle-path.zsh; do
   [ -f "$DOT/$f" ] || blocker "missing $DOT/$f"
 done
 for link in "$LBIN/gs" "$SHELL_SNIPPET_DIR/official-gentle-path.zsh"; do
@@ -249,14 +249,14 @@ run "$LBIN/gentle-ai" install --agent claude-code
 #endregion
 
 #region 8. Dotfiles links
-step "8. Link gs-official and official-gentle-path.zsh"
+step "8. Build gs and link official-gentle-path.zsh"
 for link in "$LBIN/gs" "$SHELL_SNIPPET_DIR/official-gentle-path.zsh"; do
   if [ "$APPLY" -eq 1 ] && { [ -e "$link" ] || [ -L "$link" ]; }; then
     fail "$link already exists; refusing"
   fi
 done
 run mkdir -p "$SHELL_SNIPPET_DIR"
-run ln -s "$DOT/bin/gs-official" "$LBIN/gs"
+run sh -c "cd '$DOT/gs' && go build -trimpath -buildvcs=false -o '$LBIN/gs' ."
 run ln -s "$DOT/zsh/scripts/official-gentle-path.zsh" "$SHELL_SNIPPET_DIR/official-gentle-path.zsh"
 #endregion
 

@@ -601,6 +601,13 @@ else
 fi
 run_or_plan "chmod +x $DOTFILES/claude/statusline.sh" chmod +x "$DOTFILES/claude/statusline.sh"
 run_or_plan "chmod +x agent-state CLI" chmod +x "$DOTFILES/zsh/scripts/agent-state.sh"
+# gs is a Go binary built from this clone; gs sync rebuilds it from main later.
+if command -v go &>/dev/null; then
+    run_or_plan "build gs into ~/.local/bin/gs" sh -c \
+        "mkdir -p '$HOME/.local/bin' && cd '$DOTFILES/gs' && go build -trimpath -buildvcs=false -o '$HOME/.local/bin/.gs.new' . && mv -f '$HOME/.local/bin/.gs.new' '$HOME/.local/bin/gs'"
+else
+    echo "  ! go unavailable; gs not built (install Go, then rerun ./install.sh)"
+fi
 if [[ "$PLATFORM" == "Darwin" ]]; then
     run_or_plan "chmod +x sketchybar scripts" chmod +x "$DOTFILES/sketchybar/sketchybarrc" "$DOTFILES/sketchybar/plugins"/*.sh
 

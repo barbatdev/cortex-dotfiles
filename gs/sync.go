@@ -100,7 +100,9 @@ func cmdSync(e *Env) error {
 	if engramChanged || len(staleEngramProcesses(e)) > 0 {
 		restartEngramService(s)
 	}
-	s.syncDotfiles()
+	if s.syncDotfiles() {
+		s.rebuildSelf()
+	}
 	if !ws {
 		s.syncAppRepos()
 	}
@@ -354,32 +356,61 @@ func restartEngramService(s *syncRun) {
 	s.step(label, err, out)
 }
 
-// syncDotfiles pulls the dotfiles clone when it is clean and on main.
-func (s *syncRun) syncDotfiles() {
+// syncDotfiles pulls the dotfiles clone when it is clean and on main, and
+// reports whether the clone is now current main (gs may rebuild from it).
+func (s *syncRun) syncDotfiles() bool {
 	const label = "dotfiles"
 	dir := s.e.DotfilesDir()
 	switch {
 	case os.Getenv("GS_SKIP_DOTFILES") == "1":
 		s.skip(label, "GS_SKIP_DOTFILES=1")
-		return
+		return false
 	case !isDir(filepath.Join(dir, ".git")):
 		s.skip(label, "no clone at "+dir)
-		return
+		return false
 	}
 	if st, _ := s.e.StdoutOf(dir, "git", "status", "--porcelain"); st != "" {
 		s.skip(label, dir+" has local changes")
-		return
+		return false
 	}
 	if br, _ := s.e.StdoutOf(dir, "git", "branch", "--show-current"); br != "main" {
 		s.skip(label, fmt.Sprintf("%s is on %q, not main", dir, br))
-		return
+		return false
 	}
 	old, _ := s.e.StdoutOf(dir, "git", "rev-parse", "--short", "HEAD")
 	out, err := s.e.Output(dir, "git", "pull", "-q", "--ff-only", "origin", "main")
-	if s.step(label, err, out) {
-		if cur, _ := s.e.StdoutOf(dir, "git", "rev-parse", "--short", "HEAD"); cur != old {
-			s.changed = append(s.changed, fmt.Sprintf("dotfiles (%s -> %s)", old, cur))
-		}
+	if !s.step(label, err, out) {
+		return false
+	}
+	if cur, _ := s.e.StdoutOf(dir, "git", "rev-parse", "--short", "HEAD"); cur != old {
+		s.changed = append(s.changed, fmt.Sprintf("dotfiles (%s -> %s)", old, cur))
+	}
+	return true
+}
+
+// rebuildSelf builds gs from the dotfiles clone (current main) and installs it
+// as ~/.local/bin/gs. -trimpath and -buildvcs=false make the bytes depend only
+// on the source and the toolchain, so an unchanged source changes nothing.
+func (s *syncRun) rebuildSelf() {
+	const label = "gs (self)"
+	stage, err := os.MkdirTemp(s.e.StateDir(), "build-")
+	if err != nil {
+		s.step(label, err, "")
+		return
+	}
+	defer os.RemoveAll(stage)
+	built := filepath.Join(stage, "gs")
+	out, err := s.e.Output(filepath.Join(s.e.DotfilesDir(), "gs"), "go", "build", "-trimpath", "-buildvcs=false", "-o", built, ".")
+	if !s.step(label, err, out) {
+		return
+	}
+	changed, err := installAtomic(built, s.e.Target("gs"))
+	if err != nil {
+		s.step("gs (self) install", err, "")
+		return
+	}
+	if changed {
+		s.changed = append(s.changed, "gs (rebuilt)")
 	}
 }
 
