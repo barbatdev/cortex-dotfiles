@@ -393,6 +393,11 @@ cmd_sync() {
   # Stale GOROOT/GOBIN from a removed version manager breaks every go build.
   if [ -n "${GOROOT:-}" ] && [ ! -d "$GOROOT" ]; then unset GOROOT; fi
   if [ -n "${GOBIN:-}" ] && [ ! -d "$(dirname "$GOBIN")" ]; then unset GOBIN; fi
+  # gentle-ai's beta upgrade (run by gentle-shell upgrade) does its own `go install`
+  # of the pre-v3 Engram module path. With a go env GOBIN of ~/.local/bin that build
+  # overwrites the engram symlink with Engram v1, so every child of the sync installs
+  # into ~/go/bin instead; gs's own builds name their GOBIN explicitly.
+  export GOBIN="$HOME/go/bin"
   mkdir -p "$bin" "$HOME/.local/bin" "$(dirname "$reg")"
   if is_workshop; then
     # Workshop runs the Pi bundled in the clone (node_modules): no legacy
@@ -459,6 +464,9 @@ cmd_sync() {
     fi
     ln -sfn "$bin/$name" "$HOME/.local/bin/$name"
   done
+  # The integrations need `engram instance-id` (Engram >= v2.0.0-rc.11); a pre-v3
+  # build on PATH blocks every memory read, so the sync must not report success.
+  "$HOME/.local/bin/engram" instance-id >/dev/null 2>&1 || sync_failed 'engram lacks instance-id (pre-v3)'
   local ai_bin
   if is_workshop; then
     local tmp; tmp=$(mktemp "$(dirname "$reg")/.dev-binary.XXXXXX")
