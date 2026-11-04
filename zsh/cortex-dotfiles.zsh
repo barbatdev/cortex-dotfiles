@@ -15,8 +15,12 @@ fi
 #endregion
 
 #region PATH
+# Moves $1 to the front of PATH (adds it when missing). An entry inherited at the
+# end of PATH (sshd, /etc/profile) must still win: on agent-gentle a late
+# ~/.local/bin let /usr/bin/gs (Ghostscript) shadow gs.
 _cortex_dotfiles_path_prepend() {
-    [[ ":$PATH:" == *":$1:"* ]] || export PATH="$1:$PATH"
+    path=("$1" ${path:#$1})
+    export PATH
 }
 
 # ~/.local/bin always, even before it exists (installers create it later).
