@@ -41,6 +41,9 @@ EOF
   printf '#!/bin/sh\n[ "$1" = --version ] && echo "gentle-ai 1.0.0"\nexit 0\n' > "$HOME/ai"
   chmod +x "$HOME/ai"
   printf '{"path":"%s"}\n' "$HOME/ai" > "$HOME/.pi/gentle-ai/dev-binary.json"
+  # Engram built by gs sync; ENGRAM_PRE_V3=1 makes it a pre-v3 build without instance-id.
+  printf '#!/bin/sh\ncase "$1" in\n  version) echo "engram 3.6.1" ;;\n  instance-id) [ "${ENGRAM_PRE_V3:-}" = 1 ] && exit 1; echo abc ;;\nesac\nexit 0\n' > "$HOME/.local/share/gentle-ai/main/engram"
+  chmod +x "$HOME/.local/share/gentle-ai/main/engram"
   if [ "$1" = consumer ]; then
     NPM="$HOME/.local/lib/node_modules/gentle-pi"
     make_pkg "$NPM" 4.5.1-main.feee99d88dae
@@ -50,7 +53,7 @@ EOF
 #!/bin/sh
 case "\$1" in
   --version) printf 'gentle-shell %s\n' "\$(cat "$NPM/VERSION")" ;;
-  upgrade) [ -n "\${UPGRADE_TO:-}" ] && echo "\$UPGRADE_TO" > "$NPM/VERSION"; exit "\${UPGRADE_RC:-0}" ;;
+  upgrade) echo "upgrade GOBIN=\${GOBIN:-unset}" >> "$CALLS"; [ -n "\${UPGRADE_TO:-}" ] && echo "\$UPGRADE_TO" > "$NPM/VERSION"; exit "\${UPGRADE_RC:-0}" ;;
 esac
 EOF
     chmod +x "$S/gentle-shell-impl"
@@ -284,6 +287,19 @@ setup consumer; rm -rf "$GS_SHELL_REMOTE"; export GS_SHELL_REMOTE="$T/missing"
 OUT=$("$GS" sync 2>&1); rc=$?
 check "sync: unreachable GitHub only warns that freshness is unverified" \
   '[ $rc -eq 0 ] && [[ "$OUT" == *"freshness unverified"* ]]'
+
+# gentle-ai's beta upgrade runs `go install` of the pre-v3 Engram module path; with a
+# go env GOBIN of ~/.local/bin it overwrote the engram symlink with Engram v1.
+setup consumer; remote_main HEAD
+: > "$CALLS"; OUT=$(GOBIN="$HOME/.local/bin" "$GS" sync 2>&1)
+check "sync: go installs run by the upgrade land in ~/go/bin, never ~/.local/bin" \
+  'grep -qx "upgrade GOBIN=$HOME/go/bin" "$CALLS"'
+
+setup consumer; remote_main HEAD; main=$(sha_of)
+echo "4.5.2-main.${main:0:12}" > "$NPM/VERSION"
+OUT=$(ENGRAM_PRE_V3=1 "$GS" sync 2>&1); rc=$?
+check "sync: an engram without instance-id (pre-v3) is INCOMPLETE, exit 1" \
+  '[ $rc -eq 1 ] && [[ "$OUT" == *"INCOMPLETE"*"engram lacks instance-id (pre-v3)"* ]]'
 
 printf '\n%s\n' "$([ $fails -eq 0 ] && echo 'all passed' || echo "$fails failed")"
 exit $fails

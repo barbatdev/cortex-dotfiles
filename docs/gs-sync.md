@@ -110,6 +110,16 @@ on the calling shell (a shell opened before a dotfiles update, or a host that
 does not load them). A value already set in the environment wins.
 `zsh/cortex-dotfiles.zsh` also exports it for `gentle-ai` runs outside `gs sync`.
 
+`GENTLE_AI_ENGRAM_BIN` does not cover `gentle-ai upgrade` on the beta channel
+(run by `gentle-shell upgrade`): it still runs that `go install` and writes into
+the effective `GOBIN`. On a host with `go env -w GOBIN=~/.local/bin`, the v1
+build replaced the `~/.local/bin/engram` symlink. `gs sync` therefore exports
+`GOBIN=~/go/bin` for every step it runs; its own builds set `GOBIN` explicitly.
+To protect runs outside `gs sync` as well, keep `go env GOBIN` off `~/.local/bin`.
+
+After relinking, `gs sync` runs `~/.local/bin/engram instance-id` and reports
+`INCOMPLETE — failed: engram lacks instance-id (pre-v3)` when that fails.
+
 Check: `engram version` reports 3.x after `gs sync` and after starting Pi.
 
 ## Tests
