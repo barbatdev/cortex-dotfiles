@@ -206,6 +206,7 @@ Seguimiento: [cortex-dotfiles #31](https://github.com/barbatdev/cortex-dotfiles/
 
 ## Especificaciones
 
+- [Workspaces de OmniWM en SketchyBar](sketchybar/README.md): activación, dependencias y recuperación del listener local.
 - [Cortex Agent State v1](docs/agent-state-v1.md): contrato `cortex.agent_state.v1` para normalizar estados de agentes hacia Herdr, statuslines, SketchyBar y notificaciones.
 
 ## Comandos principales

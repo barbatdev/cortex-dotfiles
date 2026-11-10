@@ -71,7 +71,7 @@ sketchybar --bar \
     margin=0 \
     y_offset=0 \
     corner_radius=0 \
-    display=main \
+    display=all \
     sticky=on \
     topmost=window
 
@@ -139,26 +139,7 @@ sketchybar --add item brand.4k left \
         background.height=28 \
         click_script="open '$HOME/dev'"
 
-for sid in 1 2 3 4 5 6 7 8 9 10; do
-    sketchybar --add space "space.$sid" left \
-        --set "space.$sid" \
-            associated_space="$sid" \
-            icon="$sid" \
-            label.drawing=off \
-            icon.font="$FONT:Bold:12.0" \
-            icon.color="$MUTED" \
-            background.color="$PILL_SOFT" \
-            background.border_color="$SPACE_BORDER" \
-            background.border_width=0 \
-            background.height=24 \
-            background.corner_radius=7 \
-            icon.padding_left=8 \
-            icon.padding_right=8 \
-            padding_left=1 \
-            padding_right=1 \
-            script="$PLUGIN_DIR/space.sh" \
-        --subscribe "space.$sid" space_change
-done
+# Los workspaces de OmniWM (omni.ws.*) los crea el listener omni_workspaces.py antes de front_app.
 
 sketchybar --add item front_app left \
     --set front_app \
@@ -380,3 +361,4 @@ NAME=front_app "$PLUGIN_DIR/front_app.sh"
 NAME=front_app.lg "$PLUGIN_DIR/front_app.sh"
 NAME=front_app.vertical "$PLUGIN_DIR/front_app.sh"
 NAME=front_app.4k "$PLUGIN_DIR/front_app.sh"
+"$PLUGIN_DIR/omni_workspaces.sh"
