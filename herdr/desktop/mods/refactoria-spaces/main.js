@@ -5,6 +5,7 @@
 
 import { View, div, svg } from "gpui-kit";
 import { v_flex, h_flex } from "gpui-base";
+import { FeedSource } from "./feed.js";
 import { spaces, agents, machines, panes, run, openOverlay, exec, hc, theme, shared, setShared, watchFolder, window, layout, home, readTextFile, nextCommand } from "herdr";
 
 function find(node, id) {
@@ -88,6 +89,10 @@ export default class Spaces extends View {
     this.over = null;
     this.machines = [];
     this.folded = new Set(JSON.parse(localStorage.getItem("machines.folded") ?? "[]"));
+    // Gentle Shell sessions (./feed.js): this mod is the one reader that
+    // publishes them for every other refactoria mod.
+    this.feed = new FeedSource();
+    this.feed.start(cx, null, 10000, { lead: true });
     this.refreshMachines(cx);
     cx.timer.every(15000, cx => this.refreshMachines(cx));
     // `git status` walks the whole tree, on another machine a process there:

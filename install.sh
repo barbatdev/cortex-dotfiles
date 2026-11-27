@@ -578,6 +578,17 @@ seed_file "$DOTFILES/opencode/tui.json" "$HOME/.config/opencode/tui.json"
 # Herdr Desktop rewrites settings.json (theme picker, zoom keys): seed a copy.
 if [[ "$PLATFORM" == "Darwin" ]]; then
     seed_file "$DOTFILES/herdr/desktop/settings.json" "$HOME/.config/herdr-app/settings.json"
+    # A mod's feed.js must live inside its folder (Herdr refuses an import that
+    # resolves outside it): copy each one, refreshing it when it changed.
+    for feed in "$DOTFILES"/herdr/desktop/mods/*/feed.js; do
+        mod="$(basename "$(dirname "$feed")")"
+        dst="$HOME/.config/herdr-app/mods/$mod/feed.js"
+        if cmp -s "$feed" "$dst"; then continue; fi
+        if [[ "$DRY_RUN" == true ]]; then echo "  → Would copy $dst"; continue; fi
+        mkdir -p "$(dirname "$dst")"
+        cp "$feed" "$dst.tmp.$$" && mv -f "$dst.tmp.$$" "$dst"
+        echo "  ✓ $dst copied"
+    done
     # Herdr Desktop does not load mod images through a symlink: copy them.
     for image in logo.png wordmark.png; do
         seed_file "$DOTFILES/herdr/desktop/mods/refactoria-chrome/$image" \
