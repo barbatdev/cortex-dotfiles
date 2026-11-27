@@ -303,10 +303,13 @@ class HelperTests(unittest.TestCase):
 
 
 class BarConfigTests(unittest.TestCase):
-    def test_native_spaces_replaced_and_bar_spans_all_displays(self):
+    def test_native_spaces_replaced_and_bar_only_on_retina(self):
         rc = RC.read_text()
         self.assertNotIn('--add space', rc)
-        self.assertIn('display=all', rc)
+        self.assertIn('MAC_DISPLAY=1', rc)
+        bar = rc.split('sketchybar --bar', 1)[1].split('sketchybar --default', 1)[0]
+        self.assertIn('display="$MAC_DISPLAY"', bar)
+        self.assertNotIn('display=all', bar)
         self.assertNotIn('display=main', rc)
         self.assertIn('omni_workspaces.sh', rc)
         self.assertIn('sketchybar --add item front_app left', rc)

@@ -71,7 +71,7 @@ sketchybar --bar \
     margin=0 \
     y_offset=0 \
     corner_radius=0 \
-    display=all \
+    display="$MAC_DISPLAY" \
     sticky=on \
     topmost=window
 
