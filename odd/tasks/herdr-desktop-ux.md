@@ -16,7 +16,7 @@ Branch `feat/herdr-desktop-ux`, worktree `../cortex-dotfiles-herdr-ux`. Gentle S
 - T1 (S4) Map the gentle-shell feed/status formats and the current refactoria mods; design shared data layer — explore — done (no commit)
 - T2 (S4, S3) Shared feed reader used by mods (names, state, task) — inline — done (commit: see log)
 - T3 (S2, S4) Agents panel rebuilt on the feed — done (commit f2c5766)
-- T4 (S3) Spaces sidebar richer: session name, state, task — pending
+- T4 (S3) Richer spaces sidebar: name, state, task — done (commit 0883adc)
 - T5 (S1) GitHub sidebar panel (PRs detail, issues, actions, notifications) — implemented (commit 80492a0); Issues/CI/Inbox tabs, PR expansion and Copy branch await a manual click check
 - T6 (S3) Visual density/hierarchy pass + screenshot check — pending
 
