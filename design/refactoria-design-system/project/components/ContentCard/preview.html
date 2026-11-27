@@ -1,0 +1,34 @@
+<!-- @dsCard group="Content" height=300 -->
+<div class="stage grid">
+  <a class="content-card_wrap linked" href="#" onclick="return false" data-spot>
+    <h3>RefactorIA Devs</h3>
+    <p>Tutoriales y contenido curado para aprender con criterio, no con copy/paste.</p>
+  </a>
+  <a class="content-card_wrap linked" href="#" onclick="return false" data-spot>
+    <h3>RefactorIA Labs</h3>
+    <p>Streams, experimentos y sesiones largas construyendo en vivo, con lo que sale mal incluido.</p>
+  </a>
+  <article class="content-card_wrap" data-spot>
+    <h3>Sin link</h3>
+    <p>Sin href se renderiza como article: sin lift ni glow, solo el spotlight.</p>
+  </article>
+</div>
+<style>
+  body{margin:0;background:var(--background);color:var(--text);font-family:var(--font-primary)}
+  .stage{padding:24px;display:grid;gap:20px}
+  .hint{margin:0;font-size:13px;color:var(--text-2)}
+  :focus-visible{outline:var(--focus-width) solid var(--text);outline-offset:var(--focus-offset)}
+  .grid{grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}
+  .content-card_wrap{position:relative;display:grid;align-content:start;gap:var(--space-3);padding:var(--space-5);background:var(--background-2);border:var(--border-width) solid var(--border);border-radius:var(--radius-small);color:var(--text-2);text-decoration:none;overflow:hidden;transition:transform var(--duration-card) var(--ease-out-expo),border-color var(--duration-card) var(--ease-out-expo),box-shadow var(--duration-card) var(--ease-out-expo)}
+  .content-card_wrap::after{content:"";position:absolute;inset:0;background:radial-gradient(22rem circle at var(--spot-x,50%) var(--spot-y,50%),color-mix(in srgb,var(--brand-500) 14%,transparent),transparent 45%);opacity:0;transition:opacity var(--duration-card) var(--ease-out-expo);pointer-events:none}
+  .content-card_wrap>*{position:relative;z-index:1;margin:0}
+  .content-card_wrap h3{color:var(--text);font-size:24px;font-weight:500;letter-spacing:-0.03em;line-height:1.1}
+  .content-card_wrap p{font-size:16px;line-height:1.5}
+  @media (hover:hover) and (pointer:fine){.content-card_wrap:hover::after{opacity:1}}
+  @media (hover:hover){.content-card_wrap.linked:hover{transform:translateY(calc(var(--lift-md) * -1));box-shadow:var(--glow-md);border-color:color-mix(in srgb,var(--brand-500) 65%,transparent)}}
+  .content-card_wrap.linked:active{transform:scale(var(--press-scale));transition-duration:var(--duration-press)}
+  @media (prefers-reduced-motion:reduce){*{transition-duration:1ms!important;animation:none!important}*:hover,*:active{transform:none!important}}
+</style>
+<script>
+  if(matchMedia('(hover: hover) and (pointer: fine)').matches){document.querySelectorAll('[data-spot]').forEach(c=>c.addEventListener('pointermove',e=>{const r=c.getBoundingClientRect();c.style.setProperty('--spot-x',(e.clientX-r.left)+'px');c.style.setProperty('--spot-y',(e.clientY-r.top)+'px')}))}
+</script>

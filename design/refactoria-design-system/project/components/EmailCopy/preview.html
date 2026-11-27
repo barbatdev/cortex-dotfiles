@@ -1,0 +1,33 @@
+<!-- @dsCard group="Actions" height=160 -->
+<div class="stage">
+  <p class="emailcopy_wrap" data-email="juan@refactoria.dev">
+    <a class="emailcopy_link mono-label" href="#" onclick="return false">juan@refactoria.dev</a>
+    <button class="button_wrap secondary emailcopy_button" type="button"><span class="emailcopy_label">Copiar</span></button>
+  </p>
+  <p class="hint">Click Copiar: label swaps to "Copiado ✓" with a glow-press pulse for 2s.</p>
+</div>
+<style>
+  body{margin:0;background:var(--background);color:var(--text);font-family:var(--font-primary)}
+  .stage{padding:24px;display:grid;gap:20px}
+  .hint{margin:0;font-size:13px;color:var(--text-2)}
+  :focus-visible{outline:var(--focus-width) solid var(--text);outline-offset:var(--focus-offset)}
+  .button_wrap{display:inline-flex;justify-content:center;align-items:center;gap:.5em;padding:.75em 1.5em;font:inherit;font-size:16px;line-height:1.2;text-decoration:none;cursor:pointer;background:var(--button-background);color:var(--button-text);border:var(--border-width) solid var(--button-background);border-radius:.5em;transition:background-color var(--duration-hover) var(--ease-out-expo),color var(--duration-hover) var(--ease-out-expo),border-color var(--duration-hover) var(--ease-out-expo),transform var(--duration-hover) var(--ease-out-expo),box-shadow var(--duration-hover) var(--ease-out-expo)}
+  .button_wrap.secondary{background:transparent;color:var(--text);border-color:var(--border)}
+  .button_wrap.link{padding:.4em 0;border:0;border-bottom:var(--border-width) solid var(--border);border-radius:0;background:linear-gradient(var(--link-border-hover),var(--link-border-hover)) no-repeat 100% 100%/0 var(--border-width);background-origin:border-box;color:var(--text);transition:background-size calc(var(--duration-hover) * 2) var(--ease-out-expo),color var(--duration-hover) var(--ease-out-expo),text-shadow var(--duration-hover) var(--ease-out-expo)}
+  .mono-label{font-family:var(--font-mono)}
+  @media (hover:hover){
+    .button_wrap:not(.link):hover:not(:disabled){transform:translateY(calc(var(--lift-sm) * -1));box-shadow:var(--glow-sm);background:var(--button-background-hover);color:var(--button-text-hover);border-color:var(--button-background-hover)}
+    .button_wrap.link:hover{background-position:0 100%;background-size:100% var(--border-width);text-shadow:var(--text-glow-strong)}
+  }
+  .button_wrap:not(.link):active:not(:disabled){transform:scale(var(--press-scale));box-shadow:var(--glow-press);transition-duration:var(--duration-press)}
+  .emailcopy_wrap{display:flex;flex-wrap:wrap;align-items:center;gap:var(--space-3);margin:0}
+  .emailcopy_link{color:color-mix(in srgb,var(--brand-500),var(--text) 30%);font-size:1.15rem;text-decoration-thickness:var(--border-width);text-underline-offset:.2em;transition:text-shadow var(--duration-hover) var(--ease-out-expo),color var(--duration-hover) var(--ease-out-expo)}
+  @media (hover:hover){.emailcopy_link:hover{text-shadow:var(--text-glow-strong);color:color-mix(in srgb,var(--brand-500),var(--text) 55%)}}
+  .emailcopy_button.copied{border-color:color-mix(in srgb,var(--brand-500) 70%,transparent);animation:pulse 600ms var(--ease-out-expo)}
+  @keyframes pulse{40%{box-shadow:var(--glow-press)}}
+  @media (prefers-reduced-motion:reduce){*{transition-duration:1ms!important;animation:none!important}*:hover,*:active{transform:none!important}}
+</style>
+<script>
+  const w=document.querySelector('.emailcopy_wrap'),b=w.querySelector('.emailcopy_button'),l=w.querySelector('.emailcopy_label');
+  b.addEventListener('click',async()=>{try{await navigator.clipboard.writeText(w.dataset.email)}catch(e){}l.textContent='Copiado ✓';b.classList.add('copied');setTimeout(()=>{l.textContent='Copiar';b.classList.remove('copied')},2000)});
+</script>

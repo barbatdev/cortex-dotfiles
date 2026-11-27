@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "chosen": "02-continuum.html",
+  "handoffs": {
+    "02-continuum.html": {
+      "status": "in_progress",
+      "queued": false,
+      "sentAt": "2026-11-12T13:00:17.965Z",
+      "startedAt": "2026-11-12T13:00:22.735Z",
+      "implementedAt": null,
+      "feature": "odd/tasks/omniwm-refactoria.md",
+      "note": "Implementing the selected Continuum direction as a native OmniShell API 1 style; SketchyBar remains disabled."
+    }
+  }
+}

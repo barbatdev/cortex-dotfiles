@@ -1,0 +1,26 @@
+# Canonical default dark theme: design/refactoria-design-system/project/tokens.css.
+# Both host appearances intentionally stay dark. Native hex is #RRGGBBAA,
+# not SketchyBar AARRGGBB: text-2 alpha 0.6 = 99; border alpha 0.2 = 33.
+[light]
+background = "#0b0714"
+surface = "#17102a"
+elevatedSurface = "#2c2144"
+foreground = "#ffffff"
+secondaryForeground = "#ffffff99"
+mutedForeground = "#ffffff99"
+accent = "#7127ff"
+accentForeground = "#ffffff"
+border = "#ffffff33"
+focus = "#ffffff"
+
+[dark]
+background = "#0b0714"
+surface = "#17102a"
+elevatedSurface = "#2c2144"
+foreground = "#ffffff"
+secondaryForeground = "#ffffff99"
+mutedForeground = "#ffffff99"
+accent = "#7127ff"
+accentForeground = "#ffffff"
+border = "#ffffff33"
+focus = "#ffffff"

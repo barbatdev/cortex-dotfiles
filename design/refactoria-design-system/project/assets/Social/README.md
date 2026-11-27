@@ -1,0 +1,1 @@
+The Open Graph card for refactoria.dev, 1200×630: wordmark with "IA" in `brand-500`, the motto with "No hype." as the accent, the official beard with a soft violet glow, and `refactoria.dev` at the foot. Use it as the `og:image` and `twitter:image` of every page.

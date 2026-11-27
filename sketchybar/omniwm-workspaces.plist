@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!-- Template: replace __PYTHON__ and __CONFIG_DIR__ before copying to
+     ~/Library/LaunchAgents/com.cortex.omniwm-workspaces.plist (see README.md). -->
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.cortex.omniwm-workspaces</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>__PYTHON__</string>
+        <string>__CONFIG_DIR__/plugins/omni_workspaces.py</string>
+    </array>
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>CONFIG_DIR</key>
+        <string>__CONFIG_DIR__</string>
+    </dict>
+    <key>RunAtLoad</key>
+    <true/>
+    <!-- The listener retries transport failures itself and exits 1 only when IPC is denied. -->
+    <key>KeepAlive</key>
+    <false/>
+    <key>ProcessType</key>
+    <string>Background</string>
+</dict>
+</plist>
