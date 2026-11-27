@@ -32,6 +32,10 @@ La barra muestra los workspaces de OmniWM en cada monitor (en lugar de los Space
 - **Reintentos**: si OmniWM no está corriendo (exit 2), reintenta con backoff hasta 30 s. Si el IPC está denegado (exit 1), termina sin reintentar.
 - **Dependencias**: `/opt/homebrew/bin/omniwmctl` (OmniWM 0.8.0), `/opt/homebrew/bin/sketchybar`, `python3` (solo stdlib). Rutas sobrescribibles con `OMNIWMCTL` y `SKETCHYBAR`.
 
+## Gestores retirados
+
+Yabai y skhd no son dependencias del stack actual. Sus fórmulas, servicios de usuario y enlaces `~/.yabairc` / `~/.skhdrc` fueron retirados del host durante la migración; el instalador ya no enlaza yabai. Las configuraciones efectivas previas se conservan en `archive/omniwm-migration/` solo como referencia. Restaurar archivos no reinstala los binarios ni los servicios. OmniWM, SketchyBar y Karabiner permanecen activos.
+
 ## Recuperación manual
 
 | Síntoma | Acción |
