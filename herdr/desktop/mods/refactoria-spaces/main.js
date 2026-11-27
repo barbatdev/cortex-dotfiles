@@ -119,11 +119,21 @@ export default class Spaces extends View {
     });
   }
 
-  // Spaces in the order the list shows them: this computer first, then machines by name.
-  spaceOrder() {
+  // One display order for labels and shortcuts. Keep source i for drag-and-drop.
+  spaceGroups() {
     const rows = this.ordered();
-    const remote = [...new Set(rows.map((r) => r.w.machine).filter(Boolean))].sort();
-    return [null, ...remote].flatMap((m) => rows.filter((r) => (r.w.machine ?? null) === m).map((r) => r.w));
+    const remote = [...new Set([...rows.map(r => r.w.machine).filter(Boolean), ...this.machines.map(m => m.name)])].sort();
+    let ordinal = 0;
+    return [null, ...remote].map((m) => {
+      const folded = remote.length > 0 && this.folded.has(m);
+      const mine = rows.filter((r) => (r.w.machine ?? null) === m)
+        .map((r) => ({ ...r, ordinal: folded ? null : ++ordinal }));
+      return { m, folded, mine };
+    });
+  }
+
+  spaceOrder() {
+    return this.spaceGroups().flatMap(({ folded, mine }) => folded ? [] : mine.map((r) => r.w));
   }
 
   focusAgent(n) {
@@ -308,23 +318,23 @@ export default class Spaces extends View {
 
   // The rows, under a header per machine once one isn't this computer.
   grouped(t, collapsed) {
-    const rows = this.ordered();
+    const groups = this.spaceGroups();
     const draw = (r) => (collapsed ? this.compact(r, t) : this.row(r, t));
-    const remote = [...new Set([...rows.map(r => r.w.machine).filter(Boolean), ...this.machines.map(m => m.name)])].sort();
     const loading = m => {
       const layout = machines().find(k => k.name === m)?.layout;
       return layout === "loading" || (!layout && this.machines.some(k => k.name === m && k.state === "connected"))
         || spaces().some(s => (s.machine ?? null) === m && !this.shown.has(s.id));
     };
     const loadingRow = m => div().id(`machine-loading-${m ?? "local"}`).h(28).flex_none().px(8).text_size(12).text_color(t.dim).child(collapsed ? "…" : "Loading…");
-    if (!remote.length) return loading(null) && !rows.length ? [loadingRow(null)] : rows.map(draw);
-    const machineNames = [null, ...remote];
-    return machineNames.flatMap((m) => {
-      const mine = rows.filter((r) => (r.w.machine ?? null) === m);
+    if (groups.length === 1) {
+      const rows = groups[0].mine;
+      return loading(null) && !rows.length ? [loadingRow(null)] : rows.map(draw);
+    }
+    return groups.flatMap(({ m, folded, mine }) => {
       const waiting = mine.filter((r) => spaceWaits(r.w, this.seen, agents())).length;
       const machine = this.machines.find(k => k.name === m);
       const connected = !m || machine?.state === "connected";
-      const folded = this.folded.has(m);
+
       const head = h_flex().id(`machine-${m ?? "local"}`).h(30).mt(6).mb(2).flex_none().px(collapsed ? 2 : 8).gap(7).items_center().text_size(12).text_color(t.foreground)
         .rounded(8).bg(t.raised).border(waiting ? 2 : 1).border_color(waiting ? (this.pulse ? t.blocked : t.raised) : t.raised)
         .cursor_pointer().when(!waiting, el => el.hover(s => s.border_color(t.input)))
@@ -431,7 +441,7 @@ export default class Spaces extends View {
       );
   }
 
-  compact({ w, i }, t) {
+  compact({ w, ordinal }, t) {
     return h_flex()
       .id(`space-${w.id}`)
       .h(26)
@@ -441,7 +451,7 @@ export default class Spaces extends View {
       .when(w.active, (el) => el.bg(t.raised))
       .hover((s) => s.bg(t.hover))
       .on_click(() => run("space.select", { id: w.id }))
-      .child(div().text_color(w.active ? t.foreground : t.muted).child(String(i + 1)))
+      .child(div().text_color(w.active ? t.foreground : t.muted).child(String(ordinal)))
       .child(div().text_color(spaceWaits(w, this.seen, agents()) ? tone(t, w.status) : t.dim).child(spaceWaits(w, this.seen, agents()) ? "●" : "·"));
   }
 
