@@ -29,7 +29,7 @@ Branch `feat/herdr-desktop-ux`, worktree `../cortex-dotfiles-herdr-ux`. Gentle S
 - T5 (S1) GitHub side panel — fixed L10 bugs (commits 80492a0, ed220f3); real mouse click on tabs awaits the user
 - T7 (S6) UX brief — done (S6)
 - T8 (S6, S3) Design 2-3 directions on the gentle-design canvas: design/herdr-desktop-ux/ — done (commit 002d3ab)
-- T6 (S3, S6) Implement 02-sessions-as-cards in refactoria-agents — done (commit c2cb41d); gaps: spaces strip and brand summary line from the artboard not built, blocked/failed cards seen only in tests
+- T6 (S3, S6) Implement 02-sessions-as-cards in refactoria-agents — reopened by L17 (commit c2cb41d)
 
 ## Log
 
@@ -55,3 +55,4 @@ si cambio de proyecto desaparece ese pane y no tengo como agregarlo"
 - L14: T8 design directions in design/herdr-desktop-ux/ (canvas served from the main checkout's design/, mirrored here): 01-inbox-first.html (pinned "Needs you" stack, Running with nested work, idle summarized), 02-sessions-as-cards.html (one card per active session), 03-unified-spaces.html (agents inside the spaces tree, summary strip). Contrast tables in each file header; #8F839D is never used on #2C2144 (4.19).
 - L15 (user handoff): "Implement the design artboard design/herdr-desktop-ux/02-sessions-as-cards.html" — chosen artboard 02 Sessions as cards; 01-inbox-first and 03-unified-spaces are alternatives.
 - L16: T6 worker result. refactoria-agents draws artboard 02: urgency-sorted session cards (state icon + word + labeled time, question with Answer/Open pane, todo bar, subagent/job/consult/failed chips, GS/CC/CX/shell badge + machine · branch · model · ctx · cost meta) and an idle list collapsed to "N idle · M machines". Pure logic in model.js (base64 UTF-8 decode of OSC 7501 title/msg, record kinds, urgency, labels, stale/duplicate removal), tested in tests/herdr_agents_test.mjs; install.sh already copies model.js. OSC records name subagents/jobs over the feed's names (no duplicate chips). Live herdr-app-4: errors [], /tmp/herdr-t6.png. Not done: the artboard's compact Spaces strip (refactoria-spaces, outside T6 surfaces), custom SVG state icons (text glyphs/shapes used), brand summary line (refactoria-chrome).
+- L17 (user): screenshot of herdr-app-4 after T6, no text. Visible defects against S6: idle list expanded shows stale rows ("cortex-dotfiles GS · here · 27d", "refactoria CC · here · 27d"); indistinguishable duplicates (refactoria ×2, gestion ×2, innit-core ×3, infra ×2); with no active session the Agents section shows no "Active" header or empty state, only "IDLE 18"; a large empty gap separates Spaces from the idle list. T6 reopened for these.
