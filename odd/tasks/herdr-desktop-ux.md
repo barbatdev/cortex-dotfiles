@@ -73,5 +73,5 @@ si cambio de proyecto desaparece ese pane y no tengo como agregarlo"
 - L24 (user, verbatim): "me encanta como quedó ... te felicito. Tenemos qu emejorar el bloque de spaces ahora ... realmente desentona con el resto que quedó muy muy bien." [screenshot: Spaces list with machine headers as filled bars, solid letter avatars, 2-line rows (name + branch), solid violet selected row, amber-outlined agent-dev header with "● 1", worktree row with branch glyph and ↓1]
 - T16 (S3, S6) Redesign the Spaces block on the canvas (design/herdr-spaces/) in the language of 04-sessions-v2 and github 02-rich-tabs, then implement in refactoria-spaces — pending
 - L25: T16 design directions in design/herdr-spaces/: 01-quiet-list (machine labels, 2-3 line rows, raised selection with accent bar), 02-repo-tree (worktrees nested, git chips, agent state right), 03-compact-switcher (28 px rows with shortcut numbers, detail on hover). Chosen: 01-quiet-list (L26).
-- T17 (S3, S6) Implement design/herdr-spaces/01-quiet-list.html in refactoria-spaces — in progress
+- T17 (S3, S6) Implement 01-quiet-list in refactoria-spaces — done (commit 401aded); shortcut numbers follow ctrl-a N, not Cmd+N (tab.select)
 - L26 (user handoff): "Implement the design artboard design/herdr-spaces/01-quiet-list.html" — chosen artboard 01 Quiet list; 02-repo-tree and 03-compact-switcher are alternatives.
