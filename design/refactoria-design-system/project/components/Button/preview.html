@@ -1,0 +1,36 @@
+<!-- @dsCard group="Actions" height=300 -->
+<div class="stage">
+  <div class="row">
+    <button class="button_wrap" type="button">Ver el canal</button>
+    <button class="button_wrap secondary" type="button">Copiar</button>
+    <button class="button_wrap" type="button" disabled>Enviar</button>
+  </div>
+  <div class="row">
+    <a class="button_wrap link mono-label" href="#" onclick="return false">cortex</a>
+    <button class="button_wrap play" type="button" aria-label="Play" aria-pressed="false"><svg viewBox="0 0 1393 1394" width="16" height="16" fill="none" aria-hidden="true"><path d="M1271 696.5L280 1393V0L1271 696.5Z" fill="currentColor"/></svg></button>
+    <button class="button_wrap secondary close" type="button" aria-label="Close"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" aria-hidden="true"><path d="M4 4L20 20M20 4L4 20" stroke="currentColor" vector-effect="non-scaling-stroke" style="stroke-width: var(--border-width)"/></svg></button>
+    <button class="button_wrap secondary arrow back" type="button" aria-label="Previous"><svg viewBox="0 0 240 188" width="20" height="16" fill="none" aria-hidden="true"><path d="M135 184.805L234 93.8053L135 2.80469" stroke="currentColor" vector-effect="non-scaling-stroke" style="stroke-width: var(--border-width)"/><path d="M234 93.8047H0" stroke="currentColor" vector-effect="non-scaling-stroke" style="stroke-width: var(--border-width)"/></svg></button>
+    <button class="button_wrap secondary arrow" type="button" aria-label="Next"><svg viewBox="0 0 240 188" width="20" height="16" fill="none" aria-hidden="true"><path d="M135 184.805L234 93.8053L135 2.80469" stroke="currentColor" vector-effect="non-scaling-stroke" style="stroke-width: var(--border-width)"/><path d="M234 93.8047H0" stroke="currentColor" vector-effect="non-scaling-stroke" style="stroke-width: var(--border-width)"/></svg></button>
+  </div>
+  <p class="hint">primary · secondary · disabled / link · play · close · arrow back · arrow. Hover, press, Tab.</p>
+</div>
+<style>
+  body{margin:0;background:var(--background);color:var(--text);font-family:var(--font-primary)}
+  .stage{padding:24px;display:grid;gap:20px}
+  .hint{margin:0;font-size:13px;color:var(--text-2)}
+  :focus-visible{outline:var(--focus-width) solid var(--text);outline-offset:var(--focus-offset)}
+  .row{display:flex;flex-wrap:wrap;gap:16px;align-items:center}
+  .button_wrap{display:inline-flex;justify-content:center;align-items:center;gap:.5em;padding:.75em 1.5em;font:inherit;font-size:16px;line-height:1.2;text-decoration:none;cursor:pointer;background:var(--button-background);color:var(--button-text);border:var(--border-width) solid var(--button-background);border-radius:.5em;transition:background-color var(--duration-hover) var(--ease-out-expo),color var(--duration-hover) var(--ease-out-expo),border-color var(--duration-hover) var(--ease-out-expo),transform var(--duration-hover) var(--ease-out-expo),box-shadow var(--duration-hover) var(--ease-out-expo)}
+  .button_wrap.secondary{background:transparent;color:var(--text);border-color:var(--button-2-border)}
+  .button_wrap.link{padding:.4em 0;border:0;border-bottom:var(--border-width) solid var(--border);border-radius:0;background:linear-gradient(var(--link-border-hover),var(--link-border-hover)) no-repeat 100% 100%/0 var(--border-width);background-origin:border-box;color:var(--text);transition:background-size calc(var(--duration-hover) * 2) var(--ease-out-expo),color var(--duration-hover) var(--ease-out-expo),text-shadow var(--duration-hover) var(--ease-out-expo)}
+  .mono-label{font-family:var(--font-mono)}
+  @media (hover:hover){
+    .button_wrap:not(.link):hover:not(:disabled){transform:translateY(calc(var(--lift-sm) * -1));box-shadow:var(--glow-sm);background:var(--button-background-hover);color:var(--button-text-hover);border-color:var(--button-background-hover)}
+    .button_wrap.link:hover{background-position:0 100%;background-size:100% var(--border-width);text-shadow:var(--text-glow-strong)}
+  }
+  .button_wrap:not(.link):active:not(:disabled){transform:scale(var(--press-scale));box-shadow:var(--glow-press);transition-duration:var(--duration-press)}
+  .button_wrap:is(.play,.close,.arrow){gap:0;padding:.75em;border-radius:var(--radius-round)}
+  .button_wrap.back svg{rotate:180deg}
+  .button_wrap:disabled{cursor:not-allowed;opacity:.5}
+  @media (prefers-reduced-motion:reduce){*{transition-duration:1ms!important;animation:none!important}*:hover,*:active{transform:none!important}}
+</style>

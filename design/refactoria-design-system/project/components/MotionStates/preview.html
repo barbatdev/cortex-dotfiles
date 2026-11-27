@@ -1,0 +1,35 @@
+<!-- @dsCard group="Motion" height=300 subtitle="Hover, press, focus and confirm in the electric-with-glow character" -->
+<div class="row">
+  <button class="btn" type="button">Ver el canal</button>
+  <a class="card" href="#" onclick="return false"><span class="eyebrow">Contenido</span><span class="title">RefactorIA Labs</span></a>
+  <button class="mono" type="button">hola@refactoria.dev</button>
+</div>
+<p class="hint">Hover, press, Tab to focus. Click the email to confirm.</p>
+<style>
+  body{margin:0;background:var(--background);color:var(--text);font-family:var(--font-primary)}
+  .row{display:flex;flex-wrap:wrap;gap:24px;align-items:center;padding:32px 24px 8px}
+  .hint{margin:8px 24px;font-size:13px;color:var(--text-2)}
+  .btn{font:inherit;font-size:16px;padding:12px 24px;border-radius:var(--radius-round);border:1px solid var(--button-background);background:var(--button-background);color:var(--button-text);cursor:pointer;transition:transform var(--duration-hover) var(--ease-out-expo),box-shadow var(--duration-hover) var(--ease-out-expo),background-color var(--duration-hover) var(--ease-out-expo),color var(--duration-hover) var(--ease-out-expo)}
+  .card{display:flex;flex-direction:column;gap:4px;min-width:220px;padding:18px;border-radius:var(--radius-main);background:var(--background-2);border:1px solid var(--border);color:var(--text);text-decoration:none;transition:transform var(--duration-card) var(--ease-out-expo),box-shadow var(--duration-card) var(--ease-out-expo),border-color var(--duration-card) var(--ease-out-expo)}
+  .eyebrow{font-family:var(--font-mono);font-size:12px;color:var(--text-2)}
+  .title{font-size:22px;font-weight:500;letter-spacing:-0.03em}
+  .mono{font-family:var(--font-mono);font-size:15px;background:none;border:0;border-bottom:1px solid var(--border);color:var(--text);padding:4px 0;cursor:pointer;transition:text-shadow var(--duration-hover) var(--ease-out-expo)}
+  @media (hover:hover){
+    .btn:hover{transform:translateY(calc(var(--lift-sm) * -1));box-shadow:var(--glow-sm);background:var(--button-background-hover);color:var(--button-text-hover)}
+    .card:hover{transform:translateY(calc(var(--lift-md) * -1));box-shadow:var(--glow-md);border-color:var(--brand-500)}
+    .mono:hover{text-shadow:var(--text-glow-strong)}
+  }
+  .btn:active,.card:active{transform:scale(var(--press-scale));box-shadow:var(--glow-press);transition-duration:var(--duration-press)}
+  :focus-visible{outline:2px solid var(--text);outline-offset:var(--focus-offset)}
+  .mono.done{animation:pulse 600ms var(--ease-out-expo)}
+  .mono.done::after{content:"_";animation:blink var(--duration-blink) steps(1) infinite}
+  @keyframes pulse{40%{box-shadow:var(--glow-press)}}
+  @keyframes blink{50%{opacity:0}}
+  @media (prefers-reduced-motion:reduce){.btn,.card{transform:none!important}.mono.done{animation:none}}
+</style>
+<script>
+  const m=document.querySelector('.mono');
+  m.addEventListener('click',()=>{const o='hola@refactoria.dev';let i=0;const t='copiado';m.textContent='';m.classList.add('done');
+    const step=()=>{m.textContent=t.slice(0,++i);if(i<t.length)setTimeout(step,45)};step();
+    setTimeout(()=>{m.textContent=o;m.classList.remove('done')},1600)});
+</script>

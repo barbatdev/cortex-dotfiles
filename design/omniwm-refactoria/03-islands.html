@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>03 · Islands — RefactorIA OmniShell</title>
+<style>
+/* Palette from sketchybar/colors.sh; floating group geometry is not a project token. */
+* { box-sizing: border-box; }
+body { margin: 0; background: #0b0714; color: #f2effa; font: 14px/1.5 system-ui, sans-serif; }
+main { max-width: 1536px; margin: auto; padding: 32px 40px; }
+header { display: flex; justify-content: space-between; gap: 32px; align-items: end; }
+h1 { font-size: 28px; font-weight: 600; letter-spacing: -.7px; margin: 4px 0; }
+p { margin: 4px 0; }
+.eyebrow { color: #c7a6ff; font-size: 12px; letter-spacing: 2px; text-transform: uppercase; }
+.tradeoff { max-width: 480px; color: #ebebeb; }
+.notice { margin: 20px 0; padding-left: 12px; border-left: 2px solid #a477ff; }
+.exhibit { display: grid; grid-template-columns: 300px minmax(0, 1fr); gap: 18px 24px; }
+figure { margin: 0; min-width: 0; }
+.retina { grid-column: 1 / -1; }
+.lg { grid-row: span 2; }
+figcaption { display: flex; justify-content: space-between; gap: 12px; margin-bottom: 8px; color: #ebebeb; font-size: 12px; }
+figcaption strong { color: #ffffff; font-weight: 600; }
+.viewport { overflow-x: auto; border: 1px solid #2c2144; border-radius: 12px; }
+.screen { position: relative; background: radial-gradient(ellipse at 30% 0, #2c2144, #0b0714 80%); height: 142px; }
+.retina .screen { min-width: 1250px; height: 148px; }
+.lg .screen { height: 352px; min-width: 284px; }
+.wide .screen { min-width: 1000px; }
+.bar { display: flex; align-items: center; gap: 7px; height: 44px; padding: 5px 9px; white-space: nowrap; font: 11px/1.2 ui-monospace, monospace; }
+.island { display: flex; align-items: center; gap: 8px; min-height: 32px; padding: 2px 9px; background: #0b0714; border: 1px solid #c7a6ff; border-radius: 10px; }
+nav { display: flex; align-items: center; gap: 4px; }
+.spacer { flex: 1; min-width: 120px; }
+.brand { color: #c7a6ff; font: 600 11px system-ui, sans-serif; }
+button { appearance: none; cursor: pointer; color: #ebebeb; font: inherit; border: 1px solid transparent; border-radius: 5px; background: transparent; min-height: 26px; padding: 3px 7px; }
+button[aria-pressed="true"] { color: #ffffff; border-color: #a477ff; text-decoration: underline; text-underline-offset: 4px; background: #2c2144; }
+button:hover { border-color: #c7a6ff; }
+:focus-visible { outline: 2px solid #8cc8ff; outline-offset: 2px; }
+.metric b { color: #8cc8ff; font-weight: 500; }
+.app { color: #ebebeb; border-left: 1px solid #c7a6ff; padding-left: 8px; }
+.notch { position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: 100px; height: 22px; background: #0b0714; border-radius: 0 0 9px 9px; }
+.desktop-label { position: absolute; left: 20px; bottom: 16px; color: #c7a6ff; font-size: 12px; }
+.desktop-label small { display: block; color: #ebebeb; font-size: 11px; }
+.lg .bar { justify-content: center; padding: 5px 8px; }
+.lg nav { gap: 3px; padding: 2px 5px; }
+.lg button { min-width: 30px; padding: 3px 6px; }
+details { margin-top: 10px; font-size: 12px; }
+summary { cursor: pointer; color: #c7a6ff; padding: 4px 0; }
+ol { margin: 6px 0; padding-left: 24px; }
+footer { display: flex; gap: 24px; justify-content: space-between; margin-top: 18px; color: #ebebeb; font-size: 12px; }
+#feedback { min-height: 18px; }
+@media (max-width: 900px) { main { padding: 24px 16px; } header, footer { display: block; } .exhibit { grid-template-columns: minmax(0, 1fr); } .retina { grid-column: auto; } .lg { grid-row: auto; max-width: 340px; } .lg .screen { height: 260px; } .tradeoff { margin-top: 12px; } }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; } }
+</style>
+</head>
+<body>
+<main>
+<header><div><p class="eyebrow">RefactorIA / OmniShell · 03</p><h1>Lo esencial, en pequeñas islas.</h1><p>Grupos flotantes · 44 px · el escritorio pasa entre ellos.</p></div><p class="tradeoff"><strong>Prioridad: separar tareas de telemetría.</strong><br>Spaces y aplicación forman una isla; recursos y reloj, otras. Más aire y reconocimiento por grupo, a costa de altura y ancho.</p></header>
+<p class="notice"><strong>Muestra estática, no datos en vivo.</strong> Hora, recursos, batería y aplicaciones son ejemplos. Los botones solo cambian la selección de esta maqueta; no controlan OmniWM.</p>
+<section class="exhibit" aria-label="Cuatro barras, una por monitor">
+<figure class="retina" data-monitor="retina">
+<figcaption><strong>01 / Retina display</strong><span>Mismos extremos y orden conocido · ahora agrupados por función</span></figcaption>
+<div class="viewport" tabindex="0" role="region" aria-label="Retina; desplazamiento horizontal en pantallas estrechas"><div class="screen">
+<div class="bar" data-bar="retina"><div class="island"><span class="brand">RefactorIA</span><nav aria-label="Espacios Retina"><button aria-pressed="true">internet</button><button aria-pressed="false">mail</button><button aria-pressed="false">herdr</button></nav><span class="app">Safari</span></div><span class="spacer"></span><div class="island"><span class="metric"><b>CPU</b> 16%</span><span class="metric"><b>RAM</b> 12 GB</span><span class="metric">VOL 32%</span><span class="metric">Wi-Fi</span></div><div class="island"><span class="metric">mar 17 · 14:32</span><span class="metric" data-battery>BAT 84%</span></div></div>
+<div class="notch" aria-hidden="true"></div><div class="desktop-label">internet<small>La selección sigue a la izquierda · los recursos siguen a la derecha</small></div>
+</div></div>
+</figure>
+<figure class="lg" data-monitor="lg">
+<figcaption><strong>02 / LG vertical</strong><span>Barra horizontal superior</span></figcaption>
+<div class="viewport" tabindex="0" role="region" aria-label="LG; solo espacios OmniWM en la barra superior"><div class="screen">
+<div class="bar" data-bar="lg"><nav class="island" aria-label="Espacios LG"><button aria-pressed="true" aria-label="1: grok bot" title="grok bot">1</button><button aria-pressed="false" aria-label="2: discord" title="discord">2</button><button aria-pressed="false" aria-label="3: whatsapp + whatsapp web" title="whatsapp + whatsapp web">3</button><button aria-pressed="false" aria-label="4: chatgpt" title="chatgpt">4</button><button aria-pressed="false" aria-label="5: spotify" title="spotify">5</button><button aria-pressed="false" aria-label="6: ventana de herdr" title="ventana de herdr">6</button><button aria-pressed="false" aria-label="7: X.com" title="X.com">7</button></nav></div>
+</div></div>
+<details><summary>Mapa LG · nombres completos</summary><ol><li>grok bot</li><li>discord</li><li>whatsapp + whatsapp web</li><li>chatgpt</li><li>spotify</li><li>ventana de herdr</li><li>X.com</li></ol></details>
+</figure>
+<figure class="wide" data-monitor="xiaomi">
+<figcaption><strong>03 / Xiaomi</strong><span>Variante ancha · sin batería</span></figcaption>
+<div class="viewport" tabindex="0" role="region" aria-label="Xiaomi; desplazamiento horizontal en pantallas estrechas"><div class="screen">
+<div class="bar" data-bar="xiaomi"><div class="island"><span class="brand">RefactorIA</span><nav aria-label="Espacios Xiaomi"><button aria-pressed="true">herdr</button><button aria-pressed="false">varios</button></nav><span class="app">Visual Studio Code</span></div><span class="spacer"></span><div class="island"><span class="metric"><b>CPU</b> 16%</span><span class="metric"><b>RAM</b> 12 GB</span></div><div class="island"><span class="metric">mar 17 · 14:32</span></div></div>
+<div class="desktop-label">herdr<small>Espacio libre entre grupos; sin repetir el nombre del monitor en la barra.</small></div>
+</div></div>
+</figure>
+<figure class="wide" data-monitor="samsung">
+<figcaption><strong>04 / Samsung</strong><span>Variante ancha · sin batería</span></figcaption>
+<div class="viewport" tabindex="0" role="region" aria-label="Samsung; desplazamiento horizontal en pantallas estrechas"><div class="screen">
+<div class="bar" data-bar="samsung"><div class="island"><span class="brand">RefactorIA</span><nav aria-label="Espacios Samsung"><button aria-pressed="false">herdr</button><button aria-pressed="true">remotedesktopmanager</button></nav><span class="app">Remote Desktop Manager</span></div><span class="spacer"></span><div class="island"><span class="metric"><b>CPU</b> 16%</span><span class="metric"><b>RAM</b> 12 GB</span></div><div class="island"><span class="metric">mar 17 · 14:32</span></div></div>
+<div class="desktop-label">remotedesktopmanager<small>Isla ampliada para el nombre completo; no se asume que todo cabe</small></div>
+</div></div>
+</figure>
+</section>
+<footer><p>Tab + Enter/Espacio: selección local. En vistas estrechas, enfoca el marco y desplaza con flechas.<br>Paleta: sketchybar/colors.sh · Tipografía de sistema · Propuesta nativa, no instalación.</p><p id="feedback" role="status" aria-live="polite">Vista de ejemplo · ninguna conexión al host.</p></footer>
+</main>
+<script>
+document.querySelectorAll('nav').forEach(nav => {
+  nav.addEventListener('click', event => {
+    const button = event.target.closest('button');
+    if (!button) return;
+    nav.querySelectorAll('button').forEach(item => item.setAttribute('aria-pressed', String(item === button)));
+    document.getElementById('feedback').textContent = `Solo maqueta · ${nav.getAttribute('aria-label')}: ${button.getAttribute('aria-label') || button.textContent}.`;
+  });
+});
+</script>
+</body>
+</html>

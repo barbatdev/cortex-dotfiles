@@ -1,0 +1,52 @@
+<!-- @dsCard group="Navigation" height=480 -->
+<footer class="footer_wrap">
+  <div class="footer_inner">
+    <div class="footer_grid">
+      <div class="footer_brand">
+        <p class="footer_wordmark">RefactorIA<span class="footer_cursor">_</span></p>
+        <p class="footer_motto">Modernize with engineering judgment. No hype.</p>
+        <p class="footer_creator">Proyecto independiente creado y dirigido por <a href="#" onclick="return false">Juan Barbat</a>.</p>
+      </div>
+      <nav class="footer_col" aria-label="Identidad oficial">
+        <p class="footer_heading mono-label">Identidad</p>
+        <a href="#" onclick="return false">github.com/barbatdev</a>
+        <a href="#" onclick="return false">github.com/refactor-ia</a>
+        <a href="#" onclick="return false">youtube.com/@RefactorIA</a>
+        <a href="#" onclick="return false">youtube.com/@RefactorIADevs</a>
+      </nav>
+      <nav class="footer_col" aria-label="Comunidad y música">
+        <p class="footer_heading mono-label">Comunidad</p>
+        <a href="#" onclick="return false">Discord</a>
+        <a href="#" onclick="return false">Spotify</a>
+        <a href="#" onclick="return false">juan@refactoria.dev</a>
+        <a href="#" onclick="return false">Todos los links</a>
+        <a href="#" onclick="return false">refactoria.dev</a>
+      </nav>
+    </div>
+    <div class="footer_bottom"><p class="footer_copyright">&copy; <span id="year">2026</span> RefactorIA · Hecho sin hype.</p></div>
+  </div>
+</footer>
+<style>
+  body{margin:0;background:var(--background);color:var(--text);font-family:var(--font-primary)}
+  .stage{padding:24px;display:grid;gap:20px}
+  .hint{margin:0;font-size:13px;color:var(--text-2)}
+  :focus-visible{outline:var(--focus-width) solid var(--text);outline-offset:var(--focus-offset)}
+  .mono-label{font-family:var(--font-mono)}
+  .footer_wrap{display:flex;justify-content:center;padding:var(--space-6) var(--site-margin);background:var(--background);border-top:var(--border-width) solid var(--border)}
+  .footer_inner{width:100%;display:flex;flex-direction:column;gap:var(--space-6)}
+  .footer_grid{display:grid;gap:var(--space-6)}
+  @media (width >= 44rem){.footer_grid{grid-template-columns:2fr 1fr 1fr}}
+  .footer_brand p{max-width:26rem;margin:0 0 var(--space-2);color:var(--text-2);font-size:15px}
+  .footer_brand .footer_wordmark{color:var(--text);font-weight:700;font-size:1.1rem;letter-spacing:-0.03em}
+  .footer_cursor{color:var(--brand-500);animation:blink var(--duration-blink) steps(2,start) infinite}
+  @keyframes blink{to{visibility:hidden}}
+  .footer_creator a{color:var(--text);transition:color var(--duration-hover) var(--ease-out-expo)}
+  .footer_heading{margin:0 0 var(--space-2);color:var(--text-2);font-size:.75rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase}
+  .footer_col{display:grid;gap:var(--space-2);align-content:start}
+  .footer_col a{width:fit-content;color:var(--text-2);font-size:15px;text-decoration:none;transition:color var(--duration-hover) var(--ease-out-expo),text-shadow var(--duration-hover) var(--ease-out-expo)}
+  @media (hover:hover){.footer_col a:hover{color:var(--text);text-shadow:var(--text-glow-soft)}.footer_creator a:hover{color:color-mix(in srgb,var(--brand-500),var(--text) 30%)}}
+  .footer_bottom{padding-top:var(--space-4);border-top:var(--border-width) solid var(--border)}
+  .footer_copyright{margin:0;color:var(--text-2);font-size:14px}
+  @media (prefers-reduced-motion:reduce){*{transition-duration:1ms!important;animation:none!important}*:hover,*:active{transform:none!important}}
+</style>
+<script>document.querySelector('#year').textContent=new Date().getFullYear();</script>

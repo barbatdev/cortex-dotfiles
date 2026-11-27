@@ -1,0 +1,65 @@
+<!-- @dsCard group="Navigation" height=360 -->
+<header class="nav_wrap">
+  <div class="nav_inner">
+    <a class="nav_logo nav_wordmark" href="#" onclick="return false" aria-label="RefactorIA, inicio">RefactorIA<span class="nav_cursor">_</span></a>
+    <button class="nav_toggle" type="button" aria-label="Menú" aria-expanded="false" aria-controls="nav-menu"><span class="nav_toggle_icon"></span></button>
+    <nav class="nav_menu" id="nav-menu" aria-label="Navegación principal">
+      <div class="nav_menu_inner">
+        <ul class="nav_links">
+          <li><a class="nav_link" href="#" onclick="return false" aria-current="page">Qué es</a></li>
+          <li><a class="nav_link" href="#" onclick="return false">Contenido</a></li>
+          <li><a class="nav_link" href="#" onclick="return false">Open Source</a></li>
+          <li><a class="nav_link" href="#" onclick="return false">Música</a></li>
+          <li><a class="nav_link" href="#" onclick="return false">Creador</a></li>
+          <li><a class="nav_link" href="#" onclick="return false">Contacto</a></li>
+        </ul>
+      </div>
+    </nav>
+  </div>
+</header>
+<p class="hint pad">Below 48rem the links collapse behind the toggle; Escape closes it.</p>
+<style>
+  body{margin:0;background:var(--background);color:var(--text);font-family:var(--font-primary)}
+  .stage{padding:24px;display:grid;gap:20px}
+  .hint{margin:0;font-size:13px;color:var(--text-2)}
+  :focus-visible{outline:var(--focus-width) solid var(--text);outline-offset:var(--focus-offset)}
+  .pad{padding:16px 24px}
+  .nav_wrap{position:relative;display:flex;justify-content:center;padding-inline:var(--site-margin);background:var(--background);border-bottom:var(--border-width) solid var(--border)}
+  .nav_inner{width:100%;display:flex;align-items:center;justify-content:space-between;gap:0 var(--space-6)}
+  .nav_logo,.nav_toggle{min-height:4rem}
+  .nav_wordmark{display:flex;align-items:center;color:var(--text);font-weight:700;font-size:1.05rem;letter-spacing:-0.03em;text-decoration:none;transition:opacity var(--duration-hover) var(--ease-out-expo)}
+  .nav_cursor,.footer_cursor{color:var(--brand-500);animation:blink var(--duration-blink) steps(2,start) infinite}
+  @keyframes blink{to{visibility:hidden}}
+  .nav_toggle{--_w:1.5rem;--_g:.5rem;display:inline-flex;align-items:center;justify-content:center;min-width:2.75rem;background:none;border:0;color:inherit;border-radius:var(--radius-small);cursor:pointer;transition:opacity var(--duration-hover) var(--ease-out-expo)}
+  .nav_toggle_icon{position:relative;display:block;width:var(--_w);height:calc(var(--_g) + var(--border-width))}
+  .nav_toggle_icon::before,.nav_toggle_icon::after{content:"";position:absolute;inset-inline:0;height:var(--border-width);background:currentcolor;transition:transform var(--duration-card) var(--ease-out-expo)}
+  .nav_toggle_icon::before{top:0}.nav_toggle_icon::after{top:var(--_g)}
+  .nav_wrap.open .nav_toggle_icon::before{transform:translateY(calc(var(--_g) / 2)) rotate(45deg)}
+  .nav_wrap.open .nav_toggle_icon::after{transform:translateY(calc(var(--_g) / -2)) rotate(-45deg)}
+  .nav_menu{position:absolute;top:100%;inset-inline:0;display:grid;grid-template-rows:0fr;visibility:hidden;background:var(--background);border-bottom:var(--border-width) solid var(--border);transition:grid-template-rows var(--duration-card) var(--ease-out-expo),visibility var(--duration-card) var(--ease-out-expo)}
+  .nav_menu_inner{overflow:hidden;opacity:0;transition:opacity var(--duration-card) var(--ease-out-expo)}
+  .nav_wrap.open .nav_menu{grid-template-rows:1fr;visibility:visible}
+  .nav_wrap.open .nav_menu_inner{opacity:1}
+  .nav_links{display:flex;flex-direction:column;margin:0;list-style:none;padding:var(--space-2) var(--site-margin) var(--space-4);font-size:18px;font-weight:500}
+  .nav_links>li+li{border-top:var(--border-width) solid var(--border)}
+  .nav_link{display:block;padding-block:var(--space-3);color:color-mix(in lab,currentcolor 60%,transparent);text-decoration:none;text-underline-offset:.4em;text-decoration-thickness:var(--border-width);transition:color var(--duration-hover) var(--ease-out-expo),text-shadow var(--duration-hover) var(--ease-out-expo)}
+  .nav_link[aria-current="page"]{color:var(--text)}
+  @media (hover:hover){.nav_wordmark:hover,.nav_toggle:hover{opacity:.6}.nav_link:hover{color:var(--text);text-shadow:var(--text-glow-soft)}}
+  @media (width >= 48rem){
+    .nav_toggle{display:none}
+    .nav_menu{position:static;display:block;visibility:visible;background:transparent;border-bottom:0}
+    .nav_menu_inner{overflow:visible;opacity:1}
+    .nav_links{flex-direction:row;flex-wrap:wrap;align-items:center;padding:0;gap:var(--space-4);font-size:15px}
+    .nav_links>li+li{border-top:0}
+    .nav_link{padding-block:0}
+    .nav_link[aria-current="page"]{text-decoration:underline}
+  }
+  @media (prefers-reduced-motion:reduce){*{transition-duration:1ms!important;animation:none!important}*:hover,*:active{transform:none!important}}
+</style>
+<script>
+  const n=document.querySelector('.nav_wrap'),t=n.querySelector('.nav_toggle');
+  const set=o=>{n.classList.toggle('open',o);t.setAttribute('aria-expanded',String(o))};
+  t.addEventListener('click',()=>set(t.getAttribute('aria-expanded')!=='true'));
+  n.querySelectorAll('a').forEach(a=>a.addEventListener('click',()=>set(false)));
+  document.addEventListener('keydown',e=>{if(e.key==='Escape'&&n.classList.contains('open')){set(false);t.focus()}});
+</script>

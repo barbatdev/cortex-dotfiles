@@ -1,0 +1,7 @@
+format = 1
+name = "refactoria"
+version = "0.1.0"
+api = 1
+minOmniWM = "0.8.0"
+title = "RefactorIA Continuum"
+summary = "A quiet violet top bar with monitor-local workspaces and live status."

@@ -1,0 +1,28 @@
+{
+  "title": "RefactorIA · OmniShell para cuatro displays",
+  "brief": "Tres direcciones de estilo nativo OmniWM. Retina conserva el orden de SketchyBar; LG vertical lleva una barra horizontal superior solo con spaces OmniWM numerados y nombres accesibles completos. Xiaomi y Samsung ofrecen variantes anchas sin batería. Métricas estáticas de ejemplo; ninguna conexión al host. Paleta verificada en sketchybar/colors.sh, sin sistema de diseño inventado.",
+  "feature": "odd/tasks/omniwm-refactoria.md",
+  "artboards": [
+    {
+      "file": "01-familiar.html",
+      "title": "Familiar · Cápsulas conocidas",
+      "tradeoff": "Máxima continuidad con SketchyBar: 36 px, grupos compactos y centro libre. Más bordes y mayor densidad visual.",
+      "width": 1600,
+      "height": 1000
+    },
+    {
+      "file": "02-continuum.html",
+      "title": "Continuum · Banda continua",
+      "tradeoff": "Pestañas subrayadas y recursos separados por reglas sobre una sola banda de 36 px. Menos ruido, menor separación por objeto.",
+      "width": 1600,
+      "height": 1000
+    },
+    {
+      "file": "03-islands.html",
+      "title": "Islands · Grupos flotantes",
+      "tradeoff": "Spaces y app comparten isla; recursos y reloj se agrupan aparte. Más aire y reconocimiento funcional a costa de 44 px de altura y más ancho.",
+      "width": 1600,
+      "height": 1000
+    }
+  ]
+}

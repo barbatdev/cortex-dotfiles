@@ -1,0 +1,117 @@
+{
+  "v": 3,
+  "layout": "files",
+  "createdOnFiles": {
+    "v": 1,
+    "at": "2026-10-15T14:20:00Z"
+  },
+  "title": "RefactorIA",
+  "namespace": "RefactorIA",
+  "libraries": [],
+  "sections": {},
+  "groups": [
+    "Logos",
+    "Favicons",
+    "Social"
+  ],
+  "assetGroups": {
+    "Logos": {
+      "name": "Logos",
+      "tile": "m",
+      "order": [
+        "refactoria-mark-light.svg",
+        "refactoria-mark-dark.svg",
+        "refactoria-mark-tile.svg",
+        "refactoria-wordmark.png",
+        "refactoria-mark-master.png"
+      ],
+      "files": {
+        "refactoria-mark-light.svg": {
+          "name": "refactoria-mark-light.svg",
+          "blob": "3d3692d3df115ada325ace204bfb92ed",
+          "size": 4749,
+          "type": "image/svg+xml"
+        },
+        "refactoria-mark-dark.svg": {
+          "name": "refactoria-mark-dark.svg",
+          "blob": "db011fdba85cb3b977506cb1bc160cf9",
+          "size": 4749,
+          "type": "image/svg+xml"
+        },
+        "refactoria-mark-tile.svg": {
+          "name": "refactoria-mark-tile.svg",
+          "blob": "5d8e7184155e1dd71da72bfcb0069077",
+          "size": 4817,
+          "type": "image/svg+xml"
+        },
+        "refactoria-wordmark.png": {
+          "name": "refactoria-wordmark.png",
+          "blob": "ee9a6d9b7c05c3960b06a688270da9a1",
+          "size": 146405,
+          "type": "image/png"
+        },
+        "refactoria-mark-master.png": {
+          "name": "refactoria-mark-master.png",
+          "blob": "7912611da55bef0df2c441a6560dd284",
+          "size": 614994,
+          "type": "image/png"
+        }
+      }
+    },
+    "Favicons": {
+      "name": "Favicons",
+      "tile": "s",
+      "order": [
+        "favicon-512.png",
+        "apple-touch-icon.png",
+        "favicon-32.png"
+      ],
+      "files": {
+        "favicon-512.png": {
+          "name": "favicon-512.png",
+          "blob": "8e92b95ecd31eca895350beb7b071e8c",
+          "size": 12701,
+          "type": "image/png"
+        },
+        "apple-touch-icon.png": {
+          "name": "apple-touch-icon.png",
+          "blob": "a19f970c24580ddfe102bda7fdd2dd44",
+          "size": 3963,
+          "type": "image/png"
+        },
+        "favicon-32.png": {
+          "name": "favicon-32.png",
+          "blob": "5a12f536e20722aad69470dd639a5db3",
+          "size": 654,
+          "type": "image/png"
+        }
+      }
+    },
+    "Social": {
+      "name": "Social",
+      "tile": "l",
+      "order": [
+        "og-image.png"
+      ],
+      "files": {
+        "og-image.png": {
+          "name": "og-image.png",
+          "blob": "796bd902aec0ef823afa0248feb6cd6c",
+          "size": 60772,
+          "type": "image/png"
+        }
+      }
+    }
+  },
+  "blobs": {},
+  "docs": {
+    "readme": "project/README.md",
+    "sections": []
+  },
+  "lastChange": {
+    "by": "Juan Barbat",
+    "at": "2026-11-03T12:00:00Z",
+    "via": "Claude Code",
+    "note": "Added the Video and multimedia section and three video-only color tokens, codified from the first animated Shorts."
+  }
+}

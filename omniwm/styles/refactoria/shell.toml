@@ -1,0 +1,32 @@
+# Profile-local layout, following OmniWM v0.8.0 styles/celestial.
+theme = "refactoria"
+leading = ["refactoria-spaces"]
+center = []
+trailing = ["refactoria-status"]
+
+# API 1 discovers drawer members even without bar-lane placement. These native
+# default panels stay headless until a Retina status click; no edge-hover open.
+[drawer.refactoria-panels]
+edge = "right"
+widgets = ["wifi", "calendar", "volume"]
+hover = false
+
+[workspaceBar]
+position = "overlappingMenuBar"
+height = 36
+fullWidth = true
+fullWidthNotchMode = "splitAroundNotch"
+reserveLayoutSpace = true
+autoHide = false
+hideEmptyWorkspaces = false
+transparentBackground = false
+backgroundOpacity = 1
+barFill = "background"
+barBorder = "border"
+showItemBackgrounds = false
+showAccentHighlights = true
+solidBlackBackground = false
+showLabels = true
+systemStatsButton = false
+xOffset = 0
+yOffset = 0
