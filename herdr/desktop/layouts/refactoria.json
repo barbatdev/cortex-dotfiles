@@ -46,17 +46,6 @@
                 "weight": 1
               },
               "min": 90
-            },
-            {
-              "id": "prs",
-              "type": "block",
-              "content": {
-                "mod": "refactoria-prs"
-              },
-              "size": {
-                "weight": 1
-              },
-              "min": 90
             }
           ]
         },
