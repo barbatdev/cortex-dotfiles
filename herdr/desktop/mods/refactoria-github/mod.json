@@ -3,6 +3,10 @@
   "title": "GitHub",
   "palette": [
     { "title": "GitHub: show panel", "command": "layout.select", "args": { "stack": "panel-body", "child": "github" }, "words": "pull requests issues actions ci notifications" },
-    { "title": "GitHub: toggle side panel", "command": "layout.toggle", "args": { "id": "panel" }, "words": "github files changes" }
+    { "title": "GitHub: toggle side panel", "command": "layout.toggle", "args": { "id": "panel" }, "words": "github files changes" },
+    { "title": "GitHub: pull requests", "command": "refactoria-github.prs", "words": "pr reviews checks" },
+    { "title": "GitHub: issues", "command": "refactoria-github.issues", "words": "assigned labels" },
+    { "title": "GitHub: CI runs", "command": "refactoria-github.ci", "words": "actions workflows failing" },
+    { "title": "GitHub: inbox", "command": "refactoria-github.inbox", "words": "notifications mentions review requests" }
   ]
 }
