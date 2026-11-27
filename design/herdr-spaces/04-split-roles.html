@@ -1,0 +1,354 @@
+<!doctype html>
+<!--
+  Herdr Desktop · Sidebar 04 · Split roles — Spaces = navigation, Agents = activity
+  Iteration on 01-quiet-list (Spaces) + herdr-desktop-ux/04-sessions-v2 (Agents); both stay untouched.
+  Tokens: same RefactorIA tokens, no new hues (#4A3D66 decorative edge already used in 01).
+  WCAG 2.x contrast (relative luminance), every text pair used here:
+  On #17102A sidebar / tray cards: #FFFFFF 18.36 · #EBEBEB 15.40 · #F2EFFA 16.17 · #C7A6FF 9.03 · #A477FF 5.82 · #8F839D 5.16 · #8CC8FF 10.33 · #FFC857 11.93 · #58E6A8 11.63 · #FF6B8A 6.75 · #FFB547 10.45
+  On #0B0714 Agents tray / page: #FFFFFF 19.91 · #EBEBEB 16.70 · #F2EFFA 17.54 · #C7A6FF 9.79 · #A477FF 6.32 · #8F839D 5.60 · #8CC8FF 11.21 · #FFC857 12.94 · #58E6A8 12.61 · #FF6B8A 7.32
+  On #2C2144 hover / current row / hovered card: #FFFFFF 14.91 · #EBEBEB 12.51 · #F2EFFA 13.14 · #C7A6FF 7.33 · #8CC8FF 8.39 · #FFC857 9.69 · #58E6A8 9.44 · #FF6B8A 5.48
+     #8F839D on #2C2144 = 4.19 FAIL -> never used: hovered/current rows and hovered cards switch grey meta to #C7A6FF.
+  White on #7127FF (primary button) 6.11 · #0B0714 on #58E6A8 ("New" badge) 12.61.
+  No text is dimmed by opacity. No terminal/GitHub area is shown on this artboard.
+  Non-text (>= 3:1): Spaces agent dots (8 px) amber #FFC857 11.93 / blue #8CC8FF 10.33 / red #FF6B8A 6.75 / green #58E6A8 11.63 vs #17102A;
+     9.69 / 8.39 / 5.48 / 9.44 vs #2C2144 (hover/current); legend dots vs #17102A same values.
+     Accent bar #A477FF 5.82 vs #17102A / 4.73 vs #2C2144. Focus ring #FFB547 10.45 vs #17102A, 12.0+ vs #0B0714, 8.49 vs #2C2144.
+     Tray edge: surface change #17102A -> #0B0714 plus #4A3D66 top border and grip are decorative; the tray is also a labelled <section> with its own heading.
+  Dot is never the only signal: each space button's accessible name carries the agent state, the dot has role=img + aria-label + title tooltip,
+     and the same state is visible as text (pill / New badge) in the Agents tray.
+  Motion: only the Working spinner in Agents; stops under prefers-reduced-motion. Spaces dots never animate.
+-->
+<html lang="en"><head><meta charset="utf-8"><title>Herdr Desktop — Sidebar 04 · Split roles</title><style>
+:root{
+  --bg:#0B0714;--surface:#17102A;--raised:#2C2144;--fg:#FFFFFF;--muted:#EBEBEB;--dim:#F2EFFA;
+  --accent:#A477FF;--solid:#7127FF;--spark:#FFB547;--working:#8CC8FF;--blocked:#FFC857;--done:#58E6A8;--error:#FF6B8A;--unknown:#C7A6FF;--grey:#8F839D;
+  --font:"Inter",-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",Arial,sans-serif;
+  --mono:"SF Mono",ui-monospace,Menlo,monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{width:1440px;height:900px;background:var(--bg);color:var(--fg);font:12px/1.4 var(--font);overflow:hidden;-webkit-font-smoothing:antialiased}
+header.top{height:50px;display:flex;align-items:center;gap:14px;padding:0 40px}
+header.top h1{font-size:15px;font-weight:600}
+header.top p{color:var(--grey);font-size:12px}
+main{display:flex;gap:28px;padding:0 40px}
+.col{display:flex;flex-direction:column;gap:8px;width:300px}
+figcaption{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:8px}
+figcaption .k{width:20px;height:20px;border-radius:6px;background:var(--surface);color:var(--accent);display:grid;place-items:center;font-weight:600;font-size:11px}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;text-align:left}
+:focus-visible{outline:2px solid var(--spark);outline-offset:2px;border-radius:6px}
+svg{flex:none}
+.mono{font-family:var(--mono);font-size:10.5px}
+@media (prefers-reduced-motion:no-preference){.spin{animation:spin 1.6s linear infinite;transform-origin:50% 50%}@keyframes spin{to{transform:rotate(360deg)}}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+/* sidebar shell */
+aside.sb{width:300px;height:812px;background:var(--surface);border:1px solid var(--raised);border-radius:12px;display:flex;flex-direction:column;overflow:hidden}
+.brand{display:flex;align-items:center;gap:10px;padding:12px 14px 4px;flex:none}
+.brand b{font-size:14px;letter-spacing:.2px}.brand b span{color:var(--accent)}
+.brand small{display:block;color:var(--grey);font-size:10.5px}
+
+/* ── SPACES: navigation ── quiet small-caps label, two-line rows, one dot */
+.spaces{flex:1;min-height:0;overflow:auto;padding:0 8px 10px;scrollbar-width:thin;scrollbar-color:#2C2144 transparent}
+.lbl{display:flex;align-items:center;gap:6px;font-size:10.5px;font-weight:600;letter-spacing:.6px;text-transform:uppercase;color:var(--grey);padding:10px 8px 2px}
+.lbl .n{color:var(--muted);font-weight:500;letter-spacing:0}
+.ib{margin-left:auto;width:24px;height:24px;border-radius:6px;display:grid;place-items:center;color:var(--unknown)}.ib:hover{background:var(--raised)}.ib svg{width:12px;height:12px}
+.mh{display:flex;align-items:center;gap:6px;width:100%;padding:8px 8px 3px;font-size:10.5px;font-weight:600;letter-spacing:.6px;text-transform:uppercase;color:var(--grey);min-height:28px;border-radius:7px}
+.mh:hover{background:var(--raised);color:var(--unknown)}
+.mh>svg{width:12px;height:12px}.mh .chev{width:11px;height:11px}
+.mh .n{letter-spacing:0;color:var(--muted);font-weight:500}
+.mh .on{margin-left:auto;display:inline-flex;gap:3px;align-items:center;letter-spacing:0;text-transform:none;font-weight:500}
+.mh .on svg{width:10px;height:10px;color:var(--done)}
+.mh:hover .on{color:var(--unknown)}
+.ql{list-style:none;display:flex;flex-direction:column;gap:1px}
+.q{position:relative;display:grid;grid-template-columns:16px 1fr auto;column-gap:9px;width:100%;padding:5px 8px 6px;border-radius:9px;min-height:38px}
+.q:hover,.q[aria-current]{background:var(--raised)}
+.q[aria-current]::before{content:"";position:absolute;left:0;top:8px;bottom:8px;width:3px;border-radius:3px;background:var(--accent)}
+.q[aria-current] .qn{font-weight:600}
+.q .ic{width:14px;height:14px;margin-top:2px;color:var(--grey)}
+.q:hover .ic,.q[aria-current] .ic{color:var(--unknown)}
+.r1{display:flex;align-items:center;gap:6px;min-width:0}
+.qn{font-size:12.5px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--c);flex:none}
+.kb{font:600 10px/1 var(--font);color:var(--unknown);min-width:16px;height:16px;border-radius:4px;display:inline-grid;place-items:center;background:var(--bg);box-shadow:inset 0 0 0 1px #2C2144;font-variant-numeric:tabular-nums;flex:none;margin-top:1px}
+.q2{grid-column:2/4;display:flex;align-items:center;gap:8px;font-size:11px;color:var(--grey);margin-top:2px;min-width:0}
+.q2 .b{display:inline-flex;align-items:center;gap:4px;min-width:0}.q2 .b svg{width:10px;height:10px}
+.q2 .b span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.gst{display:inline-flex;align-items:center;gap:2px;font-variant-numeric:tabular-nums;white-space:nowrap;color:var(--dim)}.gst svg{width:10px;height:10px}
+.q:hover .q2,.q[aria-current] .q2{color:var(--unknown)}
+.q.wt{margin-left:14px;width:calc(100% - 14px)}
+.q.wt::after{content:"";position:absolute;left:-7px;top:-4px;height:20px;width:7px;border-left:1px solid #4A3D66;border-bottom:1px solid #4A3D66;border-bottom-left-radius:5px}
+
+/* ── AGENTS: activity ── darker tray docked at the bottom, own header with live summary */
+.tray{flex:none;height:404px;margin:0 6px;background:var(--bg);border:1px solid #4A3D66;border-bottom:0;border-radius:14px 14px 0 0;box-shadow:0 -10px 18px -6px #05030A;display:flex;flex-direction:column;overflow:hidden}
+.tray.quiet{height:458px}
+.grip{width:32px;height:4px;border-radius:4px;background:#4A3D66;margin:6px auto 0;flex:none}
+.th{display:flex;align-items:baseline;gap:8px;padding:6px 12px 9px;border-bottom:1px solid var(--raised);flex:none;flex-wrap:wrap}
+.th h2{font-size:13px;font-weight:700;letter-spacing:.1px;color:var(--fg)}
+.sum{display:flex;gap:4px 9px;flex-wrap:wrap;font-size:11px;font-weight:600}
+.sum span{display:inline-flex;align-items:center;gap:4px;white-space:nowrap}
+.sum svg{width:11px;height:11px}
+.sum .i{color:var(--grey);font-weight:500}
+.tb{flex:1;min-height:0;overflow:auto;padding:4px 8px 12px;scrollbar-width:thin;scrollbar-color:#2C2144 transparent}
+.h3{display:flex;align-items:center;gap:6px;font-size:11px;font-weight:600;color:var(--muted);padding:9px 4px 5px}
+.h3 .n{color:var(--grey);font-weight:500}
+.pg{width:14px;height:14px;color:var(--unknown)}
+.cards{display:flex;flex-direction:column;gap:7px}
+.card{position:relative;background:var(--surface);border:1px solid var(--raised);border-radius:10px;padding:9px 11px 8px}
+.card::before{content:"";position:absolute;left:-1px;top:10px;bottom:10px;width:3px;border-radius:3px;background:var(--rail)}
+.card:hover,.card.sel{background:var(--raised);border-color:var(--rail)}
+.card .hd{display:flex;align-items:center;gap:7px}
+.card .name{flex:1;min-width:0;font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pill{display:inline-flex;align-items:center;gap:4px;font-size:10.5px;font-weight:600;color:var(--rail);padding:2px 7px 2px 5px;border-radius:999px;border:1px solid var(--rail);white-space:nowrap}
+.pill svg{width:11px;height:11px}
+.card .sub{font-size:11.5px;color:var(--muted);margin:2px 0 0 21px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ask{font-size:12.5px;color:var(--fg);border-left:2px solid var(--blocked);padding:2px 0 2px 8px;margin:6px 0 8px 21px}
+.acts{display:flex;gap:6px;margin-left:21px}
+.btn{font-size:11px;padding:4px 10px;border-radius:6px;min-height:26px}
+.btn.primary{background:var(--solid);color:#fff;font-weight:600}
+.btn.ghost{border:1px solid var(--unknown);color:var(--muted)}
+.prog{display:flex;align-items:center;gap:8px;margin:6px 0 0 21px}
+.bar{flex:1;height:4px;border-radius:4px;background:var(--bg);overflow:hidden;box-shadow:inset 0 0 0 1px #2C2144}
+.bar i{display:block;height:100%;background:var(--working);border-radius:4px}
+.prog span{font-size:10.5px;color:var(--muted);font-variant-numeric:tabular-nums}
+.card .meta{margin:6px 0 0 21px;font-size:10.5px;color:var(--grey);display:flex;align-items:center;gap:5px}
+.card:hover .meta,.card.sel .meta{color:var(--unknown)}
+.card .meta svg{width:11px;height:11px}
+.gh3{display:flex;align-items:center;gap:6px;font-size:10.5px;font-weight:600;padding:9px 8px 3px;color:var(--grey)}
+.gh3 span{font-weight:500}
+.gh3.now{color:var(--accent)}
+.gh3.hour{color:var(--muted)}
+.il{list-style:none;display:flex;flex-direction:column;gap:1px}
+.ir{display:grid;grid-template-columns:14px 1fr;column-gap:8px;width:100%;padding:6px 8px;border-radius:8px;min-height:42px}
+.ir:hover{background:var(--raised)}
+.st{width:12px;height:12px;margin-top:2px;color:var(--grey)}
+.st.done{color:var(--done)}
+.l1{display:flex;align-items:center;gap:6px;min-width:0}
+.l1 .pg{width:12px;height:12px}
+.nm{font-size:12.5px;font-weight:500;color:var(--fg);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ir.earlier .nm{color:var(--muted);font-weight:400}
+.new{font-size:9.5px;font-weight:700;color:var(--bg);background:var(--done);padding:1px 5px;border-radius:4px;letter-spacing:.3px}
+.l2{grid-column:2;display:flex;gap:8px;font-size:11px;color:var(--grey);margin-top:2px;min-width:0}
+.ir.now .l2,.ir.hour .l2 .tk{color:var(--dim)}
+.tk{flex:0 1 auto;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.age{margin-left:auto;font-size:10.5px;color:var(--grey);font-variant-numeric:tabular-nums;white-space:nowrap}
+.ir.now .age{color:var(--done)}
+.wh{flex:none;display:inline-flex;align-items:center;gap:3px;white-space:nowrap}
+.wh svg{width:10px;height:10px}
+.ir:hover .l2,.ir:hover .wh,.ir:hover .tk,.ir:hover .age{color:var(--unknown)}
+.ir.now{background:linear-gradient(90deg,#2C2144 0,#0B0714 85%)}
+.more{display:flex;align-items:center;gap:4px;width:100%;padding:6px 8px 6px 30px;font-size:11px;color:var(--accent);border-radius:7px;min-height:28px}
+.more svg{width:11px;height:11px}.more:hover{background:var(--raised)}
+.calmbox{background:var(--surface);border:1px solid var(--raised);border-radius:12px;padding:12px 13px;margin-top:6px}
+.ch{display:flex;gap:11px;align-items:flex-start}
+.moon{width:30px;height:30px;color:var(--accent)}
+.ct{font-size:14px;font-weight:600}
+.cs{font-size:12px;color:var(--dim);margin-top:2px}
+.today{display:grid;grid-template-columns:repeat(2,1fr);row-gap:8px;margin:12px 0 2px;border-top:1px solid var(--raised);padding-top:10px}
+.today div{display:flex;align-items:baseline;gap:7px}
+.today dd{order:-1;font-size:17px;min-width:20px;font-weight:600;font-variant-numeric:tabular-nums}
+.today dt{font-size:11px;color:var(--grey);display:flex;align-items:center;gap:3px;white-space:nowrap}
+.today dt svg{width:10px;height:10px}
+.last{border-top:1px solid var(--raised);padding-top:10px;margin-top:10px}
+.lk{font-size:10.5px;color:var(--done);display:flex;gap:4px;align-items:center}
+.lt{display:flex;gap:7px;align-items:center;font-size:13px;font-weight:500;margin-top:4px}
+.ld{font-size:11.5px;color:var(--dim);margin:2px 0 8px 21px}
+
+/* legend */
+.legend{flex:1;height:836px;display:flex;flex-direction:column;gap:14px;padding-top:28px}
+.legend h2{font-size:13px;font-weight:600;margin-bottom:8px}
+.lg{background:var(--surface);border:1px solid var(--raised);border-radius:12px;padding:14px 16px}
+.dl{display:grid;grid-template-columns:14px 150px 1fr;gap:9px 10px;align-items:center;font-size:12px}
+.dl .dot{width:10px;height:10px}
+.dl b{font-weight:600}
+.dl span.d{color:var(--muted)}
+.split{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.split h3{font-size:12px;font-weight:600;display:flex;gap:7px;align-items:center;margin-bottom:6px}
+.split ul{list-style:none;display:flex;flex-direction:column;gap:5px;font-size:11.5px;color:var(--muted)}
+.split li::before{content:"·";color:var(--accent);margin-right:6px;font-weight:700}
+.split li.x::before{content:"×";color:var(--grey)}
+.tag{font-size:10.5px;font-weight:600;padding:1px 7px;border-radius:999px;border:1px solid var(--unknown);color:var(--unknown)}
+.notes{list-style:none;display:flex;flex-direction:column;gap:6px;font-size:11.5px;color:var(--muted)}
+.notes b{color:var(--fg);font-weight:600}
+.tip{display:inline-flex;align-items:center;gap:6px;font-size:11px;color:var(--fg);background:var(--raised);padding:4px 8px;border-radius:6px;margin-top:8px}
+</style></head>
+<body><svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-working" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6" fill="none" stroke="currentColor" stroke-opacity=".3" stroke-width="2"/><path class="spin" d="M8 2a6 6 0 0 1 6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+  <symbol id="i-blocked" viewBox="0 0 16 16"><path d="M3 2.5h10a1.5 1.5 0 0 1 1.5 1.5v6A1.5 1.5 0 0 1 13 11.5H7l-3.5 2.5v-2.5H3A1.5 1.5 0 0 1 1.5 10V4A1.5 1.5 0 0 1 3 2.5z" fill="currentColor"/><path d="M6.6 5.4a1.5 1.5 0 1 1 2 1.4c-.4.2-.6.5-.6.9v.2" stroke="#17102A" stroke-width="1.3" fill="none" stroke-linecap="round"/><circle cx="8" cy="9.6" r=".8" fill="#17102A"/></symbol>
+  <symbol id="i-done" viewBox="0 0 16 16"><circle cx="8" cy="8" r="7" fill="currentColor"/><path d="M4.8 8.2l2.1 2.1 4.3-4.5" stroke="#17102A" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-error" viewBox="0 0 16 16"><path d="M5.1 1.5h5.8l3.6 3.6v5.8l-3.6 3.6H5.1l-3.6-3.6V5.1z" fill="currentColor"/><path d="M5.8 5.8l4.4 4.4M10.2 5.8l-4.4 4.4" stroke="#17102A" stroke-width="1.7" stroke-linecap="round"/></symbol>
+  <symbol id="i-idle" viewBox="0 0 16 16"><circle cx="8" cy="8" r="5" fill="none" stroke="currentColor" stroke-width="1.6"/></symbol>
+  <symbol id="i-chev" viewBox="0 0 16 16"><path d="M4 6l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></symbol>
+  <symbol id="i-calm" viewBox="0 0 32 32"><circle cx="16" cy="16" r="15" fill="#2C2144"/><path d="M19.5 8.5a8 8 0 1 0 4 12.5 6.5 6.5 0 0 1-4-12.5z" fill="currentColor"/><circle cx="22.5" cy="10" r="1.1" fill="#F2EFFA"/></symbol>
+  <symbol id="i-laptop" viewBox="0 0 16 16"><rect x="2.5" y="3" width="11" height="7.5" rx="1.3" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M1 13h14" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></symbol>
+  <symbol id="i-server" viewBox="0 0 16 16"><rect x="2" y="2" width="12" height="5" rx="1.2" fill="none" stroke="currentColor" stroke-width="1.4"/><rect x="2" y="9" width="12" height="5" rx="1.2" fill="none" stroke="currentColor" stroke-width="1.4"/><circle cx="5" cy="4.5" r=".9" fill="currentColor"/><circle cx="5" cy="11.5" r=".9" fill="currentColor"/></symbol>
+  <symbol id="i-cloud" viewBox="0 0 16 16"><path d="M4.5 12.5h7.2a2.8 2.8 0 0 0 .3-5.6A4 4 0 0 0 4.3 7.3a2.6 2.6 0 0 0 .2 5.2z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></symbol>
+  <symbol id="p-gs" viewBox="0 0 16 16"><path d="M8 1.5l1.6 4.9 4.9 1.6-4.9 1.6L8 14.5l-1.6-4.9L1.5 8l4.9-1.6z" fill="currentColor"/></symbol>
+  <symbol id="p-cc" viewBox="0 0 16 16"><path d="M8 1.5v13M1.5 8h13M3.4 3.4l9.2 9.2M12.6 3.4l-9.2 9.2" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></symbol>
+  <symbol id="p-cx" viewBox="0 0 16 16"><path d="M5.5 2.5C3.8 2.5 4 4 4 5.5S3.5 8 2 8c1.5 0 2 1 2 2.5s-.2 3 1.5 3M10.5 2.5c1.7 0 1.5 1.5 1.5 3s.5 2.5 2 2.5c-1.5 0-2 1-2 2.5s.2 3-1.5 3" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></symbol>
+  <symbol id="i-branch" viewBox="0 0 16 16"><circle cx="4.5" cy="3.5" r="1.7" fill="none" stroke="currentColor" stroke-width="1.4"/><circle cx="4.5" cy="12.5" r="1.7" fill="none" stroke="currentColor" stroke-width="1.4"/><circle cx="11.5" cy="5" r="1.7" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M4.5 5.2v5.6M11.5 6.7c0 3-7 2-7 4" fill="none" stroke="currentColor" stroke-width="1.4"/></symbol>
+  <symbol id="i-wt" viewBox="0 0 16 16"><path d="M4 2v7a3 3 0 0 0 3 3h5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M10 9.5l2.5 2.5-2.5 2.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-repo" viewBox="0 0 16 16"><path d="M3.5 13V3a1.5 1.5 0 0 1 1.5-1.5h7.5V11H5a1.5 1.5 0 0 0 0 3h7.5" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></symbol>
+  <symbol id="i-folder" viewBox="0 0 16 16"><path d="M1.5 4a1 1 0 0 1 1-1h3.5l1.5 1.5h6a1 1 0 0 1 1 1V12a1 1 0 0 1-1 1h-11a1 1 0 0 1-1-1z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></symbol>
+  <symbol id="i-up" viewBox="0 0 16 16"><path d="M8 13V3.5M4 7.5l4-4 4 4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-down" viewBox="0 0 16 16"><path d="M8 3v9.5M4 8.5l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-dirty" viewBox="0 0 16 16"><path d="M3 13l1-3.5 7-7 2.5 2.5-7 7z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 16 16"><path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></symbol>
+  <symbol id="i-online" viewBox="0 0 16 16"><circle cx="8" cy="8" r="3.5" fill="currentColor"/></symbol>
+</svg>
+<header class="top"><h1>Split roles · Spaces vs Agents</h1><p>Spaces = where I am and where I jump · Agents = what happens and what needs me · 300 px sidebar, two states</p></header>
+<main>
+
+<!-- ═════════ A · BUSY ═════════ -->
+<figure class="col"><figcaption><span class="k">A</span>Busy · 1 needs you · 2 running · 1 new</figcaption>
+<aside class="sb" aria-label="Herdr sidebar — busy">
+ <div class="brand"><svg width="28" height="28" viewBox="0 0 28 28" aria-hidden="true"><rect width="28" height="28" rx="7" fill="#7127FF"/><path d="M7 10c0-2.5 3-4 7-4s7 1.5 7 4v3c0 5-3.5 9-7 9s-7-4-7-9z" fill="#FFFFFF"/><path d="M10 13h8M11 16.5c1 1 2 1.5 3 1.5s2-.5 3-1.5" stroke="#7127FF" stroke-width="1.6" fill="none" stroke-linecap="round"/></svg><div><b>Refactor<span>IA</span></b><small>3 machines online</small></div></div>
+
+ <nav class="spaces" aria-labelledby="a-sp">
+  <h2 class="lbl" id="a-sp">Spaces <span class="n">8</span><button class="ib" aria-label="New space"><svg aria-hidden="true"><use href="#i-plus"/></svg></button></h2>
+
+  <button class="mh" aria-expanded="true"><svg class="chev" aria-hidden="true"><use href="#i-chev"/></svg><svg aria-hidden="true"><use href="#i-laptop"/></svg>This computer<span class="n">3</span><span class="on"><svg aria-hidden="true"><use href="#i-online"/></svg>Online</span></button>
+  <ul class="ql">
+   <li><button class="q" aria-label="cortex, Command 1, docs/beta1-opencode-experimental, This computer"><svg class="ic" aria-hidden="true"><use href="#i-repo"/></svg><span class="r1"><span class="qn">cortex</span></span><span class="kb" aria-hidden="true">1</span><span class="q2"><span class="b"><svg aria-hidden="true"><use href="#i-branch"/></svg><span class="mono">docs/beta1-opencode-experimental</span></span></span></button></li>
+   <li><button class="q" aria-current="page" aria-label="cortex-dotfiles, current space, Command 2, feat/omniwm-migration, 2 ahead, 3 uncommitted, Gentle Shell working, This computer"><svg class="ic" aria-hidden="true"><use href="#i-repo"/></svg><span class="r1"><span class="qn">cortex-dotfiles</span><span class="dot" style="--c:var(--working)" role="img" aria-label="Gentle Shell working" title="cortex-dotfiles · Gentle Shell working"></span></span><span class="kb" aria-hidden="true">2</span><span class="q2"><span class="b"><svg aria-hidden="true"><use href="#i-branch"/></svg><span class="mono">feat/omniwm-migration</span></span><span class="gst" aria-label="2 ahead"><svg aria-hidden="true"><use href="#i-up"/></svg>2</span><span class="gst" aria-label="3 uncommitted changes"><svg aria-hidden="true"><use href="#i-dirty"/></svg>3</span></span></button></li>
+   <li><button class="q" aria-label="infra, Command 3, docs/montossi-netuy-cutover, This computer"><svg class="ic" aria-hidden="true"><use href="#i-repo"/></svg><span class="r1"><span class="qn">infra</span></span><span class="kb" aria-hidden="true">3</span><span class="q2"><span class="b"><svg aria-hidden="true"><use href="#i-branch"/></svg><span class="mono">docs/montossi-netuy-cutover</span></span></span></button></li>
+  </ul>
+
+  <button class="mh" aria-expanded="true"><svg class="chev" aria-hidden="true"><use href="#i-chev"/></svg><svg aria-hidden="true"><use href="#i-server"/></svg>agent-dev<span class="n">3</span><span class="on"><svg aria-hidden="true"><use href="#i-online"/></svg>Online</span></button>
+  <ul class="ql">
+   <li><button class="q" aria-label="orquestador, Command 4, main, Gentle Shell needs you, agent-dev"><svg class="ic" aria-hidden="true"><use href="#i-repo"/></svg><span class="r1"><span class="qn">orquestador</span><span class="dot" style="--c:var(--blocked)" role="img" aria-label="Gentle Shell needs you" title="orquestador · Gentle Shell needs you"></span></span><span class="kb" aria-hidden="true">4</span><span class="q2"><span class="b"><svg aria-hidden="true"><use href="#i-branch"/></svg><span class="mono">main</span></span></span></button></li>
+   <li><button class="q" aria-label="innit-core, Command 5, feat/ledger-v2, 1 ahead, 5 uncommitted, Codex working, agent-dev"><svg class="ic" aria-hidden="true"><use href="#i-repo"/></svg><span class="r1"><span class="qn">innit-core</span><span class="dot" style="--c:var(--working)" role="img" aria-label="Codex working" title="innit-core · Codex working"></span></span><span class="kb" aria-hidden="true">5</span><span class="q2"><span class="b"><svg aria-hidden="true"><use href="#i-branch"/></svg><span class="mono">feat/ledger-v2</span></span><span class="gst" aria-label="1 ahead"><svg aria-hidden="true"><use href="#i-up"/></svg>1</span><span class="gst" aria-label="5 uncommitted changes"><svg aria-hidden="true"><use href="#i-dirty"/></svg>5</span></span></button></li>
+   <li><button class="q" aria-label="innit-worker, Command 6, no git branch, agent-dev"><svg class="ic" aria-hidden="true"><use href="#i-folder"/></svg><span class="r1"><span class="qn">innit-worker</span></span><span class="kb" aria-hidden="true">6</span><span class="q2"><span class="b">no git branch</span></span></button></li>
+  </ul>
+
+  <button class="mh" aria-expanded="true"><svg class="chev" aria-hidden="true"><use href="#i-chev"/></svg><svg aria-hidden="true"><use href="#i-cloud"/></svg>agent-gentle<span class="n">2</span><span class="on"><svg aria-hidden="true"><use href="#i-online"/></svg>Online</span></button>
+  <ul class="ql">
+   <li><button class="q" aria-label="triage, Command 7, gentle-shell, 3 behind, agent-gentle"><svg class="ic" aria-hidden="true"><use href="#i-repo"/></svg><span class="r1"><span class="qn">triage</span></span><span class="kb" aria-hidden="true">7</span><span class="q2"><span class="b"><svg aria-hidden="true"><use href="#i-branch"/></svg><span class="mono">gentle-shell</span></span><span class="gst" aria-label="3 behind"><svg aria-hidden="true"><use href="#i-down"/></svg>3</span></span></button></li>
+   <li><button class="q wt" aria-label="gentle-shell-issue-3552, worktree, Command 8, fix/3552-feat-voice-make-the-gentle-voice-sound-natural, 1 behind, Gentle Shell done, not seen yet, agent-gentle"><svg class="ic" aria-hidden="true"><use href="#i-wt"/></svg><span class="r1"><span class="qn">gentle-shell-issue-3552</span><span class="dot" style="--c:var(--done)" role="img" aria-label="Gentle Shell done, not seen yet" title="gentle-shell-issue-3552 · Gentle Shell done, not seen"></span></span><span class="kb" aria-hidden="true">8</span><span class="q2"><span class="b"><svg aria-hidden="true"><use href="#i-branch"/></svg><span class="mono">fix/3552-feat-voice-make-the-gentle-voice-sound-natural</span></span><span class="gst" aria-label="1 behind"><svg aria-hidden="true"><use href="#i-down"/></svg>1</span></span></button></li>
+  </ul>
+ </nav>
+
+ <section class="tray" aria-labelledby="a-ag">
+  <div class="grip" aria-hidden="true"></div>
+  <div class="th"><h2 id="a-ag">Agents</h2><p class="sum" aria-label="1 needs you, 2 running, 9 idle"><span style="color:var(--blocked)"><svg aria-hidden="true"><use href="#i-blocked"/></svg>1 needs you</span><span style="color:var(--working)"><svg aria-hidden="true"><use href="#i-working"/></svg>2 running</span><span class="i">9 idle</span></p></div>
+  <div class="tb">
+   <h3 class="h3">Needs you <span class="n">1</span></h3>
+   <div class="cards"><article class="card" style="--rail:var(--blocked)" tabindex="0" aria-label="Orquestador roadmap #827, Gentle Shell, needs you, waiting 4 minutes, orquestador on agent-dev">
+    <div class="hd"><svg class="pg" aria-hidden="true"><use href="#p-gs"/></svg><span class="name">Orquestador roadmap #827</span><span class="pill"><svg aria-hidden="true"><use href="#i-blocked"/></svg>Needs you · 4m</span></div>
+    <p class="ask">“¿Muevo #831 y #834 al milestone de enero?”</p>
+    <div class="acts"><button class="btn primary">Answer</button><button class="btn ghost">Open pane</button></div>
+    <p class="meta"><svg aria-hidden="true"><use href="#i-server"/></svg>agent-dev · orquestador · ctx 41%</p></article></div>
+   <h3 class="h3">Running <span class="n">2</span></h3>
+   <div class="cards">
+    <article class="card sel" style="--rail:var(--working)" tabindex="0" aria-current="true" aria-label="cortex-dotfiles, Gentle Shell, working, T18 Differentiate Spaces and Agents, 3 of 7 todos, This computer">
+     <div class="hd"><svg class="pg" aria-hidden="true"><use href="#p-gs"/></svg><span class="name">cortex-dotfiles</span><span class="pill"><svg aria-hidden="true"><use href="#i-working"/></svg>Working</span></div>
+     <p class="sub">T18 Differentiate Spaces and Agents</p>
+     <div class="prog" aria-label="3 of 7 todos"><div class="bar"><i style="width:43%"></i></div><span>3/7</span></div>
+     <p class="meta"><svg aria-hidden="true"><use href="#i-laptop"/></svg>This computer · opus-5-5 · 8m</p></article>
+    <article class="card" style="--rail:var(--working)" tabindex="0" aria-label="innit-core, Codex, working, session 1, Ledger v2 migration, agent-dev">
+     <div class="hd"><svg class="pg" aria-hidden="true"><use href="#p-cx"/></svg><span class="name">innit-core #1</span><span class="pill"><svg aria-hidden="true"><use href="#i-working"/></svg>Working</span></div>
+     <p class="sub">Ledger v2 migration</p>
+     <p class="meta"><svg aria-hidden="true"><use href="#i-server"/></svg>agent-dev · 21m</p></article>
+   </div>
+   <h3 class="h3">Idle <span class="n">9</span></h3>
+   <h4 class="gh3 now">Just now<span>1</span></h4>
+   <ul class="il"><li><button class="ir now" aria-label="gentle-shell-issue-3552, Gentle Shell, finished, not seen yet, feat(voice): make the gentle voice…, agent-gentle, 6m ago"><svg class="st done" aria-hidden="true"><use href="#i-done"/></svg><span class="l1"><svg class="pg" aria-hidden="true"><use href="#p-gs"/></svg><span class="nm">gentle-shell-issue-3552</span><span class="new">New</span><span class="age">6m</span></span><span class="l2"><span class="tk">feat(voice): make the gentle voice…</span><span class="wh"><svg aria-hidden="true"><use href="#i-cloud"/></svg>agent-gentle</span></span></button></li></ul>
+   <h4 class="gh3 hour">This hour<span>2</span></h4>
+   <ul class="il"><li><button class="ir hour" aria-label="Mikrotiks de Netuy en Tecmo, Claude Code, idle, Audit firewall rules, This computer, 56m ago"><svg class="st" aria-hidden="true"><use href="#i-idle"/></svg><span class="l1"><svg class="pg" aria-hidden="true"><use href="#p-cc"/></svg><span class="nm">Mikrotiks de Netuy en Tecmo</span><span class="age">56m</span></span><span class="l2"><span class="tk">Audit firewall rules</span><span class="wh"><svg aria-hidden="true"><use href="#i-laptop"/></svg>This computer</span></span></button></li></ul>
+   <button class="more" aria-expanded="false">Show 7 more idle<svg aria-hidden="true"><use href="#i-chev"/></svg></button>
+  </div>
+ </section>
+</aside></figure>
+
+<!-- ═════════ B · ALL QUIET ═════════ -->
+<figure class="col"><figcaption><span class="k">B</span>All quiet · no dots in Spaces</figcaption>
+<aside class="sb" aria-label="Herdr sidebar — all quiet">
+ <div class="brand"><svg width="28" height="28" viewBox="0 0 28 28" aria-hidden="true"><rect width="28" height="28" rx="7" fill="#7127FF"/><path d="M7 10c0-2.5 3-4 7-4s7 1.5 7 4v3c0 5-3.5 9-7 9s-7-4-7-9z" fill="#FFFFFF"/><path d="M10 13h8M11 16.5c1 1 2 1.5 3 1.5s2-.5 3-1.5" stroke="#7127FF" stroke-width="1.6" fill="none" stroke-linecap="round"/></svg><div><b>Refactor<span>IA</span></b><small>3 machines online</small></div></div>
+
+ <nav class="spaces" aria-labelledby="b-sp">
+  <h2 class="lbl" id="b-sp">Spaces <span class="n">8</span><button class="ib" aria-label="New space"><svg aria-hidden="true"><use href="#i-plus"/></svg></button></h2>
+  <button class="mh" aria-expanded="true"><svg class="chev" aria-hidden="true"><use href="#i-chev"/></svg><svg aria-hidden="true"><use href="#i-laptop"/></svg>This computer<span class="n">3</span><span class="on"><svg aria-hidden="true"><use href="#i-online"/></svg>Online</span></button>
+  <ul class="ql">
+   <li><button class="q" aria-label="cortex, Command 1, docs/beta1-opencode-experimental, This computer"><svg class="ic" aria-hidden="true"><use href="#i-repo"/></svg><span class="r1"><span class="qn">cortex</span></span><span class="kb" aria-hidden="true">1</span><span class="q2"><span class="b"><svg aria-hidden="true"><use href="#i-branch"/></svg><span class="mono">docs/beta1-opencode-experimental</span></span></span></button></li>
+   <li><button class="q" aria-current="page" aria-label="cortex-dotfiles, current space, Command 2, feat/omniwm-migration, 3 ahead, This computer"><svg class="ic" aria-hidden="true"><use href="#i-repo"/></svg><span class="r1"><span class="qn">cortex-dotfiles</span></span><span class="kb" aria-hidden="true">2</span><span class="q2"><span class="b"><svg aria-hidden="true"><use href="#i-branch"/></svg><span class="mono">feat/omniwm-migration</span></span><span class="gst" aria-label="3 ahead"><svg aria-hidden="true"><use href="#i-up"/></svg>3</span></span></button></li>
+   <li><button class="q" aria-label="infra, Command 3, docs/montossi-netuy-cutover, This computer"><svg class="ic" aria-hidden="true"><use href="#i-repo"/></svg><span class="r1"><span class="qn">infra</span></span><span class="kb" aria-hidden="true">3</span><span class="q2"><span class="b"><svg aria-hidden="true"><use href="#i-branch"/></svg><span class="mono">docs/montossi-netuy-cutover</span></span></span></button></li>
+  </ul>
+  <button class="mh" aria-expanded="true"><svg class="chev" aria-hidden="true"><use href="#i-chev"/></svg><svg aria-hidden="true"><use href="#i-server"/></svg>agent-dev<span class="n">3</span><span class="on"><svg aria-hidden="true"><use href="#i-online"/></svg>Online</span></button>
+  <ul class="ql">
+   <li><button class="q" aria-label="orquestador, Command 4, main, agent-dev"><svg class="ic" aria-hidden="true"><use href="#i-repo"/></svg><span class="r1"><span class="qn">orquestador</span></span><span class="kb" aria-hidden="true">4</span><span class="q2"><span class="b"><svg aria-hidden="true"><use href="#i-branch"/></svg><span class="mono">main</span></span></span></button></li>
+   <li><button class="q" aria-label="innit-core, Command 5, feat/ledger-v2, 1 ahead, agent-dev"><svg class="ic" aria-hidden="true"><use href="#i-repo"/></svg><span class="r1"><span class="qn">innit-core</span></span><span class="kb" aria-hidden="true">5</span><span class="q2"><span class="b"><svg aria-hidden="true"><use href="#i-branch"/></svg><span class="mono">feat/ledger-v2</span></span><span class="gst" aria-label="1 ahead"><svg aria-hidden="true"><use href="#i-up"/></svg>1</span></span></button></li>
+   <li><button class="q" aria-label="innit-worker, Command 6, no git branch, agent-dev"><svg class="ic" aria-hidden="true"><use href="#i-folder"/></svg><span class="r1"><span class="qn">innit-worker</span></span><span class="kb" aria-hidden="true">6</span><span class="q2"><span class="b">no git branch</span></span></button></li>
+  </ul>
+  <button class="mh" aria-expanded="false"><svg class="chev" aria-hidden="true" style="transform:rotate(-90deg)"><use href="#i-chev"/></svg><svg aria-hidden="true"><use href="#i-cloud"/></svg>agent-gentle<span class="n">2</span><span class="on"><svg aria-hidden="true"><use href="#i-online"/></svg>Online</span></button>
+ </nav>
+
+ <section class="tray quiet" aria-labelledby="b-ag">
+  <div class="grip" aria-hidden="true"></div>
+  <div class="th"><h2 id="b-ag">Agents</h2><p class="sum"><span class="i">All quiet · 12 idle</span></p></div>
+  <div class="tb">
+   <div class="calmbox">
+    <div class="ch"><svg class="moon" aria-hidden="true"><use href="#i-calm"/></svg><div><p class="ct">All quiet</p><p class="cs">Nothing is running and nothing needs you.</p></div></div>
+    <dl class="today" aria-label="Today's activity">
+     <div><dt>Ran</dt><dd>14</dd></div>
+     <div><dt><svg style="color:var(--done)" aria-hidden="true"><use href="#i-done"/></svg>Finished</dt><dd>13</dd></div>
+     <div><dt><svg style="color:var(--error)" aria-hidden="true"><use href="#i-error"/></svg>Failed</dt><dd>1</dd></div>
+     <div><dt><svg style="color:var(--blocked)" aria-hidden="true"><use href="#i-blocked"/></svg>Needs you</dt><dd>0</dd></div>
+    </dl>
+    <div class="last"><p class="lk">Last finished · 22m ago · <svg style="width:10px;height:10px" aria-hidden="true"><use href="#i-laptop"/></svg>This computer</p>
+     <p class="lt"><svg class="pg" aria-hidden="true"><use href="#p-gs"/></svg>cortex-dotfiles</p>
+     <p class="ld">T18 Differentiate Spaces and Agents</p>
+     <div class="acts" style="margin-left:21px"><button class="btn ghost">Open pane</button></div></div>
+   </div>
+   <h3 class="h3">Idle <span class="n">12</span></h3>
+   <h4 class="gh3 hour">This hour<span>2</span></h4>
+   <ul class="il">
+    <li><button class="ir hour" aria-label="cortex-dotfiles, Gentle Shell, idle, T18 Differentiate Spaces and Agents, This computer, 22m ago"><svg class="st" aria-hidden="true"><use href="#i-idle"/></svg><span class="l1"><svg class="pg" aria-hidden="true"><use href="#p-gs"/></svg><span class="nm">cortex-dotfiles</span><span class="age">22m</span></span><span class="l2"><span class="tk">T18 Differentiate Spaces and Agents</span><span class="wh"><svg aria-hidden="true"><use href="#i-laptop"/></svg>This computer</span></span></button></li>
+    <li><button class="ir hour" aria-label="Orquestador roadmap #827, Gentle Shell, idle, Plan Q1 milestones, agent-dev, 44m ago"><svg class="st" aria-hidden="true"><use href="#i-idle"/></svg><span class="l1"><svg class="pg" aria-hidden="true"><use href="#p-gs"/></svg><span class="nm">Orquestador roadmap #827</span><span class="age">44m</span></span><span class="l2"><span class="tk">Plan Q1 milestones</span><span class="wh"><svg aria-hidden="true"><use href="#i-server"/></svg>agent-dev</span></span></button></li>
+   </ul>
+   <button class="more" aria-expanded="false">Show 10 more idle<svg aria-hidden="true"><use href="#i-chev"/></svg></button>
+  </div>
+ </section>
+</aside></figure>
+
+<!-- ═════════ LEGEND ═════════ -->
+<section class="legend" aria-label="Legend">
+ <div class="lg"><h2>Spaces dot · the only agent signal in navigation</h2>
+  <div class="dl">
+   <span class="dot" style="--c:var(--blocked)" aria-hidden="true"></span><b style="color:var(--blocked)">Amber · Needs you</b><span class="d">An agent in this space is waiting on an answer. Highest priority.</span>
+   <span class="dot" style="--c:var(--working)" aria-hidden="true"></span><b style="color:var(--working)">Blue · Working</b><span class="d">An agent is running. Static dot — no spinner in Spaces.</span>
+   <span class="dot" style="--c:var(--error)" aria-hidden="true"></span><b style="color:var(--error)">Red · Failed</b><span class="d">Last run failed and has not been opened.</span>
+   <span class="dot" style="--c:var(--done)" aria-hidden="true"></span><b style="color:var(--done)">Green · Done, unseen</b><span class="d">Finished; clears once you open the space or the result.</span>
+   <span></span><b style="color:var(--muted)">No dot · Idle</b><span class="d">Silence by default: idle spaces look like plain navigation.</span>
+  </div>
+  <p class="d" style="font-size:11.5px;color:var(--muted);margin-top:10px">One dot per space, most urgent wins (needs you › failed › working › done). Never the only signal:</p>
+  <span class="tip"><span class="dot" style="--c:var(--working)" aria-hidden="true"></span>cortex-dotfiles · Gentle Shell working</span>
+ </div>
+
+ <div class="lg"><h2>Role split</h2>
+  <div class="split">
+   <div><h3>Spaces <span class="tag">navigation</span></h3><ul>
+    <li>Where I am: accent bar + raised row on the current space</li>
+    <li>Where I jump: name + ⌘1–9 key</li>
+    <li>Git: branch, ↑ahead ↓behind, ✎dirty</li>
+    <li>Machine groups with online state</li>
+    <li class="x">No pills, no task line, no spinner</li>
+    <li>Quiet small-caps label · count · +</li></ul></div>
+   <div><h3>Agents <span class="tag">activity</span></h3><ul>
+    <li>What happens: state pills, task, progress</li>
+    <li>What needs me: question + Answer first</li>
+    <li>Idle timeline · calm block when quiet</li>
+    <li>Darker tray (#0B0714) docked under the sidebar, rounded top, grip + edge</li>
+    <li>Own bold header with a live summary: needs you · running · idle</li></ul></div>
+  </div>
+ </div>
+
+ <div class="lg"><h2>Accessibility</h2>
+  <ul class="notes">
+   <li><b>Dot:</b> role=img with aria-label and a title tooltip; the space button's name also says the state (“…, Gentle Shell working, This computer”).</li>
+   <li><b>Same info as text:</b> every dotted space has a matching card or row in Agents with a worded pill or “New” badge.</li>
+   <li><b>Contrast:</b> all text AA; dots ≥ 5.48:1 on every row background; grey meta switches to #C7A6FF on raised rows.</li>
+   <li><b>Landmarks:</b> Spaces is a &lt;nav&gt;, Agents a labelled &lt;section&gt; — screen readers hear two distinct regions.</li>
+  </ul>
+ </div>
+</section>
+</main>
+</body></html>
