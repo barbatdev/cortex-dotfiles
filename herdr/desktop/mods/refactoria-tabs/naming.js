@@ -38,6 +38,9 @@ export function decodeTitle(s) {
       if ((bytes[i + k] & 0xc0) !== 0x80) return s;
       cp = (cp << 6) | (bytes[i + k] & 0x3f);
     }
+    // Overlong forms, surrogates and code points past U+10FFFF are not UTF-8 either.
+    const min = [0, 0x80, 0x800, 0x10000][n];
+    if (cp < min || cp > 0x10ffff || (cp >= 0xd800 && cp <= 0xdfff)) return s;
     if (cp < 0x20 || cp === 0x7f) return s;
     out += String.fromCodePoint(cp);
     i += n + 1;
@@ -87,6 +90,41 @@ export function tabName({ app, program, todo, title, cwd, space }) {
   const shell = Boolean(program?.shell) && !app;
   const ctx = truncate(contextLabel({ program: prog, todo, title, cwd, space, shell }));
   return truncate(ctx ? `${prog} · ${ctx}` : prog, 48);
+}
+
+// One tick of auto-naming: which tabs to rename and the updated record of names this mod set
+// (`stored`, the localStorage JSON shared by every window). Lead pane: the focused agent, else
+// the first agent, else the focused pane, else the first. A tab whose data throws is skipped so
+// the others still get named. Closed tabs are forgotten only once every machine is loaded, so an
+// offline machine keeps its record.
+export function planRenames({ spaces, panes, agents, terminals, stored, machinesReady }) {
+  let last;
+  try { last = JSON.parse(stored ?? "{}"); } catch { last = {}; }
+  if (!last || typeof last !== "object" || Array.isArray(last)) last = {};
+  const agentOf = new Map((agents ?? []).map((a) => [a.pane, a]));
+  const termOf = (pane, agent) => (terminals ?? []).find((t) => (agent && t.address === agent.address) || (pane.terminal && (t.address === pane.terminal || t.id === pane.terminal)));
+  const isAgent = (p) => agentOf.has(p.pane) || p.program?.agent;
+  const renames = [];
+  const live = new Set();
+  let changed = false;
+  for (const space of spaces ?? []) for (const tab of space.tabs ?? []) {
+    live.add(tab.id);
+    try {
+      const mine = (panes ?? []).filter((p) => p.tab === tab.id && p.terminal);
+      const lead = mine.find((p) => isAgent(p) && p.focused) ?? mine.find(isAgent) ?? mine.find((p) => p.focused) ?? mine[0];
+      if (!lead) continue;
+      const agent = agentOf.get(lead.pane), term = termOf(lead, agent);
+      const title = lead.title;
+      const computed = tabName({ app: agent?.app ?? lead.app ?? term?.report?.app ?? null, program: lead.program, todo: term?.records?.todo ?? null, title, cwd: lead.cwd, space: space.name });
+      if (!shouldRename({ tab, computed, last: last[tab.id] ?? null, title })) continue;
+      last[tab.id] = computed; changed = true;
+      renames.push({ id: tab.id, name: computed });
+    } catch {
+      // this tab's data is unusable this tick; the others go on
+    }
+  }
+  if (machinesReady) for (const id of Object.keys(last)) if (!live.has(id)) { delete last[id]; changed = true; }
+  return { renames, stored: JSON.stringify(last), changed };
 }
 
 // Rename only names Herdr gave (unnamed, its number, the terminal title) or the one this mod set
