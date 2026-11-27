@@ -14,3 +14,26 @@ done
 export PATH
 unset _official_gentle_bin
 #endregion
+
+#region gentle-shell update
+# The official installer owns gentle-shell and pi through its pinned pnpm
+# (10.33.0, global/5). `gentle-shell update` runs the PATH pnpm instead, which
+# leaves a duplicate in PNPM_HOME/bin and fails with "ownership could not be
+# verified". Route Pi updates through the pinned pnpm; everything else passes through.
+# Usage: gentle-shell update [pi-version]   (default: latest)
+GENTLE_PINNED_PNPM="${GENTLE_PINNED_PNPM:-pnpm@10.33.0}"
+gentle-shell() {
+    if [[ "$1" != update ]] || ! command -v corepack >/dev/null; then
+        command gentle-shell "$@"
+        return
+    fi
+    local version="${2:-latest}"
+    [[ "$version" == latest ]] && version="$(cd ~ && corepack "$GENTLE_PINNED_PNPM" view @earendil-works/pi-coding-agent dist-tags.latest)"
+    echo "gentle-shell update: Pi $version via $GENTLE_PINNED_PNPM (official install)"
+    (cd ~ && corepack "$GENTLE_PINNED_PNPM" add -g --config.minimumReleaseAge=0 --allow-build=gentle-pi \
+        "@earendil-works/pi-coding-agent@$version") || return
+    rehash
+    command gentle-shell --version | head -2
+    echo "Restart Pi to pick it up. gentle-shell itself updates with: gs sync"
+}
+#endregion
