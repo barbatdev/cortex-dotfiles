@@ -23,6 +23,12 @@ class FeedCopiesTest(unittest.TestCase):
             with self.subTest(mod=copy.parent.name):
                 self.assertEqual(copy.read_bytes(), canonical)
 
+    def test_spaces_and_agents_share_one_state_model(self):
+        # The space dots and the agent cards must reduce state the same way.
+        agents = MODS / "refactoria-agents" / "model.js"
+        spaces = MODS / "refactoria-spaces" / "model.js"
+        self.assertEqual(spaces.read_bytes(), agents.read_bytes())
+
     def test_every_mod_importing_the_reader_carries_it(self):
         for main in MODS.glob("*/main.js"):
             if '"./feed.js"' in main.read_text():

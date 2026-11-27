@@ -431,3 +431,55 @@ test("T13: Herdr hands record titles and messages already decoded; plain text st
   const titles = JSON.stringify(r);
   for (const t of ["e2e probe failing job", "exited 3", "design", "test", "Ledger"]) assert.ok(titles.includes(t), t);
 });
+
+// T19 (design/herdr-spaces/04-split-roles.html): the tray's live summary, the Spaces dot, and the
+// card list both sidebars reduce from (one reduction, shared by a byte-identical model.js copy).
+import { spaceDot, dotTooltip, traySummary, agentCards } from "../herdr/desktop/mods/refactoria-agents/model.js";
+
+const dc = (status, program = "Gentle Shell") => ({ status, program: { name: program } });
+
+test("T19 spaceDot: needs you › failed › working › done; idle has no dot", () => {
+  assert.equal(spaceDot([]), null);
+  assert.equal(spaceDot([dc("idle"), dc("idle")]), null);
+  assert.deepEqual(spaceDot([dc("done")]), { kind: "done", status: "done", word: "done, not seen yet", label: "Gentle Shell done, not seen yet" });
+  assert.deepEqual(spaceDot([dc("done"), dc("working", "Codex")]), { kind: "working", status: "working", word: "working", label: "Codex working" });
+  assert.deepEqual(spaceDot([dc("waiting")]), { kind: "working", status: "waiting", word: "waiting on its subagents", label: "Gentle Shell waiting on its subagents" });
+  assert.deepEqual(spaceDot([dc("working"), dc("failed", "Claude Code")]).label, "Claude Code failed");
+  assert.deepEqual(spaceDot([dc("failed"), dc("blocked", "Codex"), dc("working")]), { kind: "blocked", status: "blocked", word: "needs you", label: "Codex needs you" });
+});
+
+test("T19 dotTooltip: space name, then who and what", () => {
+  assert.equal(dotTooltip("cortex-dotfiles", spaceDot([dc("working")])), "cortex-dotfiles · Gentle Shell working");
+  assert.equal(dotTooltip("x", null), "");
+});
+
+test("T19 traySummary: only non-zero parts, in words; all quiet says so", () => {
+  const busy = [dc("blocked"), dc("working"), dc("waiting"), dc("done"), ...Array(8).fill(dc("idle"))];
+  assert.deepEqual(traySummary(busy), {
+    parts: [{ kind: "blocked", text: "1 needs you" }, { kind: "working", text: "2 running" }, { kind: "idle", text: "9 idle" }],
+    label: "1 needs you, 2 running, 9 idle",
+  });
+  assert.deepEqual(traySummary([dc("failed"), dc("working")]).parts, [{ kind: "failed", text: "1 failed" }, { kind: "working", text: "1 running" }]);
+  assert.deepEqual(traySummary(Array(12).fill(dc("idle"))), { parts: [{ kind: "idle", text: "All quiet · 12 idle" }], label: "All quiet, 12 idle" });
+  assert.deepEqual(traySummary([]), { parts: [{ kind: "idle", text: "All quiet" }], label: "All quiet" });
+});
+
+test("T19 agentCards: one card per live top-level agent, with its space id; sub-agents become chips", () => {
+  const ags = [
+    { address: "t1", pane: "p1", space: "sp-a", space_name: "a", app: "gentle-shell", status: "idle", program: null },
+    { address: "t2", pane: "p2", space: "sp-a", space_name: "a", status: "working", program: { key: "codex", name: "Codex" } },
+    { address: "t3", pane: "p3", space: "sp-b", space_name: "b", status: "blocked", program: { key: "claude", name: "Claude" } },
+    { address: "t4", pane: "p4", space: "sp-c", space_name: "c", status: "idle", program: null },
+  ];
+  const terms = [
+    { address: "t1", state: "live" }, { address: "t2", state: "live" }, { address: "t3", state: "live", parent: "t2" }, { address: "t4", state: "exited" },
+  ];
+  const feedWorking = feed({ activity: { state: "working" } });
+  const sessionOf = (a) => (a.address === "t1" ? { session: { key: "s1" }, feed: feedWorking, live: { status: "working" }, need: null } : null);
+  const cards = agentCards({ agents: ags, terms, sessionOf, sinceOf: () => 0, now: 0 });
+  assert.deepEqual(cards.map((c) => [c.address, c.spaceId, c.status]), [["t1", "sp-a", "working"], ["t2", "sp-a", "blocked"]]);
+  assert.deepEqual(cards[0].session, { key: "s1" });
+  assert.equal(cards[1].session, null);
+  // The Spaces dot of sp-a is the reduction of exactly those cards.
+  assert.equal(spaceDot(cards.filter((c) => c.spaceId === "sp-a")).label, "Codex needs you");
+});

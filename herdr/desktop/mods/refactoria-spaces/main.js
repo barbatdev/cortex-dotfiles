@@ -1,14 +1,16 @@
-// Workspace spaces as a quiet list (design/herdr-spaces/01-quiet-list.html): machine labels,
-// two- or three-line rows (name + shortcut number, branch with ahead/behind/uncommitted, the
-// program and its task when a session runs there), worktrees under their checkout, outlined
-// state pills, a soft raised selection with an accent bar. Click or Enter to switch,
+// Workspace spaces as navigation (design/herdr-spaces/04-split-roles.html on 01-quiet-list):
+// machine labels, two-line rows (name + one state dot + shortcut number, branch with
+// ahead/behind/uncommitted), worktrees under their checkout, a soft raised selection with an
+// accent bar. The dot is the space's most urgent agent, reduced by ./model.js exactly as the
+// Agents tray does (a byte-identical copy); the detail lives in Agents. Click or Enter to switch,
 // right-click for its menu, drag to reorder.
 
 import { View, div, svg } from "gpui-kit";
 import { v_flex, h_flex } from "gpui-base";
-import { FeedSource, allSessions, projectOf, liveState, needsYou } from "./feed.js";
-import { pickSession, spaceOfSession, parseStatus, shortcutNumbers, branchLine, spaceRow, foldedSummary, HEIGHT, rowHeight, blockHeight } from "./rows.js";
-import { spaces, agents, terminals, machines, panes, run, openOverlay, exec, hc, theme, shared, setShared, watchFolder, window, layout, home, readTextFile, nextCommand } from "herdr";
+import { FeedSource, liveState, needsYou, isGentle } from "./feed.js";
+import { agentCards, spaceDot, dotTooltip } from "./model.js";
+import { parseStatus, shortcutNumbers, branchLine, foldedSummary, HEIGHT, rowHeight, blockHeight } from "./rows.js";
+import { spaces, agents, terminals, machines, panes, run, openOverlay, exec, hc, theme, shared, setShared, watchFolder, window, layout, nextCommand } from "herdr";
 
 const ICONS = "mods/refactoria-spaces/icons";
 // Colors the theme has no name for, from the artboard's contrast table: grey meta only on
@@ -19,17 +21,6 @@ const MONO = "Menlo";
 const palette = (t) => ({ ...t, grey: t.ansi8 ?? "#8F839D", failed: t.ansi1 ?? "#FF6B8A" });
 const activate = (e) => e?.key === "enter" || e?.key === "space" || e?.keystroke === "enter" || e?.keystroke === "space";
 const machineGlyph = (m) => (!m ? "laptop" : m === "agent-gentle" ? "cloud" : "server");
-const PROGRAMS = [
-  { keys: ["gentle-shell", "pi"], icon: "p-gs", name: "Gentle Shell" },
-  { keys: ["claude-code", "claude"], icon: "p-cc", name: "Claude Code" },
-  { keys: ["codex"], icon: "p-cx", name: "Codex" },
-];
-// An agent's program: its app report first, then Herdr's program table.
-const agentKey = (a) => { const p = a && a.program; return (a && a.app) || (p && p["key"]) || ""; };
-const programOf = (k) => PROGRAMS.find((p) => p.keys.includes(k));
-const programGlyph = (k) => programOf(k)?.icon ?? "p-sh";
-const programName = (a) => programOf(agentKey(a))?.name ?? (a?.program?.name || "shell");
-
 function find(node, id) {
   if (node?.id === id) return node;
   for (const child of node?.children ?? []) {
@@ -67,20 +58,6 @@ export function waits(status) {
   return status === "blocked" || status === "done";
 }
 
-// Every Herdr screen (herdr-app, herdr-app-2, ...) keeps its own "seen" marks in
-// view.json, so a finished agent looked at on one screen stays done on the others.
-const SCREENS = ["", "-2", "-3", "-4", "-5", "-6"];
-
-// Whether a space waits on the person: an agent blocked, or one done that no
-// screen has looked at since. `seen`: addresses ("t4", "agent-dev/t4") some
-// screen saw as done; `ags`: agents(), read once by the caller.
-export function spaceWaits(s, seen, ags) {
-  if (!waits(s.status)) return false;
-  const mine = ags.filter((a) => a.space === s.id);
-  if (!mine.length) return true;
-  return mine.some((a) => a.status === "blocked" || (a.status === "done" && !seen.has(a.address)));
-}
-
 export function glyph(status) {
   return waits(status) ? "●" : "·";
 }
@@ -116,27 +93,18 @@ export default class Spaces extends View {
     // `git status` walks the whole tree, on another machine a process there:
     // only when its answer could have changed (see `due`).
     cx.timer.every(250, (cx) => this.checkNew(cx));
-    // Someone waiting on the person pulses: only while a space is blocked or done.
-    this.pulse = false;
-    this.seen = new Set();
-    this.readSeen(cx);
     this.listenKeys(cx);
-    cx.timer.every(2000, (cx) => this.readSeen(cx));
     // The block takes the height its rows need (render tallies it), so Agents sits right below.
     this.hovered = null;
     this.measured = 0;
     this.sizedTo = null;
     cx.timer.every(500, () => this.fitBlock());
-    cx.timer.every(600, (cx) => {
-      const waiting = spaces().some((s) => spaceWaits(s, this.seen, agents()));
-      if (!waiting && !this.pulse) return;
-      this.pulse = waiting ? !this.pulse : false;
-      cx.notify();
-    });
+    // Dots follow the agents' state as the Agents tray does (it redraws on the same changes).
+    cx.timer.every(2000, (cx) => cx.notify());
   }
 
   // Sizes the "spaces" layout block to its content (rows.js blockHeight: header, machine labels,
-  // 2- and 3-line rows, folded summaries), between 90 px and FIT_MAX, beyond which it scrolls.
+  // two-line rows, folded summaries), between 90 px and FIT_MAX, beyond which it scrolls.
   fitBlock() {
     if (!this.measured) return;
     const px = Math.max(90, Math.min(FIT_MAX, Math.ceil(this.measured)));
@@ -169,27 +137,6 @@ export default class Spaces extends View {
     if (!w) return;
     const best = pickAgent(agents().filter((a) => a.space === w.id));
     best ? run("pane.focus", { pane: best.pane }) : run("space.select", { id: w.id });
-  }
-
-  // Done agents any screen has looked at, from every screen's view.json.
-  readSeen(cx) {
-    if (this.readingSeen) return;
-    this.readingSeen = true;
-    cx.spawn(async (cx) => {
-      const seen = new Set();
-      for (const n of SCREENS) {
-        try {
-          const view = JSON.parse(await readTextFile(`${home()}/.config/herdr-app${n}/view.json`));
-          for (const [addr, a] of Object.entries(view.attention ?? {})) if (a.word === "done" && a.seen) seen.add(addr);
-        } catch {
-          // No such screen, or caught mid-write: the next look reads it.
-        }
-      }
-      const changed = seen.size !== this.seen.size || [...seen].some((a) => !this.seen.has(a));
-      this.seen = seen;
-      this.readingSeen = false;
-      if (changed) cx.notify();
-    });
   }
 
   checkNew(cx) {
@@ -336,26 +283,16 @@ export default class Spaces extends View {
     return out;
   }
 
-  // Space id -> the Gentle Shell session its row shows (rows.js pickSession). Only local
-  // snapshots: spaceFor() never matches a space on another machine, so those rows stay as they are.
-  sessionsBySpace() {
+  // Space id -> its dot (model.js spaceDot over the same cards the Agents tray draws).
+  dotsBySpace() {
+    const byTerm = new Map(this.feed.sessions().filter((s) => s.terminal && s.feed).map((s) => [s.terminal.address, s]));
+    const sessionOf = (a) => {
+      const s = isGentle(a.app) ? byTerm.get(a.address) : null;
+      return s ? { session: s, feed: s.feed, live: liveState(s.feed), need: needsYou(s.feed) } : null;
+    };
     const by = {};
-    const sp = spaces(), ps = panes();
-    // A terminal's space: through its agent, else its pane's tab.
-    const tabSpace = {};
-    for (const s of sp) for (const c of s.tabs ?? []) tabSpace[c.id] = s.id;
-    const byTerminal = {};
-    for (const p of ps) if (p.terminal && tabSpace[p.tab]) byTerminal[p.terminal] = tabSpace[p.tab];
-    for (const a of agents()) if (a.address && a.space) byTerminal[a.address] = a.space;
-    // Spaces by their live folder (place()), not the folder they were made in.
-    const places = sp.map((s) => ({ id: s.id, place: place(s, ps), repo: Boolean(this.git[where(s, ps)]), machine: s.machine }));
-    const ctx = { home: home(), byTerminal, places };
-    for (const s of allSessions(this.feed.feeds)) {
-      if (!s.feed) continue;
-      const id = spaceOfSession({ terminal: s.terminal?.address ?? null, project: projectOf(s.feed) }, ctx);
-      if (id) (by[id] ??= []).push({ feed: s.feed, live: liveState(s.feed) });
-    }
-    return Object.fromEntries(Object.entries(by).map(([id, list]) => [id, pickSession(list)]));
+    for (const c of agentCards({ agents: agents(), terms: terminals(), sessionOf })) if (c.spaceId) (by[c.spaceId] ??= []).push(c);
+    return Object.fromEntries(Object.entries(by).map(([id, cards]) => [id, spaceDot(cards)]));
   }
 
   // The rows, under a header per machine once one isn't this computer. `parts` collects what is
@@ -363,8 +300,7 @@ export default class Spaces extends View {
   grouped(t, collapsed, parts) {
     const rows = this.ordered();
     const nums = shortcutNumbers(this.spaceOrder().map((w) => w.id));
-    const ags = agents();
-    const draw = (r) => (collapsed ? this.compact(r, t, parts) : this.row(r, t, nums[r.w.id], ags, parts));
+    const draw = (r) => (collapsed ? this.compact(r, t, parts) : this.row(r, t, nums[r.w.id], parts));
     const remote = [...new Set([...rows.map(r => r.w.machine).filter(Boolean), ...this.machines.map(m => m.name)])].sort();
     const loading = m => {
       const layout = machines().find(k => k.name === m)?.layout;
@@ -375,7 +311,7 @@ export default class Spaces extends View {
     if (!remote.length) return loading(null) && !rows.length ? [loadingRow(null)] : rows.map(draw);
     return [null, ...remote].flatMap((m) => {
       const mine = rows.filter((r) => (r.w.machine ?? null) === m);
-      const waiting = mine.filter((r) => spaceWaits(r.w, this.seen, ags)).length;
+      const waiting = mine.filter((r) => this.dots?.[r.w.id]?.kind === "blocked").length;
       const machine = this.machines.find(k => k.name === m);
       const connected = !m || machine?.state === "connected";
       const folded = this.folded.has(m);
@@ -458,47 +394,47 @@ export default class Spaces extends View {
       .child(div().size(Math.max(7, size - 3)).rounded_full().border(1.5).border_color(t.grey));
   }
 
-  // An outlined state pill (artboard .pl): icon + word in the state's color. Waiting on the
-  // person pulses its fill, faintly, while a space is blocked or done unseen.
+  // An outlined state pill (artboard .pl): icon + word in the state's color; only a folded
+  // machine's "N needs you" uses it now.
   pill(t, p) {
     const c = { blocked: t.blocked, failed: t.failed, working: t.working, waiting: t.working, done: t.done, idle: t.grey }[p.kind] ?? t.grey;
     return h_flex().flex_none().gap(4).items_center().h(18).pl(5).pr(7).rounded_full().border(1)
       .border_color(p.kind === "idle" ? CONNECTOR : c)
-      .when((p.kind === "blocked" || p.kind === "done") && this.pulse, (el) => el.bg(`${c}26`))
       .text_size(10.5).font_semibold().text_color(c)
       .child(this.stateIcon(t, p.kind, 11))
       .child(div().whitespace_nowrap().child(p.word));
   }
 
-  // A space row (artboard .q): glyph, name, shortcut number, state pill; the branch line with
-  // ahead/behind and uncommitted counts; the program and its task when a session runs there.
-  row({ w, i, g, tree }, t, n, ags, parts) {
+  // The space's dot (artboard .dot, 8 px, never animated): the color of its most urgent agent,
+  // with a tooltip and an accessible label; the row's own label says it too.
+  dot(t, w, d) {
+    const c = { blocked: t.blocked, failed: t.failed, working: t.working, done: t.done }[d.kind] ?? t.grey;
+    return div().id(`dot-${w.id}`).size(14).flex_none().flex().items_center().justify_center()
+      .role("image").accessibility_label(d.label).tooltip(dotTooltip(w.name, d))
+      .child(div().size(8).rounded_full().bg(c));
+  }
+
+  // A space row (artboard .q): glyph, name, the agent dot, shortcut number; the branch line with
+  // ahead/behind and uncommitted counts. Two lines always.
+  row({ w, i, g, tree }, t, n, parts) {
     const on = w.active;
     const id = `space-${w.id}`;
     const lit = this.hovered === id;
-    const session = this.bySpace?.[w.id] ?? null;
-    const mine = ags.filter((a) => a.space === w.id);
-    const agent = pickAgent(mine);
-    const waiting = spaceWaits(w, this.seen, ags);
-    const failed = mine.some((a) => Object.values(this.records?.get(a.address) ?? {}).some((r) => r?.state === "error"));
-    const info = spaceRow({
-      session, question: session ? needsYou(session.feed)?.reason ?? "" : "", waits: waiting, status: w.status, failed,
-      agent: agent ? { status: agent.status, program: programName(agent) } : null,
-    });
+    const d = this.dots?.[w.id] ?? null;
     const b = branchLine(g);
     const raised = on || lit;
     // #8F839D fails on #2C2144 (4.19): raised rows switch grey meta to #C7A6FF.
     const meta = raised ? t.unknown : t.grey;
-    parts.push({ kind: "row", lines: info.lines });
+    parts.push({ kind: "row" });
     const count = (icon, v, label) => h_flex().flex_none().gap(2).items_center().text_color(t.dim).accessibility_label(label)
       .child(this.glyph(icon, t.dim, 10)).child(String(v));
-    const label = [w.name, n ? `Control A, Control ${n}` : "", b.label, info.pill && info.pill.kind !== "idle" ? info.pill.word : "", info.task, w.machine ?? "This computer"].filter(Boolean).join(", ");
+    const label = [w.name, on ? "current space" : "", n ? `Control A, Control ${n}` : "", b.label, d?.label ?? "", w.machine ?? "This computer"].filter(Boolean).join(", ");
     const select = () => run("space.select", { id: w.id });
     return div()
       .relative()
       .id(id)
       .tab_index(0)
-      .h(rowHeight(info.lines) - 1)
+      .h(rowHeight() - 1)
       .mb(1)
       .flex_none()
       .when(Boolean(tree), (el) => el.ml(14))
@@ -534,10 +470,10 @@ export default class Spaces extends View {
         .child(v_flex().flex_1().min_w(0)
           .child(h_flex().h(18).gap(6).items_center().min_w(0)
             .child(div().min_w(0).truncate().text_size(12.5).text_color(t.foreground).when(on, (el) => el.font_semibold()).when(!on, (el) => el.font_medium()).child(w.name))
-            .when(Boolean(n), (el) => el.child(div().flex_none().min_w(16).h(16).px(3).rounded(4).bg(t.background).border(1).border_color(t.raised)
-              .flex().items_center().justify_center().text_size(10).font_semibold().text_color(t.unknown).child(String(n))))
+            .when(Boolean(d), (el) => el.child(this.dot(t, w, d)))
             .child(div().flex_1())
-            .when(Boolean(info.pill), (el) => el.child(this.pill(t, info.pill))))
+            .when(Boolean(n), (el) => el.child(div().flex_none().min_w(16).h(16).px(3).rounded(4).bg(t.background).border(1).border_color(t.raised)
+              .flex().items_center().justify_center().text_size(10).font_semibold().text_color(t.unknown).child(String(n)))))
           .child(h_flex().mt(2).h(16).gap(8).items_center().min_w(0).text_size(11).text_color(meta)
             .when(Boolean(b.branch), (el) => el.child(h_flex().min_w(0).gap(4).items_center()
               .child(this.glyph("branch", meta, 10))
@@ -545,16 +481,14 @@ export default class Spaces extends View {
             .when(!g, (el) => el.child(div().child("no git branch")))
             .when(b.ahead > 0, (el) => el.child(count("up", b.ahead, `${b.ahead} ahead`)))
             .when(b.behind > 0, (el) => el.child(count("down", b.behind, `${b.behind} behind`)))
-            .when(b.dirty > 0, (el) => el.child(count("dirty", b.dirty, `${b.dirty} uncommitted`))))
-          .when(Boolean(info.task), (el) => el.child(h_flex().mt(3).h(16).gap(5).items_center().min_w(0).text_size(11.5).text_color(t.dim)
-            .child(this.glyph(programGlyph(session ? "gentle-shell" : agentKey(agent)), t.unknown, 11))
-            .child(div().min_w(0).truncate().child(info.task))))));
+            .when(b.dirty > 0, (el) => el.child(count("dirty", b.dirty, `${b.dirty} uncommitted`))))));
   }
 
   // The narrow rail: the shortcut number and a dot when someone waits.
   compact({ w, i }, t, parts) {
     parts.push({ kind: "compact" });
-    const waiting = spaceWaits(w, this.seen, agents());
+    const d = this.dots?.[w.id] ?? null;
+    const dot = d ? { blocked: t.blocked, failed: t.failed, working: t.working, done: t.done }[d.kind] : t.unknown;
     return h_flex()
       .id(`space-${w.id}`)
       .h(HEIGHT.compact)
@@ -564,10 +498,10 @@ export default class Spaces extends View {
       .rounded(6)
       .when(w.active, (el) => el.bg(t.raised))
       .hover((s) => s.bg(t.raised))
-      .accessibility_label(w.name)
+      .accessibility_label([w.name, d?.label].filter(Boolean).join(", "))
       .on_click(() => run("space.select", { id: w.id }))
       .child(div().text_color(w.active ? t.foreground : t.muted).child(String(i + 1)))
-      .child(div().text_color(waiting ? tone(t, w.status) : t.unknown).child(waiting ? "●" : "·"));
+      .child(div().text_color(dot).child(d ? "●" : "·"));
   }
 
   render() {
@@ -586,8 +520,7 @@ export default class Spaces extends View {
       changed = true;
     }
     if (changed) setShared("space.colors", kept);
-    this.bySpace = this.sessionsBySpace();
-    this.records = new Map(terminals().map((x) => [x.address, x.records]));
+    this.dots = this.dotsBySpace();
     const parts = [];
     const list = this.grouped(t, collapsed, parts);
     this.measured = blockHeight(parts);

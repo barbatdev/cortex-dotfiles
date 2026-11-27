@@ -1,4 +1,4 @@
-// Pure row model for the spaces list: what a space's Gentle Shell session adds to its row.
+// Pure row model for the spaces list: sessions per space, git line, shortcuts, heights.
 // No "herdr" import so node --test can load it (tests/herdr_spaces_test.mjs).
 // Kept apart from refactoria-agents/rows.js: a mod cannot import outside its folder.
 
@@ -14,14 +14,16 @@ export function sessionName(feed) {
 
 const IN_PROGRESS = /^(in[_ -]?progress|active|doing|working)$/i;
 
-// The title of the task the session is on: todo.current, else the first in-progress item.
+// The task the session is on: todo.current, else the first in-progress item, with done/total.
+// Same answer as refactoria-agents/rows.js: ./model.js (a copy of the Agents one) imports it.
 export function currentTask(feed) {
   const todo = feed?.todo;
   if (!todo) return null;
   const cur = todo.current;
   let title = typeof cur === "string" ? cur : cur?.title;
   if (!title) title = (todo.items ?? []).find((i) => IN_PROGRESS.test(String(i?.state ?? "")))?.title;
-  return title ? String(title) : null;
+  if (!title) return null;
+  return { title: String(title), done: Number(todo.progress?.done) || 0, total: Number(todo.progress?.total) || 0 };
 }
 
 const trim = (p) => String(p ?? "").replace(/\/+$/, "");
@@ -57,21 +59,6 @@ export function pickSession(list) {
   return [...(list ?? [])].sort((x, y) =>
     (URGENCY[y.live?.status] ?? 0) - (URGENCY[x.live?.status] ?? 0)
     || String(y.feed?.updatedAt ?? "").localeCompare(String(x.feed?.updatedAt ?? "")))[0] ?? null;
-}
-
-// A space row's text: `state` the indicator after the name (null when idle), `other` the
-// session's name when it differs from the space's, `second` the second line (the task, else
-// the git line `git`), `tooltip` the git line when the task took its place.
-export function spaceLines({ space, git, session }) {
-  const live = session?.live;
-  const state = live && live.status !== "idle" ? { status: live.status, label: live.label } : null;
-  const name = session ? sessionName(session.feed) : "";
-  // Not repeated when it only says the space's or the project folder's name.
-  const id = session?.feed?.identity;
-  const same = [space, baseName(id?.realCwd || session?.feed?.project?.cwd || id?.cwd)].map((x) => String(x ?? "").toLowerCase());
-  const other = name && !same.includes(name.toLowerCase()) ? name : "";
-  const task = session ? currentTask(session.feed) : null;
-  return { state, other, second: task || git || "", tooltip: task && git ? git : "" };
 }
 
 // ---- Quiet list (design/herdr-spaces/01-quiet-list.html) ----
@@ -111,27 +98,6 @@ export function branchLine(g) {
   return { branch, ahead, behind, dirty, label };
 }
 
-const WORD = { blocked: "Needs you", failed: "Failed", working: "Working", waiting: "Waiting", done: "New", idle: "Idle" };
-
-// A row's state pill and its third line. `session`: { feed, live } (pickSession) or null;
-// `agent`: { status, program: name } (the space's pickAgent) or null; `question`: the open
-// question; `waits`: spaceWaits(); `status`: the space's own status; `failed`: a failure record.
-// Needs you > Failed > Working > Waiting (on its subagents) > New > Idle (a session that is just there).
-export function spaceRow({ session = null, agent = null, question = "", waits = false, status = null, failed = false } = {}) {
-  const live = session?.live?.status;
-  let kind = null;
-  if (live === "blocked" || agent?.status === "blocked" || (waits && status === "blocked")) kind = "blocked";
-  else if (failed) kind = "failed";
-  else if (live === "working" || agent?.status === "working") kind = "working";
-  else if (live === "waiting") kind = "waiting";
-  else if (waits) kind = "done";
-  else if (session) kind = "idle";
-  const program = session ? "Gentle Shell" : agent?.program || "";
-  const text = kind === "blocked" && question ? `Asks: “${question}”` : session ? currentTask(session.feed) || "" : "";
-  const task = program && text ? `${program} · ${text}` : "";
-  return { pill: kind ? { kind, word: WORD[kind] } : null, task, lines: task ? 3 : 2 };
-}
-
 // A folded machine's one line: the shortcut range it holds, then its first space names.
 export function foldedSummary(rows, shown = 3) {
   const ns = (rows ?? []).map((r) => r.n).filter((n) => n != null);
@@ -143,12 +109,13 @@ export function foldedSummary(rows, shown = 3) {
 
 // Fixed heights (px) of what the block draws, so it can take the height its content needs and
 // Agents sits right below it. Rows include their 1 px gap.
-export const HEIGHT = { head: 36, pad: 8, machine: 32, row2: 47, row3: 65, folded: 22, loading: 28, empty: 28, compact: 26 };
-export const rowHeight = (lines) => (lines >= 3 ? HEIGHT.row3 : HEIGHT.row2);
+export const HEIGHT = { head: 36, pad: 8, machine: 32, row2: 47, folded: 22, loading: 28, empty: 28, compact: 26 };
+// Every space row is two lines (04-split-roles: the agent is a dot, its detail lives in Agents).
+export const rowHeight = () => HEIGHT.row2;
 
-// parts: [{ kind: "machine" | "row" (with lines) | "folded" | "loading" | "empty" | "compact" }].
+// parts: [{ kind: "machine" | "row" | "folded" | "loading" | "empty" | "compact" }].
 export function blockHeight(parts) {
   let px = HEIGHT.head + HEIGHT.pad;
-  for (const p of parts ?? []) px += p.kind === "row" ? rowHeight(p.lines) : HEIGHT[p.kind] ?? 0;
+  for (const p of parts ?? []) px += p.kind === "row" ? rowHeight() : HEIGHT[p.kind] ?? 0;
   return px;
 }

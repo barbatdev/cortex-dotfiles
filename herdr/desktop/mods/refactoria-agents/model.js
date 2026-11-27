@@ -243,7 +243,7 @@ export function buildCard({ agent, feed = null, live = null, need = null, record
   } else meta.push(program.name);
 
   const word = status === "failed" ? `${rec.failed.length} failed` : WORD[status] ?? "Idle";
-  return { address: agent?.address, pane: agent?.pane ?? null, space: agent?.space_name ?? "", focused: Boolean(agent?.focused), pinned: Boolean(agent?.pinned), tab: tabName, machine, name, program, status, activity, word, time, since: from ?? 0, question, sub, task, chips, meta };
+  return { address: agent?.address, pane: agent?.pane ?? null, spaceId: agent?.space ?? null, space: agent?.space_name ?? "", focused: Boolean(agent?.focused), pinned: Boolean(agent?.pinned), tab: tabName, machine, name, program, status, activity, word, time, since: from ?? 0, question, sub, task, chips, meta };
 }
 
 // Most urgent first; among blocked the longest wait leads, otherwise the latest change.
@@ -342,4 +342,61 @@ export function idleLines(c, now) {
   const where = machineLabel(c.machine);
   const label = [c.name, isNew ? "finished, not seen yet" : "idle", task, where, age && `${age} ago`].filter(Boolean).join(", ");
   return { name: c.name, isNew, age, task, where, label };
+}
+
+// ---- Split roles (design/herdr-spaces/04-split-roles.html): one reduction, two sidebars ----
+
+// The cards of every live top-level agent (agents() entries `agents`, terminals() `terms`): a
+// sub-agent with its own terminal is a chip on its parent's card, never a card of its own.
+// `sessionOf(agent)`: { session, feed, live, need } for a local Gentle Shell session, else null;
+// `sinceOf(agent)`: since when it is in its state (ms). refactoria-spaces reduces these same cards
+// to its dots (spaceDot), so both sidebars agree on every agent's state at the same moment.
+export function agentCards({ agents = [], terms = [], sessionOf = () => null, sinceOf = () => null, now = Date.now() } = {}) {
+  const list = liveAgents(agents, terms);
+  const listed = new Set(list.map((a) => a.address));
+  const termOf = new Map((terms ?? []).map((x) => [x.address, x]));
+  const parentOf = new Map((terms ?? []).filter((x) => x.parent).map((x) => [x.address, x.parent]));
+  const kidsOf = new Map();
+  for (const a of list) {
+    const p = parentOf.get(a.address);
+    if (!p || !listed.has(p)) continue;
+    const term = termOf.get(a.address);
+    kidsOf.set(p, [...(kidsOf.get(p) ?? []), { name: term?.name || term?.template || a.title || a.program?.name || a.address, status: a.status }]);
+  }
+  return list.filter((a) => !listed.has(parentOf.get(a.address))).map((a) => {
+    const s = sessionOf(a);
+    const c = buildCard({ agent: a, feed: s?.feed ?? null, live: s?.live ?? null, need: s?.need ?? null, records: termOf.get(a.address)?.records, term: termOf.get(a.address) ?? null, since: sinceOf(a), now, kids: kidsOf.get(a.address) ?? [] });
+    return { ...c, session: s?.session ?? null };
+  });
+}
+
+// A space's one dot: its most urgent agent, needs you › failed › working (or waiting) › done
+// unseen; idle spaces have none. `kind` is the color (theme blocked / failed / working / done).
+const DOT = { blocked: 4, failed: 3, working: 2, waiting: 2, done: 1 };
+const DOT_WORD = { blocked: "needs you", failed: "failed", working: "working", waiting: "waiting on its subagents", done: "done, not seen yet" };
+export function spaceDot(cards) {
+  const top = (cards ?? []).filter((c) => DOT[c?.status]).reduce((a, c) => (!a || DOT[c.status] > DOT[a.status] ? c : a), null);
+  if (!top) return null;
+  const word = DOT_WORD[top.status];
+  return { kind: top.status === "waiting" ? "working" : top.status, status: top.status, word, label: `${top.program?.name || "shell"} ${word}` };
+}
+
+// The dot's tooltip (the accessible label says the same in the row's name).
+export const dotTooltip = (space, dot) => (dot ? `${space} · ${dot.label}` : "");
+
+// The Agents tray header's live summary: only non-zero parts, in words (never color alone).
+export function traySummary(cards) {
+  const { needs, running, quiet } = sections(cards ?? []);
+  const blocked = needs.filter((c) => c.status === "blocked").length;
+  const failed = needs.length - blocked;
+  const parts = [];
+  if (blocked) parts.push({ kind: "blocked", text: `${blocked} needs you` });
+  if (failed) parts.push({ kind: "failed", text: `${failed} failed` });
+  if (running.length) parts.push({ kind: "working", text: `${running.length} running` });
+  if (parts.length) {
+    if (quiet.length) parts.push({ kind: "idle", text: `${quiet.length} idle` });
+    return { parts, label: parts.map((p) => p.text).join(", ") };
+  }
+  const text = quiet.length ? `All quiet · ${quiet.length} idle` : "All quiet";
+  return { parts: [{ kind: "idle", text }], label: text.replace(" · ", ", ") };
 }

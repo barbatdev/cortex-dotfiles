@@ -1,12 +1,14 @@
 // Agents as session cards (design/herdr-desktop-ux/04-sessions-v2.html, on 02): Needs you and
 // Running cards, most urgent first; a calm block when nothing runs; idle rows grouped by recency.
+// Drawn as the activity tray of design/herdr-spaces/04-split-roles.html: a darker surface with
+// rounded top corners, its own edge and a bold header with a live summary in words.
 // The card model is pure (./model.js); this file draws it with the theme's tokens.
 
 import { View, div, svg, image } from "gpui-kit";
 import { v_flex, h_flex } from "gpui-base";
 import { agents, terminals, spaces, run, theme, shared, setShared, setAgentOrder, window, layout } from "herdr";
 import { FeedSource, isGentle, liveState, needsYou, selectSession } from "./feed.js";
-import { buildCard, sortCards, splitCards, liveAgents, timeAgo, disambiguate, idleSince, freshIdle, sections, recencyGroups, todaySummary, lastFinished, programIcon, machineIcon, pillLabel, idleLines } from "./model.js";
+import { agentCards, traySummary, buildCard, sortCards, splitCards, liveAgents, timeAgo, disambiguate, idleSince, freshIdle, sections, recencyGroups, todaySummary, lastFinished, programIcon, machineIcon, pillLabel, idleLines } from "./model.js";
 
 const ICON = { sub: "mods/refactoria-agents/icons/sub.svg", chev: "mods/refactoria-agents/icons/chev.svg", archive: "mods/refactoria-agents/icons/archive.svg", calm: "mods/refactoria-agents/icons/calm.svg" };
 
@@ -34,6 +36,9 @@ function toggleSidebar() {
 // Colors the theme has no name for, from the artboard's contrast table: grey text only on
 // chrome/background (5.16+), never on raised (4.19); the focus ring (10.45 on chrome).
 const SPARK = "#FFB547";
+// The tray (artboard .tray): darker than the sidebar, with a decorative #4A3D66 edge and grip.
+const TRAY = "#0B0714";
+const EDGE = "#4A3D66";
 const palette = (t) => ({
   ...t,
   grey: t.ansi8 ?? "#8F839D",
@@ -102,7 +107,7 @@ export default class Agents extends View {
     const lead = c.kind === "subagent" ? this.glyph(ICON.sub, t.working, 11)
       : div().flex_none().font_bold().text_color({ job: t.working, consult: t.accent, failed: t.failed }[c.kind] ?? t.dim).child({ job: "▸", consult: "⇄", failed: "×" }[c.kind] ?? "·");
     return h_flex().max_w_full().gap(5).items_center().px(7).h(22).rounded(6)
-      .bg(lit ? t.background : t.chrome).border(1).border_color(c.kind === "failed" ? t.failed : t.raised)
+      .bg(lit ? t.chrome : TRAY).border(1).border_color(c.kind === "failed" ? t.failed : t.raised)
       .text_size(11).text_color(t.dim)
       .child(lead)
       .child(div().min_w(0).truncate().child(c.label));
@@ -135,7 +140,7 @@ export default class Agents extends View {
       .border(1)
       .border_color(lit ? rail : t.raised)
       .border_l(3)
-      .bg(lit ? t.raised : t.background)
+      .bg(lit ? t.raised : t.chrome)
       .pl(10)
       .pr(11)
       .pt(10)
@@ -239,7 +244,7 @@ export default class Agents extends View {
     const stat = (n, label, icon) => h_flex().flex_1().min_w(0).gap(7).items_baseline()
       .child(div().flex_none().min_w(20).text_size(17).font_semibold().text_color(t.foreground).child(String(n)))
       .child(h_flex().min_w(0).gap(3).items_center().text_size(11).text_color(t.grey).when(Boolean(icon), (el) => el.child(icon)).child(div().min_w(0).truncate().child(label)));
-    return v_flex().id("ag-calm").mx(2).rounded(12).border(1).border_color(t.raised).bg(t.background).px(14).pt(14).pb(13)
+    return v_flex().id("ag-calm").mx(2).mt(6).rounded(12).border(1).border_color(t.raised).bg(t.chrome).px(14).pt(14).pb(13)
       .accessibility_label(`All quiet. Today: ${d.ran} ran, ${d.finished} finished, ${d.failed} failed, ${d.needs} need you`)
       .child(h_flex().gap(11).items_start()
         .child(image(ICON.calm).size(30).flex_none())
@@ -271,7 +276,6 @@ export default class Agents extends View {
     const collapsed = narrow();
     const now = Date.now();
     const all = terminals();
-    const records = new Map(all.map((x) => [x.address, x.records]));
     const termOf = new Map(all.map((x) => [x.address, x]));
     const sessions = this.feed.sessions();
     const byTerm = new Map(sessions.filter((s) => s.terminal && s.feed).map((s) => [s.terminal.address, s]));
@@ -279,29 +283,19 @@ export default class Agents extends View {
 
     // No stale duplicates: one entry per live terminal. A sub-agent with its own terminal shows on
     // its parent's card (a chip; blocked or failed raises the parent), not as a card of its own.
-    const list = liveAgents(agents(), all);
-    this.track(list, now);
-    const listed = new Set(list.map((a) => a.address));
-    const parentOf = new Map(all.filter((x) => x.parent).map((x) => [x.address, x.parent]));
-    const kidsOf = new Map();
-    for (const a of list) {
-      const p = parentOf.get(a.address);
-      if (!p || !listed.has(p)) continue;
-      const term = all.find((x) => x.address === a.address);
-      kidsOf.set(p, [...(kidsOf.get(p) ?? []), { name: term?.name || term?.template || a.title || a.program?.name || a.address, status: a.status }]);
-    }
-
+    // model.js agentCards: the same reduction refactoria-spaces turns into its dots.
+    this.track(liveAgents(agents(), all), now);
     const sinceOf = (a) => {
       const tab = tabs.get(a.tab);
       // Herdr's own status_ms first: the mod's stamp counts done and idle as one, so a kept
       // terminal looked at long ago would read as idle since then (L17: "27d" rows).
       return (a.status === "working" && tab?.working_since) || idleSince(termOf.get(a.address), this.changed[a.address]?.at) || tab?.changed_at || null;
     };
-    const cards = list.filter((a) => !listed.has(parentOf.get(a.address))).map((a) => {
+    const sessionOf = (a) => {
       const s = isGentle(a.app) ? byTerm.get(a.address) : null;
-      const c = buildCard({ agent: a, feed: s?.feed ?? null, live: s ? liveState(s.feed) : null, need: s ? needsYou(s.feed) : null, records: records.get(a.address), term: termOf.get(a.address), since: sinceOf(a), now, kids: kidsOf.get(a.address) ?? [] });
-      return { ...c, session: s ?? null };
-    });
+      return s ? { session: s, feed: s.feed, live: liveState(s.feed), need: needsYou(s.feed) } : null;
+    };
+    const cards = agentCards({ agents: agents(), terms: all, sessionOf, sinceOf, now });
     // Sessions running outside this window (another terminal on this computer): a card while they
     // do something; an idle one there is not worth a row (it would read as a stale duplicate).
     for (const s of sessions.filter((s) => s.feed && !s.terminal)) {
@@ -351,10 +345,7 @@ export default class Agents extends View {
       body.push(this.heading(t, "Running", String(running.length)));
       body.push(v_flex().gap(8).children(running.map((c) => this.card(t, c, open, now))));
     }
-    if (!needs.length && !running.length) {
-      body.push(this.heading(t, "Agents"));
-      body.push(this.calm(t, cards, now, open));
-    }
+    if (!needs.length && !running.length) body.push(this.calm(t, cards, now, open));
     // The quiet list (unseen finished turns lead as "New"), grouped by recency.
     const staleRows = this.staleOpen ? split.idle.filter((c) => !fresh.includes(c)) : [];
     const quietRows = [...quiet, ...staleRows];
@@ -384,13 +375,27 @@ export default class Agents extends View {
       .child(this.staleOpen ? `${hidden} untouched for over a day, shown ·` : `${hidden} untouched for over a day are tucked away ·`)
       .child(this.link(t, "stale-toggle", this.staleOpen ? "Hide" : "Show", toggle("staleOpen"))));
 
+    // The tray: its own surface and header (bold "Agents" with the live summary), docked under
+    // Spaces with rounded top corners, so activity never reads as more navigation.
+    const sum = traySummary(shown);
+    const tone = { blocked: t.blocked, failed: t.failed, working: t.working };
+    const header = h_flex().flex_none().px(12).pt(6).pb(9).gap(8).items_center().flex_wrap().border_b(1).border_color(t.raised)
+      .child(div().flex_none().text_size(13).font_bold().text_color(t.foreground).child("Agents"))
+      .child(h_flex().id("ag-summary").min_w(0).gap(9).flex_wrap().items_center().text_size(11)
+        .role("status").accessibility_label(sum.label)
+        .children(sum.parts.map((x) => h_flex().flex_none().gap(4).items_center()
+          .when(x.kind !== "idle", (el) => el.font_semibold().text_color(tone[x.kind]).child(this.stateIcon(t, x.kind, 11)))
+          .when(x.kind === "idle", (el) => el.font_medium().text_color(t.grey))
+          .child(div().whitespace_nowrap().child(x.text)))));
     return v_flex()
       .size_full()
       .min_h(0)
       .bg(t.chrome)
-      .border_t(1)
-      .border_color(t.border)
       .text_size(13)
-      .child(v_flex().id("ag-list").flex_1().min_h(0).px(8).pb(12).overflow_y_scrollbar().children(body));
+      .child(v_flex().flex_1().min_h(0).mx(6).bg(TRAY).border_t(1).border_l(1).border_r(1).border_color(EDGE).rounded_t(14)
+        .role("region").accessibility_label(`Agents: ${sum.label}`)
+        .child(div().flex_none().mt(6).mx_auto().w(32).h(4).rounded(4).bg(EDGE))
+        .child(header)
+        .child(v_flex().id("ag-list").flex_1().min_h(0).px(8).pt(4).pb(12).overflow_y_scrollbar().children(body)));
   }
 }
