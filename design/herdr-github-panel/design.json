@@ -1,0 +1,10 @@
+{
+  "title": "GitHub panel",
+  "brief": "Rebuild the right-side GitHub panel of the Herdr Desktop sidebar (~380 px, next to Files/Changes) so it answers per repo of the active space: what needs my action, what is moving, what is broken, and issues triaged by meaning, with real affordances (review, checkout into new space, copy, re-run failed jobs). RefactorIA tokens from 04-sessions-v2, calm colours, AA contrast.",
+  "feature": "odd/tasks/herdr-desktop-ux.md",
+  "artboards": [
+    { "file": "01-action-inbox.html", "title": "Action inbox", "tradeoff": "Fastest answer to 'what needs me' in one feed (reviews, changes requested, mentions, broken CI with its first error inline); tabs become filter chips, so browsing all PRs or all 21 issues is one click further away and the order shifts as items change", "width": 1440, "height": 900 },
+    { "file": "02-rich-tabs.html", "title": "Rich tabs", "tradeoff": "Familiar PRs/Issues/CI/Inbox model with the richest per-PR card (checks, reviewers, size, merge state) and inline expansion showing checks, files and all actions; urgency is split across tabs (attention dots only), and three-line cards fit ~6 PRs per screen", "width": 1440, "height": 900 },
+    { "file": "03-repo-dashboard.html", "title": "Repo dashboard", "tradeoff": "A health card (main CI, failing branch, queue sizes) gives instant orientation and issues are grouped by meaning (assigned, approved, bugs, stale); the fixed section order means a long review queue pushes CI and issues below the fold, and the card costs ~130 px", "width": 1440, "height": 900 }
+  ]
+}

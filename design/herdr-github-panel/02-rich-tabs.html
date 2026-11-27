@@ -1,0 +1,247 @@
+<!doctype html>
+<!--
+  Herdr Desktop · GitHub panel — 02 · Rich tabs
+
+  Tokens: RefactorIA tokens reused from design/herdr-desktop-ux/04-sessions-v2.html. WCAG 2.x contrast (relative luminance):
+  On #17102A panel:  #FFFFFF 18.36 · #EBEBEB 15.40 · #F2EFFA 16.17 · #C7A6FF 9.03 · #A477FF 5.82 · #8F839D 5.16 · #8CC8FF 10.33 · #FFC857 11.93 · #58E6A8 11.63 · #FF6B8A 6.75 · #FFB547 10.45
+  On #0B0714 inset (expanded detail, health strip): #FFFFFF 19.91 · #EBEBEB 16.70 · #C7A6FF 9.79 · #A477FF 6.32 · #8F839D 5.60 · #58E6A8 12.61 · #FF6B8A 7.32 · #FFC857 12.94 · #8CC8FF 11.21
+  On #2C2144 raised (hover / selected / focused row): #FFFFFF 14.91 · #EBEBEB 12.51 · #F2EFFA 13.14 · #C7A6FF 7.33 · #A477FF 4.73 · #58E6A8 9.44 · #FF6B8A 5.48 · #FFC857 9.69 · #8CC8FF 8.39
+     #8F839D on #2C2144 = 4.19 FAIL -> never used: hovered/selected rows switch grey meta to #C7A6FF.
+  Dimmed window parts are dimmed by COLOUR, never opacity: left sidebar #100B1E with #8F839D 5.42 / #A79CB5 7.41; terminal #0E0A18 with #8F839D 5.49.
+  Label pills (GitHub label hue toned to palette; text on its own 14% tint):
+     enhancement #8FDCE3 on #282D44 8.72 · bug #FF8FA3 on #37223B 6.68 · status:approved #7FE0B0 on #262D3D 8.65
+     docs #8CC8FF on #272A48 7.82 · stale #C7B9A0 on #30283B 7.29 · needs-triage #FFC857 on #372A30 8.89
+     on raised row the tint becomes 14% over #2C2144: lowest is bug 5.30 -> still AA.
+  Avatars (initials): #F2EFFA on #3B2D5C 10.78 · #1F3A4A 10.50 · #3A2A1E 12.09 · #203A2E 10.84
+  Buttons: #FFFFFF on #7127FF 6.11 · #0B0714 on #58E6A8 12.61 (badge) · ghost button text #EBEBEB on #17102A 15.40, border #C7A6FF 9.03 (>=3:1 control boundary)
+  Non-text: check dots / state glyphs use status colours >= 5.48:1 vs every surface and always pair with a word or count; size bar segments
+     #58E6A8 / #FF6B8A >= 6.75 vs #17102A, and the +N / -N numbers are printed next to them. Focus ring #FFB547 10.45 vs #17102A.
+  #2C2144 borders vs #17102A = 1.23 -> decorative only. Status is always glyph shape + word, never colour alone.
+-->
+<html lang="en"><head><meta charset="utf-8"><title>Herdr Desktop — GitHub panel · 02 · Rich tabs</title><style>
+:root{--bg:#0B0714;--surface:#17102A;--raised:#2C2144;--fg:#FFFFFF;--muted:#EBEBEB;--dim:#F2EFFA;--accent:#A477FF;--solid:#7127FF;--spark:#FFB547;
+--working:#8CC8FF;--blocked:#FFC857;--done:#58E6A8;--error:#FF6B8A;--unknown:#C7A6FF;--grey:#8F839D;
+--font:"Inter",-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",Arial,sans-serif;--mono:"SF Mono",ui-monospace,Menlo,monospace}
+*{box-sizing:border-box;margin:0;padding:0}
+body{width:1440px;height:900px;background:var(--bg);color:var(--fg);font:12px/1.4 var(--font);overflow:hidden;-webkit-font-smoothing:antialiased}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;text-align:left}
+a{color:inherit;text-decoration:none}
+:focus-visible{outline:2px solid var(--spark);outline-offset:2px;border-radius:6px}
+svg{flex:none}
+.win{display:grid;grid-template-columns:300px 1fr 384px;height:900px}
+/* dimmed left sidebar (colour-dimmed) */
+.side{background:#100B1E;border-right:1px solid #1E1633;padding:14px 10px;color:#8F839D;display:flex;flex-direction:column;gap:4px}
+.side .b{display:flex;gap:10px;align-items:center;padding:0 6px 10px;color:#A79CB5;font-weight:600;font-size:13px}
+.side .b i{width:24px;height:24px;border-radius:6px;background:#2A1F45;display:block}
+.side h2{font-size:10.5px;letter-spacing:.6px;text-transform:uppercase;font-weight:600;padding:10px 6px 4px}
+.side li{list-style:none;display:flex;align-items:center;gap:8px;padding:5px 6px;border-radius:7px;font-size:12.5px}
+.side li .av{width:20px;height:20px;border-radius:5px;background:#1E1633;display:grid;place-items:center;font-size:11px;font-weight:600;color:#A79CB5}
+.side li.on{background:#1A1330;color:#A79CB5}
+.side li small{margin-left:auto;font-size:10.5px}
+/* dimmed terminal */
+.term{background:#0E0A18;padding:14px 18px;font:12px/1.6 var(--mono);color:#8F839D;display:flex;flex-direction:column}
+.term .tabs{display:flex;gap:16px;font:11px var(--font);padding-bottom:10px;border-bottom:1px solid #1E1633;margin-bottom:12px}
+.term .tabs b{color:#A79CB5;font-weight:600}
+/* right panel */
+.gh{background:var(--surface);border-left:1px solid var(--raised);display:flex;flex-direction:column;min-height:0}
+.ptabs{display:flex;gap:2px;padding:10px 12px 0;border-bottom:1px solid var(--raised)}
+.ptabs button{padding:7px 10px 9px;font-size:12px;color:var(--grey);border-bottom:2px solid transparent;display:flex;gap:6px;align-items:center;min-height:32px}
+.ptabs button[aria-selected=true]{color:var(--fg);border-bottom-color:var(--accent);font-weight:600}
+.ptabs svg{width:13px;height:13px}
+.repo{display:flex;align-items:center;gap:8px;padding:12px 14px 4px}
+.repo .rn{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.repo .rn span{color:var(--grey);font-weight:400}
+.repo .sync{margin-left:auto;display:flex;align-items:center;gap:4px;color:var(--grey);font-size:10.5px;white-space:nowrap}
+.ib{width:28px;height:28px;border-radius:7px;display:grid;place-items:center;color:var(--unknown)}
+.ib:hover{background:var(--raised)}
+.ib svg{width:14px;height:14px}
+.gl{width:14px;height:14px;margin-top:2px}
+.repo .sync svg{width:11px;height:11px}
+.scroll{overflow:auto;flex:1;min-height:0;padding:0 8px 16px;scrollbar-width:thin;scrollbar-color:#2C2144 transparent}
+h2.sec{display:flex;align-items:center;gap:7px;font-size:10.5px;font-weight:600;letter-spacing:.6px;text-transform:uppercase;color:var(--grey);padding:16px 8px 6px}
+h2.sec .n{color:var(--muted);font-weight:500;letter-spacing:0;text-transform:none}
+h2.sec svg{width:12px;height:12px}
+h2.sec .lnk{margin-left:auto}
+.lnk{color:var(--accent);font-size:11px;text-decoration:underline;text-underline-offset:2px;min-height:24px;text-transform:none;letter-spacing:0;font-weight:500;display:inline-flex;align-items:center}
+.btn{font-size:11px;padding:4px 10px;border-radius:6px;min-height:26px;display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
+.btn svg{width:12px;height:12px}
+.btn.primary{background:var(--solid);color:#fff;font-weight:600}
+.btn.ghost{border:1px solid var(--unknown);color:var(--muted)}
+.acts{display:flex;gap:6px;flex-wrap:wrap}
+/* rows */
+.list{list-style:none;display:flex;flex-direction:column;gap:2px}
+.row{display:grid;grid-template-columns:16px 1fr;column-gap:9px;padding:8px 8px 9px;border-radius:9px;width:100%}
+.row:hover,.row.sel{background:var(--raised)}
+.row:hover .meta,.row.sel .meta,.row:hover .age,.row.sel .age{color:var(--unknown)}
+.row .gl{width:14px;height:14px;margin-top:2px}
+.t{font-size:12.5px;font-weight:500;color:var(--fg);line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.t .num{color:var(--unknown);font-weight:500;font-variant-numeric:tabular-nums}
+.l1{display:flex;gap:8px;align-items:flex-start}
+.l1 .t{flex:1;min-width:0}
+.age{font-size:10.5px;color:var(--grey);white-space:nowrap;font-variant-numeric:tabular-nums;margin-top:2px}
+.meta{grid-column:2;display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;font-size:11px;color:var(--grey);margin-top:4px}
+.meta>span{display:inline-flex;align-items:center;gap:4px;white-space:nowrap}
+.meta svg{width:11px;height:11px}
+.why{grid-column:2;font-size:11.5px;margin-top:5px;display:flex;align-items:center;gap:5px}
+.why svg{width:12px;height:12px}
+.row .acts{grid-column:2;margin-top:8px}
+.br{font-family:var(--mono);font-size:10.5px;color:var(--dim)}
+/* avatars */
+.avs{display:inline-flex}
+.avc{width:18px;height:18px;border-radius:50%;display:inline-grid;place-items:center;font-size:8.5px;font-weight:700;color:#F2EFFA;letter-spacing:.2px;box-shadow:0 0 0 2px var(--surface);flex:none}
+.avs .avc+.avc{margin-left:-4px}
+.row:hover .avc,.row.sel .avc{box-shadow:0 0 0 2px var(--raised)}
+.a1{background:#3B2D5C}.a2{background:#1F3A4A}.a3{background:#3A2A1E}.a4{background:#203A2E}
+.rv{position:relative}
+.rv i{position:absolute;right:-3px;bottom:-3px;width:9px;height:9px;border-radius:50%;display:grid;place-items:center;box-shadow:0 0 0 1.5px var(--surface)}
+/* labels */
+.lb{display:inline-flex;align-items:center;gap:5px;font-size:10.5px;font-weight:500;padding:1px 7px 1px 6px;border-radius:999px;white-space:nowrap;line-height:16px}
+.lb::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+.lb.enh{color:#8FDCE3;background:#282D44;box-shadow:inset 0 0 0 1px #4A6E7E}
+.lb.bug{color:#FF8FA3;background:#37223B;box-shadow:inset 0 0 0 1px #7A4A62}
+.lb.appr{color:#7FE0B0;background:#262D3D;box-shadow:inset 0 0 0 1px #48705F}
+.lb.docs{color:#8CC8FF;background:#272A48;box-shadow:inset 0 0 0 1px #4A638A}
+.lb.stale{color:#C7B9A0;background:#30283B;box-shadow:inset 0 0 0 1px #6A5F64}
+.row:hover .lb.bug,.row.sel .lb.bug{background:#4A3051}
+/* size bar */
+.sz{display:inline-flex;align-items:center;gap:5px;font-variant-numeric:tabular-nums}
+.sz .p{color:var(--done)}.sz .m{color:var(--error)}
+.sz b{display:inline-flex;gap:1.5px}
+.sz b i{width:5px;height:7px;border-radius:1.5px;background:#2C2144}
+.sz b i.g{background:var(--done)}.sz b i.r{background:var(--error)}
+/* checks */
+.ck{display:inline-flex;align-items:center;gap:4px}
+.dots{display:inline-flex;gap:2px}
+.dots svg{width:9px;height:9px}
+.pill{display:inline-flex;align-items:center;gap:4px;font-size:10.5px;font-weight:600;color:var(--c);padding:1px 7px 1px 5px;border-radius:999px;border:1px solid var(--c);white-space:nowrap}
+.pill svg{width:11px;height:11px}
+.chip{display:inline-flex;align-items:center;gap:6px;font-size:11px;color:var(--muted);padding:4px 9px;border-radius:999px;border:1px solid var(--raised);min-height:26px;white-space:nowrap}
+.chip[aria-pressed=true]{background:var(--raised);border-color:var(--unknown);color:var(--fg)}
+.chip .c{font-variant-numeric:tabular-nums;color:var(--unknown)}
+.chip svg{width:11px;height:11px}
+.foot{border-top:1px solid var(--raised);padding:9px 14px;font-size:10.5px;color:var(--grey);display:flex;align-items:center;gap:6px}
+.foot svg{width:11px;height:11px}
+.cap{position:absolute;left:316px;top:820px;width:740px;font-size:11px;color:#8F839D;line-height:1.5}
+.cap b{color:#A79CB5}
+
+.seg{display:grid;grid-template-columns:repeat(4,1fr);gap:2px;margin:8px 14px 4px;padding:3px;border-radius:9px;background:var(--bg)}
+.seg button{display:flex;flex-direction:column;align-items:center;gap:1px;padding:5px 4px;border-radius:7px;color:var(--muted);font-size:11px;min-height:40px;position:relative}
+.seg button b{font-size:14px;font-weight:600;font-variant-numeric:tabular-nums;color:var(--fg)}
+.seg button[aria-selected=true]{background:var(--raised);color:var(--fg)}
+.seg .att{position:absolute;top:5px;right:8px;width:7px;height:7px;border-radius:50%}
+.sub{display:flex;align-items:center;gap:8px;padding:6px 14px 0;font-size:11px;color:var(--grey)}
+.sub select{margin-left:auto;font:inherit;color:var(--muted);background:var(--surface);border:1px solid var(--unknown);border-radius:6px;padding:3px 6px;min-height:26px}
+.card{border-radius:10px;padding:10px 10px 10px;display:grid;grid-template-columns:16px 1fr;column-gap:9px}
+.card:hover{background:var(--raised)}
+.card:hover .meta,.card:hover .age{color:var(--unknown)}
+.card+.card{border-top:1px solid var(--raised);border-radius:0}
+.l3{grid-column:2;display:flex;align-items:center;gap:10px;margin-top:6px;font-size:11px;color:var(--grey)}
+.l3 .sz{margin-left:auto}
+.open{background:var(--bg);border:1px solid var(--raised);border-radius:12px;padding:11px 11px 12px;margin:4px 0 6px;display:grid;grid-template-columns:16px 1fr;column-gap:9px}
+.open .meta,.open .age{color:var(--grey)}
+.dt{grid-column:1/-1;margin-top:12px;border-top:1px solid var(--raised);padding-top:10px}
+.dt h3{font-size:10.5px;font-weight:600;letter-spacing:.5px;text-transform:uppercase;color:var(--grey);display:flex;gap:6px;align-items:center;margin-bottom:6px}
+.dt h3 .n{color:var(--muted);letter-spacing:0;text-transform:none;font-weight:500}
+.ckl{list-style:none;display:flex;flex-direction:column;gap:1px}
+.ckl li{display:flex;align-items:center;gap:8px;font-size:11.5px;padding:3px 0;color:var(--muted)}
+.ckl li svg{width:12px;height:12px}
+.ckl li .d{margin-left:auto;color:var(--grey);font-size:10.5px;font-variant-numeric:tabular-nums}
+.ckl li.f{color:var(--fg)}
+.ckl li .lnk{margin-left:6px}
+.rvl{display:flex;flex-direction:column;gap:5px;font-size:11.5px}
+.rvl div{display:flex;align-items:center;gap:8px;color:var(--muted)}
+.rvl span.s{margin-left:auto;font-size:10.5px;display:inline-flex;gap:4px;align-items:center}
+.rvl svg{width:11px;height:11px}
+.fl{list-style:none;font:11px/1.6 var(--mono);color:var(--muted)}
+.fl li{display:flex;gap:8px;align-items:center}
+.fl li span:first-child{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fl .p{color:var(--done)}.fl .m{color:var(--error)}
+.merge{display:flex;align-items:center;gap:6px;font-size:11.5px;color:var(--blocked);margin-top:2px}
+.merge svg{width:13px;height:13px}
+.dt .acts{margin-top:2px}
+
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}</style></head>
+<body><svg width="0" height="0" style="position:absolute" aria-hidden="true">
+<symbol id="g-pr" viewBox="0 0 16 16"><circle cx="4" cy="3.5" r="1.8" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="4" cy="12.5" r="1.8" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="12" cy="12.5" r="1.8" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M4 5.3v5.4M12 10.7V6.5a2 2 0 0 0-2-2H7.5M9 3l-1.6 1.5L9 6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="g-draft" viewBox="0 0 16 16"><circle cx="4" cy="3.5" r="1.8" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="4" cy="12.5" r="1.8" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="12" cy="12.5" r="1.8" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M4 5.3v5.4" stroke="currentColor" stroke-width="1.5"/><path d="M12 4v1M12 7.5v1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></symbol>
+<symbol id="g-issue" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="8" cy="8" r="1.6" fill="currentColor"/></symbol>
+<symbol id="g-ok" viewBox="0 0 16 16"><circle cx="8" cy="8" r="7" fill="currentColor"/><path d="M4.8 8.2l2.1 2.1 4.3-4.5" stroke="#17102A" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="g-fail" viewBox="0 0 16 16"><path d="M5.1 1.5h5.8l3.6 3.6v5.8l-3.6 3.6H5.1l-3.6-3.6V5.1z" fill="currentColor"/><path d="M5.8 5.8l4.4 4.4M10.2 5.8l-4.4 4.4" stroke="#17102A" stroke-width="1.7" stroke-linecap="round"/></symbol>
+<symbol id="g-pend" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="3 2.3"/></symbol>
+<symbol id="g-changes" viewBox="0 0 16 16"><circle cx="8" cy="8" r="7" fill="currentColor"/><path d="M5 8h6M8 5v6" stroke="#17102A" stroke-width="1.8" stroke-linecap="round"/></symbol>
+<symbol id="g-eye" viewBox="0 0 16 16"><path d="M1.5 8S4 3.5 8 3.5 14.5 8 14.5 8 12 12.5 8 12.5 1.5 8 1.5 8z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><circle cx="8" cy="8" r="2" fill="currentColor"/></symbol>
+<symbol id="g-at" viewBox="0 0 16 16"><circle cx="8" cy="8" r="2.6" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M10.6 8v1.2a1.9 1.9 0 0 0 3.8 0V8A6.4 6.4 0 1 0 11 13.6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></symbol>
+<symbol id="g-branch" viewBox="0 0 16 16"><circle cx="4.5" cy="3.5" r="1.7" fill="none" stroke="currentColor" stroke-width="1.4"/><circle cx="4.5" cy="12.5" r="1.7" fill="none" stroke="currentColor" stroke-width="1.4"/><circle cx="11.5" cy="5" r="1.7" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M4.5 5.2v5.6M11.5 6.7c0 3-7 2-7 4" fill="none" stroke="currentColor" stroke-width="1.4"/></symbol>
+<symbol id="g-clock" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M8 4.8V8l2.2 1.4" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></symbol>
+<symbol id="g-comment" viewBox="0 0 16 16"><path d="M3 2.5h10a1.5 1.5 0 0 1 1.5 1.5v6A1.5 1.5 0 0 1 13 11.5H7l-3.5 2.5v-2.5H3A1.5 1.5 0 0 1 1.5 10V4A1.5 1.5 0 0 1 3 2.5z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></symbol>
+<symbol id="g-ext" viewBox="0 0 16 16"><path d="M9 2.5h4.5V7M13.5 2.5L7.5 8.5M12 9.5v3a1 1 0 0 1-1 1H3.5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h3" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="g-copy" viewBox="0 0 16 16"><rect x="5" y="5" width="8.5" height="8.5" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M10.5 3V2.8A1.3 1.3 0 0 0 9.2 1.5H3A1.5 1.5 0 0 0 1.5 3v6.2A1.3 1.3 0 0 0 2.8 10.5H3" fill="none" stroke="currentColor" stroke-width="1.4"/></symbol>
+<symbol id="g-rerun" viewBox="0 0 16 16"><path d="M13.5 8A5.5 5.5 0 1 1 11.8 4M12.5 1.5V4.5H9.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="g-space" viewBox="0 0 16 16"><rect x="1.5" y="2.5" width="13" height="11" rx="2" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M4.5 6.5l2 1.5-2 1.5M8 10h3.5" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="g-sync" viewBox="0 0 16 16"><path d="M2.5 7a5.5 5.5 0 0 1 9.7-2.8M13.5 9a5.5 5.5 0 0 1-9.7 2.8M12.5 1.5v3h-3M3.5 14.5v-3h3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="g-file" viewBox="0 0 16 16"><path d="M4 1.5h5l3.5 3.5v8.5a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-11a1 1 0 0 1 1-1zM9 1.5V5h3.5" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></symbol>
+<symbol id="g-folder" viewBox="0 0 16 16"><path d="M1.5 4a1 1 0 0 1 1-1h3.5l1.5 1.5h6a1 1 0 0 1 1 1V12a1 1 0 0 1-1 1h-11a1 1 0 0 1-1-1z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></symbol>
+<symbol id="g-diff" viewBox="0 0 16 16"><path d="M5 2v6M2 5h6M2 12.5h6M10 3.5l3.5 0M10 8h3.5M10 12.5h3.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></symbol>
+<symbol id="g-hub" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6.5" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M5.5 13.6v-2.2c0-.8.4-1.3.9-1.6-2-.3-3-1.2-3-3 0-.7.3-1.3.7-1.8-.1-.4-.2-1.1.1-1.8 0 0 .7-.1 1.9.7a6 6 0 0 1 3.8 0c1.2-.8 1.9-.7 1.9-.7.3.7.2 1.4.1 1.8.4.5.7 1.1.7 1.8 0 1.8-1 2.7-3 3 .5.3.9.9.9 1.7v2.1" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/></symbol>
+<symbol id="g-chev" viewBox="0 0 16 16"><path d="M4 6l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></symbol>
+<symbol id="g-chevr" viewBox="0 0 16 16"><path d="M6 4l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></symbol>
+<symbol id="g-link" viewBox="0 0 16 16"><path d="M6.8 9.2a2.8 2.8 0 0 0 4 0l2.2-2.2a2.8 2.8 0 0 0-4-4l-.9.9M9.2 6.8a2.8 2.8 0 0 0-4 0L3 9a2.8 2.8 0 0 0 4 4l.9-.9" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></symbol>
+<symbol id="g-moon" viewBox="0 0 16 16"><path d="M10 2.5a6 6 0 1 0 3.5 9.3 5 5 0 0 1-3.5-9.3z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></symbol>
+<symbol id="g-merge" viewBox="0 0 16 16"><circle cx="4" cy="3.5" r="1.8" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="4" cy="12.5" r="1.8" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="12" cy="8" r="1.8" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M4 5.3v5.4M4 5.3c0 2 2 2.7 6.2 2.7" fill="none" stroke="currentColor" stroke-width="1.5"/></symbol>
+</svg><div class="win"><nav class="side" aria-label="Herdr sidebar (dimmed, not in focus)"><div class="b"><i></i>RefactorIA</div>
+<h2>Spaces · 14</h2><ul><li class="on"><span class="av">D</span>cortex-dotfiles<small>Working</small></li><li><span class="av">I</span>innit-pay<small>New</small></li><li><span class="av">C</span>cortex<small>Idle</small></li><li><span class="av">G</span>gentle-shell-issue-3552<small>Failed</small></li></ul>
+<h2>Running · 1</h2><ul><li class="on"><span class="av">✦</span>cortex-dotfiles · T9 design<small>6/9</small></li></ul>
+<h2>Idle · 11</h2><ul><li><span class="av">✳</span>innit-pay<small>9m</small></li><li><span class="av">✦</span>gentle-shell-issue-3552<small>31m</small></li><li><span class="av">✦</span>Orquestador roadmap #827<small>44m</small></li><li><span class="av">✳</span>Mikrotiks de Netuy en Tecmo<small>56m</small></li><li><span class="av">✳</span>refactoria<small>2h</small></li></ul></nav><section class="term" aria-label="Terminal (dimmed placeholder)"><div class="tabs"><b>cortex-dotfiles · gentle-shell</b><span>zsh</span><span>logs</span></div>
+<p>~/dev/barbatdev/cortex/cortex-dotfiles  fix/herdr-collapsed-prs</p><p>❯ gs run T9 --design</p><p>  ✓ read design/herdr-desktop-ux/04-sessions-v2.html</p><p>  ✓ tokens: RefactorIA (14)</p><p>  … writing design/herdr-github-panel/</p><p>&nbsp;</p><p>❯ git status --short</p><p> M herdr/sidebar.zsh</p><p>?? design/herdr-github-panel/</p></section><aside class="gh" aria-label="GitHub panel"><div class="ptabs" role="tablist" aria-label="Right panel"><button role="tab" aria-selected="false"><svg class="" style="" aria-hidden="true"><use href="#g-folder"/></svg>Files</button><button role="tab" aria-selected="false"><svg class="" style="" aria-hidden="true"><use href="#g-diff"/></svg>Changes <span style="color:var(--unknown)">4</span></button><button role="tab" aria-selected="true"><svg class="" style="" aria-hidden="true"><use href="#g-hub"/></svg>GitHub</button></div><div class="repo"><span class="avc a1" aria-hidden="true" style="border-radius:5px;width:20px;height:20px;box-shadow:none">BD</span><h1 class="rn">barbatdev/<span></span>cortex-dotfiles</h1><span class="sync"><svg class="" style="" aria-hidden="true"><use href="#g-clock"/></svg>Synced 1m ago</span><button class="ib" aria-label="Refresh GitHub data"><svg class="" style="" aria-hidden="true"><use href="#g-sync"/></svg></button><button class="ib" aria-label="Open repository on GitHub"><svg class="" style="" aria-hidden="true"><use href="#g-ext"/></svg></button></div>
+<div class="seg" role="tablist" aria-label="GitHub views">
+<button role="tab" aria-selected="true"><b>6</b>PRs<span class="att" style="background:var(--blocked)" aria-label="needs you"></span></button>
+<button role="tab" aria-selected="false"><b>21</b>Issues</button>
+<button role="tab" aria-selected="false"><b>2</b>CI runs<span class="att" style="background:var(--error)" aria-label="1 failing"></span></button>
+<button role="tab" aria-selected="false"><b>2</b>Inbox<span class="att" style="background:var(--blocked)" aria-label="unread"></span></button>
+</div>
+<p class="sub">Open · sorted by needs you<label class="sr" style="position:absolute;left:-9999px" for="sort">Sort</label><select id="sort"><option>Needs you</option><option>Updated</option><option>Size</option></select></p>
+<div class="scroll">
+<h2 class="sec">Review requested <span class="n">1</span></h2>
+<article class="open" aria-label="Pull request 113, expanded">
+<span><svg class="gl" style="color:var(--working)" aria-hidden="true"><use href="#g-pr"/></svg></span>
+<div><div class="l1"><p class="t" style="-webkit-line-clamp:3"><span class="num">#113</span> feat(herdr): shorten the PR panel title on the collapsed sidebar</p><button class="ib" aria-expanded="true" aria-label="Collapse #113" style="width:24px;height:24px;margin-top:-3px"><svg class="" style="" aria-hidden="true"><use href="#g-chev"/></svg></button></div></div>
+<p class="meta"><span><span class="avc a2" role="img" aria-label="Martina Ríos">MR</span> mrios</span><span><svg class="" style="" aria-hidden="true"><use href="#g-branch"/></svg><span class="br">fix/herdr-collapsed-prs</span></span><span>3h</span></p>
+<div class="dt"><h3>Checks <span class="n">4 passed · 1 failed</span></h3>
+<ul class="ckl"><li class="f"><svg class="" style="color:var(--error)" aria-hidden="true"><use href="#g-fail"/></svg>shellcheck<button class="lnk">Log</button><span class="d">0m 22s</span></li>
+<li><svg class="" style="color:var(--done)" aria-hidden="true"><use href="#g-ok"/></svg>zsh -n syntax<span class="d">0m 09s</span></li>
+<li><svg class="" style="color:var(--done)" aria-hidden="true"><use href="#g-ok"/></svg>starship config<span class="d">0m 14s</span></li>
+<li><svg class="" style="color:var(--done)" aria-hidden="true"><use href="#g-ok"/></svg>install.sh dry-run<span class="d">1m 02s</span></li>
+<li><svg class="" style="color:var(--done)" aria-hidden="true"><use href="#g-ok"/></svg>markdownlint<span class="d">0m 11s</span></li></ul></div>
+<div class="dt"><h3>Reviewers</h3><div class="rvl">
+<div><span class="avc a4" role="img" aria-label="you">JB</span>You<span class="s" style="color:var(--blocked)"><svg class="" style="" aria-hidden="true"><use href="#g-eye"/></svg>Requested</span></div>
+<div><span class="avc a3" role="img" aria-label="gentleman">GM</span>gentleman<span class="s" style="color:var(--done)"><svg class="" style="" aria-hidden="true"><use href="#g-ok"/></svg>Approved</span></div></div></div>
+<div class="dt"><h3>Files <span class="n">3 · +42 −8</span></h3><ul class="fl">
+<li><span>herdr/sidebar.zsh</span><span class="p">+31</span><span class="m">−6</span></li>
+<li><span>herdr/panels/github.zsh</span><span class="p">+9</span><span class="m">−2</span></li>
+<li><span>README.md</span><span class="p">+2</span><span class="m">−0</span></li></ul></div>
+<div class="dt"><p class="merge"><svg class="" style="" aria-hidden="true"><use href="#g-merge"/></svg>Blocked: 1 required check failing · Links <span class="num" style="color:var(--unknown)">#109</span></p></div>
+<div class="dt acts"><button class="btn primary"><svg class="" style="" aria-hidden="true"><use href="#g-eye"/></svg>Start review</button><button class="btn ghost"><svg class="" style="" aria-hidden="true"><use href="#g-space"/></svg>Checkout in new space</button><button class="btn ghost"><svg class="" style="" aria-hidden="true"><use href="#g-rerun"/></svg>Re-run shellcheck</button><button class="btn ghost"><svg class="" style="" aria-hidden="true"><use href="#g-copy"/></svg>Copy branch</button><button class="btn ghost"><svg class="" style="" aria-hidden="true"><use href="#g-ext"/></svg>GitHub</button></div>
+</article>
+<h2 class="sec">Yours <span class="n">1</span></h2>
+<article class="card" tabindex="0"><span><svg class="gl" style="color:var(--working)" aria-hidden="true"><use href="#g-pr"/></svg></span>
+<div class="l1"><p class="t"><span class="num">#111</span> fix(herdr): align sidebar numbers with space shortcuts</p><span class="age">1d</span></div>
+<p class="meta"><span style="color:var(--blocked)"><svg class="" style="" aria-hidden="true"><use href="#g-changes"/></svg>Changes requested</span><span><svg class="" style="" aria-hidden="true"><use href="#g-comment"/></svg>2</span></p>
+<p class="l3"><span class="ck"><span class="dots" aria-hidden="true"><svg class="" style="color:var(--done)" aria-hidden="true"><use href="#g-ok"/></svg><svg class="" style="color:var(--done)" aria-hidden="true"><use href="#g-ok"/></svg><svg class="" style="color:var(--done)" aria-hidden="true"><use href="#g-ok"/></svg><svg class="" style="color:var(--done)" aria-hidden="true"><use href="#g-ok"/></svg><svg class="" style="color:var(--done)" aria-hidden="true"><use href="#g-ok"/></svg></span> 5/5</span><span class="avs"><span class="rv"><span class="avc a2" role="img" aria-label="Martina Ríos, changes requested">MR</span></span></span><span class="sz" aria-label="18 additions, 11 deletions"><span class="p">+18</span><span class="m">−11</span><b aria-hidden="true"><i class="g"></i><i class="g"></i><i class="g"></i><i class="r"></i><i class="r"></i></b></span></p></article>
+<h2 class="sec">Others <span class="n">4</span></h2>
+<article class="card" tabindex="0"><span><svg class="gl" style="color:var(--working)" aria-hidden="true"><use href="#g-pr"/></svg></span>
+<div class="l1"><p class="t"><span class="num">#45</span> feat(pi): add NaN.Builders custom provider</p><span class="age">4d</span></div>
+<p class="meta"><span style="color:var(--done)"><svg class="" style="" aria-hidden="true"><use href="#g-ok"/></svg>Approved · ready to merge</span></p>
+<p class="l3"><span class="ck"><span class="dots" aria-hidden="true"><svg class="" style="color:var(--done)" aria-hidden="true"><use href="#g-ok"/></svg><svg class="" style="color:var(--done)" aria-hidden="true"><use href="#g-ok"/></svg><svg class="" style="color:var(--done)" aria-hidden="true"><use href="#g-ok"/></svg><svg class="" style="color:var(--done)" aria-hidden="true"><use href="#g-ok"/></svg><svg class="" style="color:var(--done)" aria-hidden="true"><use href="#g-ok"/></svg></span> 5/5</span><span class="avs"><span class="avc a3" role="img" aria-label="gentleman, approved">GM</span><span class="avc a2" role="img" aria-label="Martina Ríos, approved">MR</span></span><span class="sz" aria-label="186 additions, 4 deletions"><span class="p">+186</span><span class="m">−4</span><b aria-hidden="true"><i class="g"></i><i class="g"></i><i class="g"></i><i class="g"></i><i class="g"></i></b></span></p></article>
+<article class="card" tabindex="0"><span><svg class="gl" style="color:var(--working)" aria-hidden="true"><use href="#g-pr"/></svg></span>
+<div class="l1"><p class="t"><span class="num">#33</span> Fix Starship and Herdr dotfile defaults</p><span class="age">12d</span></div>
+<p class="meta"><span><svg class="" style="" aria-hidden="true"><use href="#g-clock"/></svg>Awaiting review</span><span><svg class="" style="" aria-hidden="true"><use href="#g-link"/></svg>#6</span></p>
+<p class="l3"><span class="ck"><span class="dots" aria-hidden="true"><svg class="" style="color:var(--done)" aria-hidden="true"><use href="#g-ok"/></svg><svg class="" style="color:var(--done)" aria-hidden="true"><use href="#g-ok"/></svg><svg class="" style="color:var(--done)" aria-hidden="true"><use href="#g-ok"/></svg><svg class="" style="color:var(--working)" aria-hidden="true"><use href="#g-pend"/></svg><svg class="" style="color:var(--working)" aria-hidden="true"><use href="#g-pend"/></svg></span> <span style="color:var(--working)">2 running</span></span><span class="sz" aria-label="64 additions, 40 deletions"><span class="p">+64</span><span class="m">−40</span><b aria-hidden="true"><i class="g"></i><i class="g"></i><i class="g"></i><i class="r"></i><i class="r"></i></b></span></p></article>
+<article class="card" tabindex="0"><span><svg class="gl" style="color:var(--grey)" aria-hidden="true"><use href="#g-draft"/></svg></span>
+<div class="l1"><p class="t"><span class="num">#5</span> feat: add yabai window cycling helpers</p><span class="age">2mo</span></div>
+<p class="meta"><span>Draft · no activity 41d</span></p>
+<p class="l3"><span>No checks yet</span><span class="sz" aria-label="97 additions, 0 deletions"><span class="p">+97</span><span class="m">−0</span><b aria-hidden="true"><i class="g"></i><i class="g"></i><i class="g"></i><i class="g"></i><i class="g"></i></b></span></p></article>
+<article class="card" tabindex="0"><span><svg class="gl" style="color:var(--working)" aria-hidden="true"><use href="#g-pr"/></svg></span>
+<div class="l1"><p class="t"><span class="num">#3</span> Tune Ghostty and Zellij defaults</p><span class="age">3mo</span></div>
+<p class="meta"><span style="color:var(--blocked)"><svg class="" style="" aria-hidden="true"><use href="#g-merge"/></svg>Merge conflict</span></p>
+<p class="l3"><span class="ck"><span class="dots" aria-hidden="true"><svg class="" style="color:var(--done)" aria-hidden="true"><use href="#g-ok"/></svg><svg class="" style="color:var(--done)" aria-hidden="true"><use href="#g-ok"/></svg><svg class="" style="color:var(--done)" aria-hidden="true"><use href="#g-ok"/></svg><svg class="" style="color:var(--done)" aria-hidden="true"><use href="#g-ok"/></svg></span> 4/4</span><span class="sz" aria-label="22 additions, 15 deletions"><span class="p">+22</span><span class="m">−15</span><b aria-hidden="true"><i class="g"></i><i class="g"></i><i class="g"></i><i class="r"></i><i class="r"></i></b></span></p></article>
+</div></aside></div><p class="cap"><b>02 · Rich tabs.</b> Keeps the four tabs (now big counts + an attention dot) but every PR becomes a three-line card: title wraps, review/merge state with glyph+word, then check dots, reviewer avatars and a +/− size bar. #113 is expanded inline with checks, reviewers, files, merge blocker and all actions.</p></body></html>
