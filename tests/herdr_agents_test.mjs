@@ -177,9 +177,10 @@ test("card: feed todo progress wins as done/total; a blocked record raises state
 });
 
 test("card: non-Gentle agent keeps what Herdr knows; name never the tab index", () => {
+  // L17: the task-like title names the card over the space name.
   const c = buildCard({ agent: agent({ address: "agent-dev/t9", status: "working", app: "codex", program: { key: "codex", name: "Codex" }, space_name: "infra", title: "Rotate Terraform state locks" }), now: NOW, since: NOW - 12 * 60000 });
-  assert.equal(c.name, "infra");
-  assert.equal(c.sub, "Rotate Terraform state locks");
+  assert.equal(c.name, "Rotate Terraform state locks");
+  assert.equal(c.sub, "");
   assert.equal(c.word, "Working");
   assert.equal(c.time, "for 12m");
   assert.deepEqual(c.meta, ["agent-dev", "Codex"]);
@@ -234,4 +235,62 @@ test("chips: OSC records name the work; the feed's names only when no record doe
   assert.deepEqual(withRec.chips.map((x) => x.label), ["implement sessions as cards", "npm test"]);
   const feedOnly = buildCard({ agent: agent({ app: "pi", status: "working" }), feed: f, live, now: NOW });
   assert.deepEqual(feedOnly.chips.map((x) => x.label), ["gentle-ai-worker", "npm test"]);
+});
+
+// ---- L17: stale idle rows, duplicate names, empty state ----
+import { agentName, disambiguate, idleSince, freshIdle, emptyLine, STALE_MS } from "../herdr/desktop/mods/refactoria-agents/model.js";
+
+test("idle since: Herdr's status_ms first, then the mod's own stamp, then the terminal's creation", () => {
+  assert.equal(idleSince({ status_ms: 50, created_ms: 10 }, 30), 50);
+  assert.equal(idleSince({ status_ms: null, created_ms: 10 }, 30), 30);
+  assert.equal(idleSince({ created_ms: 10 }, null), 10);
+  assert.equal(idleSince(undefined, null), null);
+});
+
+test("stale idle rows hidden after 24 h unless focused or pinned; unknown age stays", () => {
+  const day = 86400000;
+  assert.equal(STALE_MS, day);
+  const rows = [
+    { address: "fresh", since: NOW - day + 1 },
+    { address: "old", since: NOW - 27 * day },
+    { address: "oldFocused", since: NOW - 27 * day, focused: true },
+    { address: "oldPinned", since: NOW - 27 * day, pinned: true },
+    { address: "unknown", since: 0 },
+  ];
+  const r = freshIdle(rows, NOW);
+  assert.deepEqual(r.rows.map((c) => c.address), ["fresh", "oldFocused", "oldPinned", "unknown"]);
+  assert.equal(r.hidden, 1);
+  assert.deepEqual(freshIdle([], NOW), { rows: [], hidden: 0 });
+});
+
+test("names: session name, pane name, the decoded agent title, tab, then space", () => {
+  const f = feed({ identity: { sessionId: "s", sessionName: "Fix login", cwd: "/w/app", pid: 1 } });
+  assert.equal(agentName(agent({ title: "π - other", pane_name: "api" }), f), "Fix login");
+  assert.equal(agentName(agent({ title: "π - other", pane_name: "api" }), null), "api");
+  assert.equal(agentName(agent({ app: "gentle-shell", title: "π - review sidebar spec", space_name: "cortex" }), null), "review sidebar spec");
+  assert.equal(agentName(agent({ app: "claude-code", title: "✳ Rotate state locks", space_name: "infra" }), null), "Rotate state locks");
+  assert.equal(agentName(agent({ title: "~/dev/x", tab_name: "deploy" }), null), "deploy");
+  assert.equal(agentName(agent({ title: "zsh", tab_name: "1", space_name: "infra" }), null), "infra");
+  assert.equal(agentName(agent({ title: "", tab_name: "1", space_name: "infra" }), feed({ identity: { sessionId: "s", cwd: "/w/app", pid: 1 } })), "app");
+});
+
+test("colliding names get the tab name, else #n; distinct names stay", () => {
+  const cs = [
+    { address: "a", name: "innit-core", tab: "api" }, { address: "b", name: "innit-core", tab: "web" },
+    { address: "c", name: "innit-core", tab: "web" }, { address: "d", name: "gestion", tab: "" },
+    { address: "e", name: "Gestion", tab: "" }, { address: "f", name: "infra", tab: "" },
+  ];
+  assert.deepEqual(disambiguate(cs).map((c) => c.name), ["innit-core · api", "innit-core · web #1", "innit-core · web #2", "gestion #1", "Gestion #2", "infra"]);
+});
+
+test("empty state: a quiet line with the idle count", () => {
+  assert.equal(emptyLine(18), "Nothing running · 18 idle");
+  assert.equal(emptyLine(0), "Nothing running");
+});
+
+test("card name comes from agentName and keeps the tab for disambiguation", () => {
+  const c = buildCard({ agent: agent({ app: "claude-code", title: "✳ Rotate state locks", space_name: "infra", tab_name: "ops" }), now: NOW });
+  assert.equal(c.name, "Rotate state locks");
+  assert.equal(c.tab, "ops");
+  assert.equal(c.sub, "");
 });

@@ -6,7 +6,7 @@ import { View, div, svg } from "gpui-kit";
 import { v_flex, h_flex } from "gpui-base";
 import { agents, terminals, spaces, run, theme, shared, setShared, setAgentOrder, window, layout } from "herdr";
 import { FeedSource, isGentle, liveState, needsYou, selectSession } from "./feed.js";
-import { buildCard, sortCards, splitCards, idleView, liveAgents, timeAgo } from "./model.js";
+import { buildCard, sortCards, splitCards, idleView, liveAgents, timeAgo, disambiguate, idleSince, freshIdle, emptyLine } from "./model.js";
 
 function find(node, id) {
   if (node?.id === id) return node;
@@ -199,6 +199,7 @@ export default class Agents extends View {
     const now = Date.now();
     const all = terminals();
     const records = new Map(all.map((x) => [x.address, x.records]));
+    const termOf = new Map(all.map((x) => [x.address, x]));
     const sessions = this.feed.sessions();
     const byTerm = new Map(sessions.filter((s) => s.terminal && s.feed).map((s) => [s.terminal.address, s]));
     const tabs = new Map(spaces().flatMap((s) => s.tabs).map((tab) => [tab.id, tab]));
@@ -219,7 +220,9 @@ export default class Agents extends View {
 
     const sinceOf = (a) => {
       const tab = tabs.get(a.tab);
-      return (a.status === "working" && tab?.working_since) || this.changed[a.address]?.at || tab?.changed_at || null;
+      // Herdr's own status_ms first: the mod's stamp counts done and idle as one, so a kept
+      // terminal looked at long ago would read as idle since then (L17: "27d" rows).
+      return (a.status === "working" && tab?.working_since) || idleSince(termOf.get(a.address), this.changed[a.address]?.at) || tab?.changed_at || null;
     };
     const cards = list.filter((a) => !listed.has(parentOf.get(a.address))).map((a) => {
       const s = isGentle(a.app) ? byTerm.get(a.address) : null;
@@ -235,7 +238,11 @@ export default class Agents extends View {
       cards.push({ ...c, session: s });
     }
 
-    const { active, idle } = splitCards(sortCards(cards));
+    // Idle agents untouched for 24 h (kept terminals of old work) are hidden unless focused or
+    // pinned (model.js freshIdle); names that still collide get the tab name or #n.
+    const split = splitCards(cards);
+    const { rows: fresh, hidden } = freshIdle(split.idle, now);
+    const { active, idle } = splitCards(sortCards(disambiguate([...split.active, ...fresh])));
     const idleSorted = [...idle].sort((x, y) => (y.since ?? 0) - (x.since ?? 0));
     const shown = [...active, ...idleSorted];
     setAgentOrder(shown.filter((c) => c.pane).map((c) => c.address));
@@ -265,13 +272,10 @@ export default class Agents extends View {
     const toggle = this.button(t, "idle-toggle", this.idleOpen ? "Collapse" : "Show", false, toggleIdle);
 
     const body = [];
-    if (shown.length === 0) {
-      body.push(div().px(8).pt(14).text_size(12).text_color(t.muted).child("No agent status yet. Agents show up here when they report their status."));
-    }
-    if (active.length) {
-      body.push(this.heading(t, "ACTIVE AGENTS", `${active.length} · most urgent first`));
-      body.push(v_flex().gap(8).children(active.map((c) => this.card(t, c, open))));
-    }
+    // The section keeps its header with nothing running: one quiet line instead of the cards.
+    body.push(this.heading(t, "ACTIVE AGENTS", active.length ? `${active.length} · most urgent first` : null));
+    if (active.length) body.push(v_flex().gap(8).children(active.map((c) => this.card(t, c, open))));
+    else body.push(div().id("ag-empty").px(8).h(24).flex().items_center().text_size(11.5).text_color(t.grey).child(emptyLine(idle.length)));
     if (idle.length) {
       body.push(this.heading(t, "IDLE", String(idle.length), toggle));
       if (iv.open) body.push(v_flex().children(iv.rows.map((c) => this.idleRow(t, c, now, open))));
@@ -282,6 +286,7 @@ export default class Agents extends View {
         .on_click(toggleIdle)
         .child(iv.summary));
     }
+    if (hidden) body.push(div().px(8).h(22).flex().items_center().text_size(10.5).text_color(t.grey).child(`${hidden} untouched for over a day, hidden`));
 
     return v_flex()
       .size_full()

@@ -29,6 +29,8 @@ function place(s, ps) {
 }
 // A row with git details shows them on a second line under the name.
 const rowHeight = ({ tree, twoLines }) => (twoLines ? 48 : tree ? 28 : 30);
+// The most the spaces block grows to (about 60% of a laptop-height sidebar); past it, it scrolls.
+const FIT_MAX = 520;
 const where = (s, ps) => JSON.stringify([s.machine ?? null, place(s, ps)]);
 const base = (path) => path.replace(/\/+$/, "").split("/").pop();
 // Changes made outside Herdr (an editor's save, a commit in another app): looked
@@ -105,12 +107,26 @@ export default class Spaces extends View {
     this.readSeen(cx);
     this.listenKeys(cx);
     cx.timer.every(2000, (cx) => this.readSeen(cx));
+    // The block takes the height its rows need (render tallies it), so Agents sits right below.
+    this.measured = 0;
+    this.sizedTo = null;
+    cx.timer.every(500, () => this.fitBlock());
     cx.timer.every(600, (cx) => {
       const waiting = spaces().some((s) => spaceWaits(s, this.seen, agents()));
       if (!waiting && !this.pulse) return;
       this.pulse = waiting ? !this.pulse : false;
       cx.notify();
     });
+  }
+
+  // Sizes the "spaces" layout block to its content: header, rows, machine headers (folded
+  // machines count only their header), between 90 px and FIT_MAX, beyond which the list scrolls.
+  fitBlock() {
+    if (!this.measured) return;
+    const px = Math.max(90, Math.min(FIT_MAX, Math.ceil(this.measured)));
+    if (px === this.sizedTo) return;
+    this.sizedTo = px;
+    run("layout.resize", { id: "spaces", px });
   }
 
   // keys.json "refactoria-spaces.agent-N" (Ctrl+A Ctrl+N, as in Herdr TUI): go to
@@ -322,7 +338,7 @@ export default class Spaces extends View {
       return layout === "loading" || (!layout && this.machines.some(k => k.name === m && k.state === "connected"))
         || spaces().some(s => (s.machine ?? null) === m && !this.shown.has(s.id));
     };
-    const loadingRow = m => div().id(`machine-loading-${m ?? "local"}`).h(28).flex_none().px(8).text_size(12).text_color(t.dim).child(collapsed ? "…" : "Loading…");
+    const loadingRow = m => (this.measured += 28, div().id(`machine-loading-${m ?? "local"}`).h(28).flex_none().px(8).text_size(12).text_color(t.dim).child(collapsed ? "…" : "Loading…"));
     if (!remote.length) return loading(null) && !rows.length ? [loadingRow(null)] : rows.map(draw);
     const machineNames = [null, ...remote];
     return machineNames.flatMap((m) => {
@@ -351,6 +367,7 @@ export default class Spaces extends View {
         .text_size(12).text_color(t.dim).hover(s => s.bg(t.hover).text_color(t.foreground))
         .on_click(() => run("space.new", m ? { machine: m } : {}))
         .child(svg("mods/workspace-chrome/plus.svg").size(12)).when(!collapsed, el => el.child("New space there"));
+      this.measured += 38 + (!folded && mine.length === 0 && !loading(m) ? 28 : 0);
       return [head, ...(folded ? [] : mine.length ? mine.map(draw) : [loading(m) ? loadingRow(m) : empty])];
     });
   }
@@ -432,7 +449,7 @@ export default class Spaces extends View {
       .relative()
       .id(`space-${w.id}`)
       .px(8)
-      .h(rowHeight({ tree, twoLines }))
+      .h((this.measured += rowHeight({ tree, twoLines }), rowHeight({ tree, twoLines })))
       .flex_none()
       .justify_center()
       .rounded(8)
@@ -474,6 +491,7 @@ export default class Spaces extends View {
   }
 
   compact({ w, i }, t) {
+    this.measured += 26;
     return h_flex()
       .id(`space-${w.id}`)
       .h(26)
@@ -503,6 +521,7 @@ export default class Spaces extends View {
     }
     if (changed) setShared("space.colors", kept);
     this.bySpace = this.sessionsBySpace();
+    this.measured = 31 + 14; // the "Spaces" header and the list's bottom padding
     return v_flex().size_full().min_h(0).bg(t.chrome).text_size(13)
       .child(h_flex().h(31).pl(16).pr(10).items_center().justify_between().text_size(12).text_color(t.dim)
         .when(!collapsed, el => el.child("Spaces"))

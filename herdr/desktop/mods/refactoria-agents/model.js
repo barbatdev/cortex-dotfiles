@@ -116,8 +116,59 @@ const WORD = { blocked: "Blocked", working: "Working", waiting: "Waiting", done:
 const telling = (s) => {
   const raw = String(s ?? "").trim();
   if (/^[~/]|^[A-Za-z]:\\/.test(raw) || raw.includes("@")) return "";
-  return raw.replace(/^[^\p{L}\p{N}]+/u, "").trim();
+  // Gentle Shell titles read "π - <session or folder>"; the π is the program, not the task.
+  return raw.replace(/^π\s*[-–·:]\s*/u, "").replace(/^[^\p{L}\p{N}]+/u, "").trim();
 };
+
+const meaningfulTab = (a) => (a?.tab_name && !/^\d+$/.test(a.tab_name) ? a.tab_name : "");
+const SHELLS = /^(zsh|bash|fish|sh|nu|pwsh|login)$/i;
+
+// What an agent is called (S6: the session or task, not the space): the Gentle Shell session's own
+// name, the pane's name, the agent's decoded title when it reads like a task, the tab's name, the
+// session's folder, then the space.
+export function agentName(agent, feed) {
+  const own = typeof feed?.identity?.sessionName === "string" ? feed.identity.sessionName.trim() : "";
+  if (own) return own;
+  if (agent?.pane_name) return agent.pane_name;
+  const title = telling(agent?.title);
+  if (title && !SHELLS.test(title) && title.toLowerCase() !== agent?.program?.key) return title;
+  return meaningfulTab(agent) || sessionName(feed) || agent?.space_name || programBadge(agent).name;
+}
+
+// Names that still collide get the tab's name, then "#n" in list order.
+export function disambiguate(cards) {
+  const key = (s) => String(s ?? "").toLowerCase();
+  const count = (xs, f) => xs.reduce((m, x) => m.set(f(x), (m.get(f(x)) ?? 0) + 1), new Map());
+  const byName = count(cards, (c) => key(c.name));
+  const step = cards.map((c) => (byName.get(key(c.name)) > 1 && c.tab && key(c.tab) !== key(c.name) ? { ...c, name: `${c.name} · ${c.tab}` } : c));
+  const left = count(step, (c) => key(c.name));
+  const seen = new Map();
+  return step.map((c) => {
+    const k = key(c.name);
+    if (left.get(k) < 2) return c;
+    seen.set(k, (seen.get(k) ?? 0) + 1);
+    return { ...c, name: `${c.name} #${seen.get(k)}` };
+  });
+}
+
+// Since when an agent is in its state (ms): Herdr's terminal status_ms (local terminals), else the
+// mod's own stamp of the last change it saw, else when the terminal started.
+export function idleSince(term, changedAt) {
+  return term?.status_ms || changedAt || term?.created_ms || null;
+}
+
+// Idle agents untouched for this long are hidden (kept terminals of old work), unless focused or
+// pinned; an agent of unknown age stays.
+export const STALE_MS = 24 * 3600000;
+
+export function freshIdle(rows, now, max = STALE_MS) {
+  const keep = (c) => c.focused || c.pinned || !c.since || now - c.since <= max;
+  const out = (rows ?? []).filter(keep);
+  return { rows: out, hidden: (rows ?? []).length - out.length };
+}
+
+// The Agents section with nothing running: one quiet line.
+export const emptyLine = (idle) => (idle ? `Nothing running · ${idle} idle` : "Nothing running");
 
 const machineOf = (address) => {
   const m = /^([^/]+)\/./.exec(typeof address === "string" ? address : "");
@@ -149,8 +200,8 @@ export function buildCard({ agent, feed = null, live = null, need = null, record
   const from = activity === "blocked" && Number.isFinite(opened) ? opened : since;
   const time = from ? timeLabel(status, now - from) : "";
 
-  const tabName = agent?.tab_name && !/^\d+$/.test(agent.tab_name) ? agent.tab_name : "";
-  const name = sessionName(feed) || agent?.pane_name || tabName || agent?.space_name || program.name;
+  const tabName = meaningfulTab(agent);
+  const name = agentName(agent, feed);
 
   const question = activity === "blocked" ? (need?.reason || rec.blocked[0]?.msg || "") : "";
   const ft = currentTask(feed);
@@ -185,7 +236,7 @@ export function buildCard({ agent, feed = null, live = null, need = null, record
   } else meta.push(program.name);
 
   const word = status === "failed" ? `${rec.failed.length} failed` : WORD[status] ?? "Idle";
-  return { address: agent?.address, pane: agent?.pane ?? null, focused: Boolean(agent?.focused), machine, name, program, status, activity, word, time, since: from ?? 0, question, sub, task, chips, meta };
+  return { address: agent?.address, pane: agent?.pane ?? null, focused: Boolean(agent?.focused), pinned: Boolean(agent?.pinned), tab: tabName, machine, name, program, status, activity, word, time, since: from ?? 0, question, sub, task, chips, meta };
 }
 
 // Most urgent first; among blocked the longest wait leads, otherwise the latest change.
