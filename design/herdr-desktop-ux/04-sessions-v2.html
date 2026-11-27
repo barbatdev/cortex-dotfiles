@@ -1,0 +1,180 @@
+<!doctype html>
+<!--
+  Artboard 04 — Sessions v2 · calm idle (iteration on 02; 02 stays untouched)
+  Tokens: only the RefactorIA tokens of 02. WCAG 2.x contrast (relative luminance), same table as 02:
+  On #0B0714 bg:   #FFFFFF 19.91 · #EBEBEB 16.70 · #F2EFFA 17.54 · #A477FF 6.32 · #8F839D 5.60 · #8CC8FF 11.21 · #FFC857 12.94 · #58E6A8 12.61 · #FF6B8A 7.32 · #C7A6FF 9.79
+  On #17102A side: #FFFFFF 18.36 · #EBEBEB 15.40 · #F2EFFA 16.17 · #A477FF 5.82 · #8F839D 5.16 · #8CC8FF 10.33 · #FFC857 11.93 · #58E6A8 11.63 · #FF6B8A 6.75 · #C7A6FF 9.03 · #FFB547 10.45
+  On #2C2144 raised/selected/hover: #FFFFFF 14.91 · #EBEBEB 12.51 · #F2EFFA 13.14 · #A477FF 4.73 · #8CC8FF 8.39 · #FFC857 9.69 · #58E6A8 9.44 · #FF6B8A 5.48 · #C7A6FF 7.33
+     NOTE #8F839D on #2C2144 = 4.19 (FAIL) -> grey never sits on raised: hovered/selected rows and cards switch grey meta to #C7A6FF.
+  White on #7127FF (primary buttons) 6.11 · #0B0714 on #58E6A8 ("New" badge) 12.61
+  Non-text: state icons/rails use status colours (>= 5.4:1 vs #17102A/#2C2144; grey ring 5.16 vs #17102A); focus ring #FFB547 10.45 vs #17102A, 9.0+ vs #2C2144.
+  #2C2144 vs #17102A borders = 1.23 -> decorative only; every control also has a text label or icon.
+  State is always icon + word (Working / Needs you / Failed / New / Idle). Spinner stops under prefers-reduced-motion.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Herdr Desktop — Sidebar 04 · Sessions v2 · calm idle</title>
+<style>
+:root{
+  --bg:#0B0714;--surface:#17102A;--raised:#2C2144;--fg:#FFFFFF;--muted:#EBEBEB;--dim:#F2EFFA;
+  --accent:#A477FF;--solid:#7127FF;--spark:#FFB547;--working:#8CC8FF;--blocked:#FFC857;--done:#58E6A8;--error:#FF6B8A;--unknown:#C7A6FF;--grey:#8F839D;
+  --font:"Inter",-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",Arial,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{width:1440px;height:900px;background:var(--bg);color:var(--fg);font:12px/1.4 var(--font);overflow:hidden;-webkit-font-smoothing:antialiased}
+header.top{height:60px;display:flex;align-items:center;gap:14px;padding:0 40px}
+header.top h1{font-size:15px;font-weight:600}
+header.top p{color:var(--grey);font-size:12px}
+main{display:flex;gap:44px;justify-content:center;padding:0 40px}
+.col{display:flex;flex-direction:column;gap:10px;width:300px}
+figcaption{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:8px}
+figcaption .k{width:20px;height:20px;border-radius:6px;background:var(--surface);color:var(--accent);display:grid;place-items:center;font-weight:600;font-size:11px}
+aside{width:300px;height:790px;background:var(--surface);border:1px solid var(--raised);border-radius:12px;display:flex;flex-direction:column;overflow:hidden}
+.scroll{overflow:auto;flex:1;padding:0 8px 14px;scrollbar-width:thin;scrollbar-color:#2C2144 transparent}
+.brand{display:flex;align-items:center;gap:10px;padding:14px 14px 6px}
+.brand b{font-size:14px;letter-spacing:.2px}.brand b span{color:var(--accent)}
+.brand small{display:block;color:var(--grey);font-size:10.5px}
+h2{display:flex;align-items:center;gap:6px;font-size:10.5px;font-weight:600;letter-spacing:.6px;text-transform:uppercase;color:var(--grey);padding:14px 8px 6px}
+h2 .n{color:var(--muted);font-weight:500;letter-spacing:0;text-transform:none}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;text-align:left}
+:focus-visible{outline:2px solid var(--spark);outline-offset:2px;border-radius:6px}
+svg{flex:none}
+.lnk{color:var(--accent);font-size:10.5px;text-decoration:underline;text-underline-offset:2px;min-height:24px}
+.lnk.sm{margin-left:auto;text-transform:none;letter-spacing:0;font-weight:500}
+.btn{font-size:11px;padding:4px 10px;border-radius:6px;min-height:26px}
+.btn.primary{background:var(--solid);color:#fff;font-weight:600}
+.btn.ghost{border:1px solid var(--unknown);color:var(--muted)}
+.acts{display:flex;gap:6px}
+/* spaces */
+.sps{list-style:none;display:flex;flex-direction:column;gap:1px}
+.sp{display:flex;align-items:center;gap:8px;padding:5px 8px;border-radius:7px}
+.sp:hover{background:var(--raised)}
+.av{width:20px;height:20px;border-radius:5px;background:var(--raised);display:grid;place-items:center;font-size:11px;font-weight:600;color:var(--accent)}
+.sn{font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sst{margin-left:auto;display:inline-flex;align-items:center;gap:4px;font-size:10.5px;white-space:nowrap}
+.sst svg{width:11px;height:11px}
+.sp:hover .sst[style*="grey"]{color:var(--unknown)!important}
+/* calm block */
+.calmbox{background:var(--bg);border:1px solid var(--raised);border-radius:12px;padding:14px 14px 13px;margin:0 2px}
+.ch{display:flex;gap:11px;align-items:flex-start}
+.moon{width:30px;height:30px;color:var(--accent)}
+.ct{font-size:14px;font-weight:600}
+.cs{font-size:12px;color:var(--dim);margin-top:2px}
+.today{display:grid;grid-template-columns:repeat(2,1fr);row-gap:10px;margin:14px 0 4px;border-top:1px solid var(--raised);padding-top:11px}
+.today div{display:flex;align-items:baseline;gap:7px}
+.today dd{order:-1;font-size:17px;min-width:20px;font-weight:600;font-variant-numeric:tabular-nums;color:var(--fg)}
+.today dt{font-size:11px;color:var(--grey);display:flex;align-items:center;gap:3px;white-space:nowrap}
+.today dt svg{width:10px;height:10px}
+.tod{font-size:10.5px;color:var(--grey);margin:8px 0 12px}
+.last{border-top:1px solid var(--raised);padding-top:11px}
+.lk{font-size:10.5px;color:var(--done);display:flex;gap:4px;align-items:center}
+.lt{display:flex;gap:7px;align-items:center;font-size:13px;font-weight:500;margin-top:5px}
+.ld{font-size:11.5px;color:var(--dim);margin:2px 0 10px 21px}
+.last .acts{margin-left:21px}
+.pg{width:14px;height:14px;color:var(--unknown)}
+/* cards (from 02) */
+.cards{display:flex;flex-direction:column;gap:8px}
+.card{position:relative;background:var(--bg);border:1px solid var(--raised);border-radius:10px;padding:10px 11px 9px}
+.card::before{content:"";position:absolute;left:-1px;top:10px;bottom:10px;width:3px;border-radius:3px;background:var(--rail)}
+.card:hover,.card.sel{background:var(--raised);border-color:var(--rail)}
+.card .hd{display:flex;align-items:center;gap:7px}
+.card .name{flex:1;min-width:0;font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pill{display:inline-flex;align-items:center;gap:4px;font-size:10.5px;font-weight:600;color:var(--rail);padding:2px 7px 2px 5px;border-radius:999px;border:1px solid var(--rail);white-space:nowrap}
+.pill svg{width:11px;height:11px}
+.card .sub{font-size:11.5px;color:var(--muted);margin:2px 0 0 21px}
+.card .body{margin:7px 0 0 21px}
+.ask{font-size:12.5px;color:var(--fg);border-left:2px solid var(--blocked);padding:2px 0 2px 8px;margin:6px 0 8px 21px}
+.err{font-size:11.5px;color:var(--error);margin:6px 0 8px 21px}
+.card .acts{margin-left:21px}
+.prog{display:flex;align-items:center;gap:8px}
+.bar{flex:1;height:4px;border-radius:4px;background:var(--bg);overflow:hidden;box-shadow:inset 0 0 0 1px #2C2144}
+.bar i{display:block;height:100%;background:var(--working);border-radius:4px}
+.prog span{font-size:10.5px;color:var(--muted);font-variant-numeric:tabular-nums}
+.chips{display:flex;flex-wrap:wrap;gap:5px;margin-top:7px}
+.chip{display:inline-flex;align-items:center;gap:5px;font-size:11px;color:var(--dim);padding:3px 8px 3px 6px;border-radius:6px;background:var(--bg);border:1px solid var(--raised)}
+.chip svg{width:11px;height:11px}
+.card .meta{margin:7px 0 0 21px;font-size:10.5px;color:var(--grey);display:flex;align-items:center;gap:5px}
+.card:hover .meta,.card.sel .meta{color:var(--unknown)}
+.card .meta svg{width:11px;height:11px}
+/* idle groups */
+.gh3{display:flex;align-items:center;gap:6px;font-size:10.5px;font-weight:600;padding:10px 8px 3px;color:var(--grey)}
+.gh3 span{font-weight:500;color:var(--grey)}
+.gh3.now,.gh3.now span{color:var(--accent)}
+.gh3.hour{color:var(--muted)}
+.il{list-style:none;display:flex;flex-direction:column;gap:1px}
+.ir{display:grid;grid-template-columns:14px 1fr;column-gap:8px;width:100%;padding:6px 8px;border-radius:8px;min-height:44px}
+.ir:hover{background:var(--raised)}
+.st{width:12px;height:12px;margin-top:2px;color:var(--grey)}
+.st.done{color:var(--done)}
+.l1{display:flex;align-items:center;gap:6px;min-width:0}
+.l1 .pg{width:12px;height:12px}
+.nm{font-size:12.5px;font-weight:500;color:var(--fg);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ir.earlier .nm{color:var(--muted);font-weight:400}
+.new{font-size:9.5px;font-weight:700;color:var(--bg);background:var(--done);padding:1px 5px;border-radius:4px;letter-spacing:.3px}
+.l2{grid-column:2;display:flex;gap:8px;font-size:11px;color:var(--grey);margin-top:2px;min-width:0}
+.ir.now .l2,.ir.hour .l2 .tk{color:var(--dim)}
+.tk{flex:0 1 auto;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.age{margin-left:auto;font-size:10.5px;color:var(--grey);font-variant-numeric:tabular-nums;white-space:nowrap}
+.ir.now .age{color:var(--done)}
+.ir:hover .age{color:var(--unknown)}
+.wh{flex:none;display:inline-flex;align-items:center;gap:3px;white-space:nowrap;color:var(--grey);font-variant-numeric:tabular-nums}
+.wh svg{width:10px;height:10px}
+.ir:hover .l2,.ir:hover .wh,.ir:hover .tk{color:var(--unknown)}
+.ir.now{background:linear-gradient(90deg,#2C2144 0,#17102A 85%)}
+.ir.now .wh{color:var(--dim)}
+.more{display:flex;align-items:center;gap:4px;width:100%;padding:6px 8px 6px 30px;font-size:11px;color:var(--accent);border-radius:7px;min-height:28px}
+.more svg{width:11px;height:11px}
+.more:hover{background:var(--raised)}
+.hid{display:flex;align-items:center;gap:6px;font-size:10.5px;color:var(--grey);padding:10px 8px 0}
+.hid svg{width:12px;height:12px}
+@media (prefers-reduced-motion:no-preference){.spin{animation:spin 1.6s linear infinite;transform-origin:50% 50%}@keyframes spin{to{transform:rotate(360deg)}}}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-working" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6" fill="none" stroke="currentColor" stroke-opacity=".3" stroke-width="2"/><path class="spin" d="M8 2a6 6 0 0 1 6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+  <symbol id="i-blocked" viewBox="0 0 16 16"><path d="M3 2.5h10a1.5 1.5 0 0 1 1.5 1.5v6A1.5 1.5 0 0 1 13 11.5H7l-3.5 2.5v-2.5H3A1.5 1.5 0 0 1 1.5 10V4A1.5 1.5 0 0 1 3 2.5z" fill="currentColor"/><path d="M6.6 5.4a1.5 1.5 0 1 1 2 1.4c-.4.2-.6.5-.6.9v.2" stroke="#17102A" stroke-width="1.3" fill="none" stroke-linecap="round"/><circle cx="8" cy="9.6" r=".8" fill="#17102A"/></symbol>
+  <symbol id="i-done" viewBox="0 0 16 16"><circle cx="8" cy="8" r="7" fill="currentColor"/><path d="M4.8 8.2l2.1 2.1 4.3-4.5" stroke="#17102A" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-error" viewBox="0 0 16 16"><path d="M5.1 1.5h5.8l3.6 3.6v5.8l-3.6 3.6H5.1l-3.6-3.6V5.1z" fill="currentColor"/><path d="M5.8 5.8l4.4 4.4M10.2 5.8l-4.4 4.4" stroke="#17102A" stroke-width="1.7" stroke-linecap="round"/></symbol>
+  <symbol id="i-idle" viewBox="0 0 16 16"><circle cx="8" cy="8" r="5" fill="none" stroke="currentColor" stroke-width="1.6"/></symbol>
+  <symbol id="i-sub" viewBox="0 0 16 16"><path d="M4 2v6a3 3 0 0 0 3 3h3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><circle cx="12" cy="11" r="2.2" fill="currentColor"/></symbol>
+  <symbol id="i-chev" viewBox="0 0 16 16"><path d="M4 6l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></symbol>
+  <symbol id="i-archive" viewBox="0 0 16 16"><rect x="1.5" y="3" width="13" height="3" rx="1" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="M2.5 6v6.5a1 1 0 0 0 1 1h9a1 1 0 0 0 1-1V6M6.5 8.8h3" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></symbol>
+  <symbol id="i-calm" viewBox="0 0 32 32"><circle cx="16" cy="16" r="15" fill="#2C2144"/><path d="M19.5 8.5a8 8 0 1 0 4 12.5 6.5 6.5 0 0 1-4-12.5z" fill="currentColor"/><circle cx="22.5" cy="10" r="1.1" fill="#F2EFFA"/></symbol>
+  <!-- machines -->
+  <symbol id="i-laptop" viewBox="0 0 16 16"><rect x="2.5" y="3" width="11" height="7.5" rx="1.3" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M1 13h14" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></symbol>
+  <symbol id="i-server" viewBox="0 0 16 16"><rect x="2" y="2" width="12" height="5" rx="1.2" fill="none" stroke="currentColor" stroke-width="1.4"/><rect x="2" y="9" width="12" height="5" rx="1.2" fill="none" stroke="currentColor" stroke-width="1.4"/><circle cx="5" cy="4.5" r=".9" fill="currentColor"/><circle cx="5" cy="11.5" r=".9" fill="currentColor"/></symbol>
+  <symbol id="i-cloud" viewBox="0 0 16 16"><path d="M4.5 12.5h7.2a2.8 2.8 0 0 0 .3-5.6A4 4 0 0 0 4.3 7.3a2.6 2.6 0 0 0 .2 5.2z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></symbol>
+  <!-- programs: original glyphs, not vendor logos -->
+  <symbol id="p-gs" viewBox="0 0 16 16"><path d="M8 1.5l1.6 4.9 4.9 1.6-4.9 1.6L8 14.5l-1.6-4.9L1.5 8l4.9-1.6z" fill="currentColor"/></symbol>
+  <symbol id="p-cc" viewBox="0 0 16 16"><path d="M8 1.5v13M1.5 8h13M3.4 3.4l9.2 9.2M12.6 3.4l-9.2 9.2" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></symbol>
+  <symbol id="p-cx" viewBox="0 0 16 16"><path d="M5.5 2.5C3.8 2.5 4 4 4 5.5S3.5 8 2 8c1.5 0 2 1 2 2.5s-.2 3 1.5 3M10.5 2.5c1.7 0 1.5 1.5 1.5 3s.5 2.5 2 2.5c-1.5 0-2 1-2 2.5s.2 3-1.5 3" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></symbol>
+  <symbol id="p-sh" viewBox="0 0 16 16"><path d="M2.5 4l4 4-4 4M8.5 12.5h5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+</svg>
+<header class="top"><h1>Sessions v2 · calm idle</h1><p>Three states of the same 300 px sidebar · idle grouped by recency, two lines per row, calm summary when nothing runs</p></header>
+<main><figure class="col"><figcaption><span class="k">A</span>Nothing running · 12 idle</figcaption><aside aria-label="Herdr sidebar — state a"><div class="brand"><svg width="28" height="28" viewBox="0 0 28 28" aria-hidden="true"><rect width="28" height="28" rx="7" fill="#7127FF"/><path d="M7 10c0-2.5 3-4 7-4s7 1.5 7 4v3c0 5-3.5 9-7 9s-7-4-7-9z" fill="#FFFFFF"/><path d="M10 13h8M11 16.5c1 1 2 1.5 3 1.5s2-.5 3-1.5" stroke="#7127FF" stroke-width="1.6" fill="none" stroke-linecap="round"/></svg><div><b>Refactor<span>IA</span></b><small>12 idle · 3 machines</small></div></div><div class="scroll"><section aria-labelledby="a-sp"><h2 id="a-sp">Spaces <span class="n">14</span><button class="lnk sm" aria-expanded="false">Show all</button></h2><ul class="sps"><li class="sp"><span class="av" aria-hidden="true">C</span><span class="sn">cortex</span><span class="sst" style="color:var(--grey)"><svg aria-hidden="true"><use href="#i-idle"/></svg>Idle</span></li><li class="sp"><span class="av" aria-hidden="true">D</span><span class="sn">cortex-dotfiles</span><span class="sst" style="color:var(--grey)"><svg aria-hidden="true"><use href="#i-idle"/></svg>Idle</span></li><li class="sp"><span class="av" aria-hidden="true">I</span><span class="sn">innit-pay</span><span class="sst" style="color:var(--done)"><svg aria-hidden="true"><use href="#i-done"/></svg>New</span></li></ul></section><section class="calm" aria-labelledby="a-ag"><h2 id="a-ag">Agents</h2>
+<div class="calmbox">
+ <div class="ch"><svg class="moon" aria-hidden="true"><use href="#i-calm"/></svg><div><p class="ct">All quiet</p><p class="cs">Nothing is running and nothing needs you.</p></div></div>
+ <dl class="today" aria-label="Today's activity">
+  <div><dt>Ran</dt><dd>14</dd></div>
+  <div><dt><svg style="color:var(--done)" aria-hidden="true"><use href="#i-done"/></svg>Finished</dt><dd>13</dd></div>
+  <div><dt><svg style="color:var(--error)" aria-hidden="true"><use href="#i-error"/></svg>Failed</dt><dd>1</dd></div>
+  <div><dt><svg style="color:var(--blocked)" aria-hidden="true"><use href="#i-blocked"/></svg>Needs you</dt><dd>0</dd></div>
+ </dl>
+ <p class="tod">Today · 3 machines online</p>
+ <div class="last"><p class="lk">Last finished · 9m ago · <svg style="width:10px;height:10px" aria-hidden="true"><use href="#i-server"/></svg>agent-dev</p>
+  <p class="lt"><svg class="pg" aria-hidden="true"><use href="#p-cc"/></svg>innit-pay</p>
+  <p class="ld">Refactor payment webhooks</p>
+  <div class="acts"><button class="btn primary">Review result</button><button class="btn ghost">Open pane</button></div></div>
+</div></section><section aria-labelledby="a-idle"><h2 id="a-idle">Idle <span class="n">12</span></h2><h3 class="gh3 now">Just now<span>1</span></h3><ul class="il"><li><button class="ir now" aria-label="innit-pay, Claude Code, finished, not seen yet, Refactor payment webhooks, agent-dev, 9m ago"><svg class="st done" aria-hidden="true"><use href="#i-done"/></svg><span class="l1"><svg class="pg" aria-hidden="true"><use href="#p-cc"/></svg><span class="nm">innit-pay</span><span class="new">New</span><span class="age">9m</span></span><span class="l2"><span class="tk">Refactor payment webhooks</span><span class="wh"><svg aria-hidden="true"><use href="#i-server"/></svg>agent-dev</span></span></button></li></ul><h3 class="gh3 hour">This hour<span>3</span></h3><ul class="il"><li><button class="ir hour" aria-label="gentle-shell-issue-3552, Gentle Shell, idle, feat(voice): make the gentle voice…, agent-gentle, 31m ago"><svg class="st" aria-hidden="true"><use href="#i-idle"/></svg><span class="l1"><svg class="pg" aria-hidden="true"><use href="#p-gs"/></svg><span class="nm">gentle-shell-issue-3552</span><span class="age">31m</span></span><span class="l2"><span class="tk">feat(voice): make the gentle voice…</span><span class="wh"><svg aria-hidden="true"><use href="#i-cloud"/></svg>agent-gentle</span></span></button></li><li><button class="ir hour" aria-label="Orquestador roadmap #827, Gentle Shell, idle, Plan Q1 milestones, agent-dev, 44m ago"><svg class="st" aria-hidden="true"><use href="#i-idle"/></svg><span class="l1"><svg class="pg" aria-hidden="true"><use href="#p-gs"/></svg><span class="nm">Orquestador roadmap #827</span><span class="age">44m</span></span><span class="l2"><span class="tk">Plan Q1 milestones</span><span class="wh"><svg aria-hidden="true"><use href="#i-server"/></svg>agent-dev</span></span></button></li><li><button class="ir hour" aria-label="Mikrotiks de Netuy en Tecmo, Claude Code, idle, Audit firewall rules, This computer, 56m ago"><svg class="st" aria-hidden="true"><use href="#i-idle"/></svg><span class="l1"><svg class="pg" aria-hidden="true"><use href="#p-cc"/></svg><span class="nm">Mikrotiks de Netuy en Tecmo</span><span class="age">56m</span></span><span class="l2"><span class="tk">Audit firewall rules</span><span class="wh"><svg aria-hidden="true"><use href="#i-laptop"/></svg>This computer</span></span></button></li></ul><h3 class="gh3 earlier">Earlier today<span>8</span></h3><ul class="il"><li><button class="ir earlier" aria-label="refactoria, Claude Code, idle, Landing hero copy pass, This computer, 2h ago"><svg class="st" aria-hidden="true"><use href="#i-idle"/></svg><span class="l1"><svg class="pg" aria-hidden="true"><use href="#p-cc"/></svg><span class="nm">refactoria</span><span class="age">2h</span></span><span class="l2"><span class="tk">Landing hero copy pass</span><span class="wh"><svg aria-hidden="true"><use href="#i-laptop"/></svg>This computer</span></span></button></li><li><button class="ir earlier" aria-label="innit-core, Gentle Shell, idle, Ledger migration, agent-dev, 3h ago"><svg class="st" aria-hidden="true"><use href="#i-idle"/></svg><span class="l1"><svg class="pg" aria-hidden="true"><use href="#p-gs"/></svg><span class="nm">innit-core</span><span class="age">3h</span></span><span class="l2"><span class="tk">Ledger migration</span><span class="wh"><svg aria-hidden="true"><use href="#i-server"/></svg>agent-dev</span></span></button></li></ul><button class="more" aria-expanded="false">Show 6 more from earlier today<svg aria-hidden="true"><use href="#i-chev"/></svg></button><p class="hid"><svg aria-hidden="true"><use href="#i-archive"/></svg>5 untouched for over a day are tucked away · <button class="lnk">Show</button></p></section></div></aside></figure><figure class="col"><figcaption><span class="k">B</span>One working + idle</figcaption><aside aria-label="Herdr sidebar — state b"><div class="brand"><svg width="28" height="28" viewBox="0 0 28 28" aria-hidden="true"><rect width="28" height="28" rx="7" fill="#7127FF"/><path d="M7 10c0-2.5 3-4 7-4s7 1.5 7 4v3c0 5-3.5 9-7 9s-7-4-7-9z" fill="#FFFFFF"/><path d="M10 13h8M11 16.5c1 1 2 1.5 3 1.5s2-.5 3-1.5" stroke="#7127FF" stroke-width="1.6" fill="none" stroke-linecap="round"/></svg><div><b>Refactor<span>IA</span></b><small>1 running · 11 idle</small></div></div><div class="scroll"><section aria-labelledby="b-sp"><h2 id="b-sp">Spaces <span class="n">14</span><button class="lnk sm" aria-expanded="false">Show all</button></h2><ul class="sps"><li class="sp"><span class="av" aria-hidden="true">D</span><span class="sn">cortex-dotfiles</span><span class="sst" style="color:var(--working)"><svg aria-hidden="true"><use href="#i-working"/></svg>Working</span></li><li class="sp"><span class="av" aria-hidden="true">I</span><span class="sn">innit-pay</span><span class="sst" style="color:var(--done)"><svg aria-hidden="true"><use href="#i-done"/></svg>New</span></li><li class="sp"><span class="av" aria-hidden="true">C</span><span class="sn">cortex</span><span class="sst" style="color:var(--grey)"><svg aria-hidden="true"><use href="#i-idle"/></svg>Idle</span></li></ul></section><section aria-labelledby="b-ag"><h2 id="b-ag">Running <span class="n">1</span></h2><div class="cards"><article class="card sel" style="--rail:var(--working)" tabindex="0" aria-label="cortex-dotfiles, Gentle Shell, working, 6 of 9 todos, subagent design sessions cards v2" aria-current="true">
+<div class="hd"><svg class="pg" aria-hidden="true"><use href="#p-gs"/></svg><span class="name">cortex-dotfiles</span><span class="pill"><svg aria-hidden="true"><use href="#i-working"/></svg>Working</span></div>
+<p class="sub">T9 Iterate the design</p><div class="body"><div class="prog" aria-label="6 of 9 todos"><div class="bar"><i style="width:67%"></i></div><span>6/9</span></div><div class="chips"><span class="chip"><svg style="color:var(--working)" aria-hidden="true"><use href="#i-sub"/></svg>design sessions cards v2</span></div></div><p class="meta"><svg aria-hidden="true"><use href="#i-laptop"/></svg>This computer · opus-5-5 · ctx 38% · 12m</p></article></div></section><section aria-labelledby="b-idle"><h2 id="b-idle">Idle <span class="n">11</span></h2><h3 class="gh3 now">Just now<span>1</span></h3><ul class="il"><li><button class="ir now" aria-label="innit-pay, Claude Code, finished, not seen yet, Refactor payment webhooks, agent-dev, 9m ago"><svg class="st done" aria-hidden="true"><use href="#i-done"/></svg><span class="l1"><svg class="pg" aria-hidden="true"><use href="#p-cc"/></svg><span class="nm">innit-pay</span><span class="new">New</span><span class="age">9m</span></span><span class="l2"><span class="tk">Refactor payment webhooks</span><span class="wh"><svg aria-hidden="true"><use href="#i-server"/></svg>agent-dev</span></span></button></li></ul><h3 class="gh3 hour">This hour<span>3</span></h3><ul class="il"><li><button class="ir hour" aria-label="gentle-shell-issue-3552, Gentle Shell, idle, feat(voice): make the gentle voice…, agent-gentle, 31m ago"><svg class="st" aria-hidden="true"><use href="#i-idle"/></svg><span class="l1"><svg class="pg" aria-hidden="true"><use href="#p-gs"/></svg><span class="nm">gentle-shell-issue-3552</span><span class="age">31m</span></span><span class="l2"><span class="tk">feat(voice): make the gentle voice…</span><span class="wh"><svg aria-hidden="true"><use href="#i-cloud"/></svg>agent-gentle</span></span></button></li><li><button class="ir hour" aria-label="Orquestador roadmap #827, Gentle Shell, idle, Plan Q1 milestones, agent-dev, 44m ago"><svg class="st" aria-hidden="true"><use href="#i-idle"/></svg><span class="l1"><svg class="pg" aria-hidden="true"><use href="#p-gs"/></svg><span class="nm">Orquestador roadmap #827</span><span class="age">44m</span></span><span class="l2"><span class="tk">Plan Q1 milestones</span><span class="wh"><svg aria-hidden="true"><use href="#i-server"/></svg>agent-dev</span></span></button></li><li><button class="ir hour" aria-label="Mikrotiks de Netuy en Tecmo, Claude Code, idle, Audit firewall rules, This computer, 56m ago"><svg class="st" aria-hidden="true"><use href="#i-idle"/></svg><span class="l1"><svg class="pg" aria-hidden="true"><use href="#p-cc"/></svg><span class="nm">Mikrotiks de Netuy en Tecmo</span><span class="age">56m</span></span><span class="l2"><span class="tk">Audit firewall rules</span><span class="wh"><svg aria-hidden="true"><use href="#i-laptop"/></svg>This computer</span></span></button></li></ul><h3 class="gh3 earlier">Earlier today<span>7</span></h3><ul class="il"><li><button class="ir earlier" aria-label="refactoria, Claude Code, idle, Landing hero copy pass, This computer, 2h ago"><svg class="st" aria-hidden="true"><use href="#i-idle"/></svg><span class="l1"><svg class="pg" aria-hidden="true"><use href="#p-cc"/></svg><span class="nm">refactoria</span><span class="age">2h</span></span><span class="l2"><span class="tk">Landing hero copy pass</span><span class="wh"><svg aria-hidden="true"><use href="#i-laptop"/></svg>This computer</span></span></button></li><li><button class="ir earlier" aria-label="innit-core, Gentle Shell, idle, Ledger migration, agent-dev, 3h ago"><svg class="st" aria-hidden="true"><use href="#i-idle"/></svg><span class="l1"><svg class="pg" aria-hidden="true"><use href="#p-gs"/></svg><span class="nm">innit-core</span><span class="age">3h</span></span><span class="l2"><span class="tk">Ledger migration</span><span class="wh"><svg aria-hidden="true"><use href="#i-server"/></svg>agent-dev</span></span></button></li><li><button class="ir earlier" aria-label="innit-core, Codex, idle, Fix flaky e2e, agent-dev, 4h ago"><svg class="st" aria-hidden="true"><use href="#i-idle"/></svg><span class="l1"><svg class="pg" aria-hidden="true"><use href="#p-cx"/></svg><span class="nm">innit-core</span><span class="age">4h</span></span><span class="l2"><span class="tk">Fix flaky e2e</span><span class="wh"><svg aria-hidden="true"><use href="#i-server"/></svg>agent-dev</span></span></button></li></ul><button class="more" aria-expanded="false">Show 4 more from earlier today<svg aria-hidden="true"><use href="#i-chev"/></svg></button><p class="hid"><svg aria-hidden="true"><use href="#i-archive"/></svg>5 untouched for over a day are tucked away · <button class="lnk">Show</button></p></section></div></aside></figure><figure class="col"><figcaption><span class="k">C</span>Needs you + failed + working</figcaption><aside aria-label="Herdr sidebar — state c"><div class="brand"><svg width="28" height="28" viewBox="0 0 28 28" aria-hidden="true"><rect width="28" height="28" rx="7" fill="#7127FF"/><path d="M7 10c0-2.5 3-4 7-4s7 1.5 7 4v3c0 5-3.5 9-7 9s-7-4-7-9z" fill="#FFFFFF"/><path d="M10 13h8M11 16.5c1 1 2 1.5 3 1.5s2-.5 3-1.5" stroke="#7127FF" stroke-width="1.6" fill="none" stroke-linecap="round"/></svg><div><b>Refactor<span>IA</span></b><small>1 needs you · 1 failed · 1 running</small></div></div><div class="scroll"><section aria-labelledby="c-sp"><h2 id="c-sp">Spaces <span class="n">14</span><button class="lnk sm" aria-expanded="false">Show all</button></h2><ul class="sps"><li class="sp"><span class="av" aria-hidden="true">G</span><span class="sn">gentle-shell-issue-3552</span><span class="sst" style="color:var(--error)"><svg aria-hidden="true"><use href="#i-error"/></svg>Failed</span></li><li class="sp"><span class="av" aria-hidden="true">T</span><span class="sn">Triage de issues</span><span class="sst" style="color:var(--blocked)"><svg aria-hidden="true"><use href="#i-blocked"/></svg>Needs you</span></li><li class="sp"><span class="av" aria-hidden="true">D</span><span class="sn">cortex-dotfiles</span><span class="sst" style="color:var(--working)"><svg aria-hidden="true"><use href="#i-working"/></svg>Working</span></li></ul></section><section aria-labelledby="c-ag"><h2 id="c-ag">Needs you <span class="n">2 · most urgent first</span></h2><div class="cards"><article class="card" style="--rail:var(--blocked)" tabindex="0" aria-label="Triage de issues pendientes, Gentle Shell, needs you, waiting 4 minutes">
+<div class="hd"><svg class="pg" aria-hidden="true"><use href="#p-gs"/></svg><span class="name">Triage de issues pendientes</span><span class="pill"><svg aria-hidden="true"><use href="#i-blocked"/></svg>Needs you · 4m</span></div>
+<p class="sub">Gentle Shell asks you</p><p class="ask">“¿Cierro los 7 issues sin actividad desde agosto?”</p><div class="acts"><button class="btn primary">Answer</button><button class="btn ghost">Open pane</button></div><p class="meta"><svg aria-hidden="true"><use href="#i-cloud"/></svg>agent-gentle · sonnet-5-5 · ctx 22%</p></article><article class="card" style="--rail:var(--error)" tabindex="0" aria-label="gentle-shell-issue-3552, Gentle Shell, failed 2 minutes ago, 3 tests failed">
+<div class="hd"><svg class="pg" aria-hidden="true"><use href="#p-gs"/></svg><span class="name">gentle-shell-issue-3552</span><span class="pill"><svg aria-hidden="true"><use href="#i-error"/></svg>Failed · 2m</span></div>
+<p class="sub">feat(voice): make the gentle voice…</p><p class="err">Tests failed · 3 of 214 · voice/tts.spec.ts</p><div class="acts"><button class="btn ghost">See error</button><button class="btn ghost">Retry</button></div><p class="meta"><svg aria-hidden="true"><use href="#i-cloud"/></svg>agent-gentle · issue-3552 · ctx 51% · $0.62</p></article></div><h2>Running <span class="n">1</span></h2><div class="cards"><article class="card sel" style="--rail:var(--working)" tabindex="0" aria-label="cortex-dotfiles, Gentle Shell, working, 6 of 9 todos, subagent design sessions cards v2" aria-current="true">
+<div class="hd"><svg class="pg" aria-hidden="true"><use href="#p-gs"/></svg><span class="name">cortex-dotfiles</span><span class="pill"><svg aria-hidden="true"><use href="#i-working"/></svg>Working</span></div>
+<p class="sub">T9 Iterate the design</p><div class="body"><div class="prog" aria-label="6 of 9 todos"><div class="bar"><i style="width:67%"></i></div><span>6/9</span></div><div class="chips"><span class="chip"><svg style="color:var(--working)" aria-hidden="true"><use href="#i-sub"/></svg>design sessions cards v2</span></div></div><p class="meta"><svg aria-hidden="true"><use href="#i-laptop"/></svg>This computer · opus-5-5 · ctx 38% · 12m</p></article></div></section><section aria-labelledby="c-idle"><h2 id="c-idle">Idle <span class="n">9</span></h2><h3 class="gh3 now">Just now<span>1</span></h3><ul class="il"><li><button class="ir now" aria-label="innit-pay, Claude Code, finished, not seen yet, Refactor payment webhooks, agent-dev, 9m ago"><svg class="st done" aria-hidden="true"><use href="#i-done"/></svg><span class="l1"><svg class="pg" aria-hidden="true"><use href="#p-cc"/></svg><span class="nm">innit-pay</span><span class="new">New</span><span class="age">9m</span></span><span class="l2"><span class="tk">Refactor payment webhooks</span><span class="wh"><svg aria-hidden="true"><use href="#i-server"/></svg>agent-dev</span></span></button></li></ul><h3 class="gh3 hour">This hour<span>2</span></h3><ul class="il"><li><button class="ir hour" aria-label="Orquestador roadmap #827, Gentle Shell, idle, Plan Q1 milestones, agent-dev, 44m ago"><svg class="st" aria-hidden="true"><use href="#i-idle"/></svg><span class="l1"><svg class="pg" aria-hidden="true"><use href="#p-gs"/></svg><span class="nm">Orquestador roadmap #827</span><span class="age">44m</span></span><span class="l2"><span class="tk">Plan Q1 milestones</span><span class="wh"><svg aria-hidden="true"><use href="#i-server"/></svg>agent-dev</span></span></button></li><li><button class="ir hour" aria-label="Mikrotiks de Netuy en Tecmo, Claude Code, idle, Audit firewall rules, This computer, 56m ago"><svg class="st" aria-hidden="true"><use href="#i-idle"/></svg><span class="l1"><svg class="pg" aria-hidden="true"><use href="#p-cc"/></svg><span class="nm">Mikrotiks de Netuy en Tecmo</span><span class="age">56m</span></span><span class="l2"><span class="tk">Audit firewall rules</span><span class="wh"><svg aria-hidden="true"><use href="#i-laptop"/></svg>This computer</span></span></button></li></ul><h3 class="gh3 earlier">Earlier today<span>6</span></h3><ul class="il"><li><button class="ir earlier" aria-label="refactoria, Claude Code, idle, Landing hero copy pass, This computer, 2h ago"><svg class="st" aria-hidden="true"><use href="#i-idle"/></svg><span class="l1"><svg class="pg" aria-hidden="true"><use href="#p-cc"/></svg><span class="nm">refactoria</span><span class="age">2h</span></span><span class="l2"><span class="tk">Landing hero copy pass</span><span class="wh"><svg aria-hidden="true"><use href="#i-laptop"/></svg>This computer</span></span></button></li></ul><button class="more" aria-expanded="false">Show 5 more from earlier today<svg aria-hidden="true"><use href="#i-chev"/></svg></button><p class="hid"><svg aria-hidden="true"><use href="#i-archive"/></svg>5 untouched for over a day are tucked away · <button class="lnk">Show</button></p></section></div></aside></figure></main>
+</body>
+</html>

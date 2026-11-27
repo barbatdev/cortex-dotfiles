@@ -36,6 +36,10 @@ MANAGED_LINKS=(
   "herdr/desktop/mods/refactoria-agents/mod.json|$HOME/.config/herdr-app/mods/refactoria-agents/mod.json|darwin"
   "herdr/desktop/mods/refactoria-prs/main.js|$HOME/.config/herdr-app/mods/refactoria-prs/main.js|darwin"
   "herdr/desktop/mods/refactoria-prs/mod.json|$HOME/.config/herdr-app/mods/refactoria-prs/mod.json|darwin"
+  "herdr/desktop/mods/refactoria-github/main.js|$HOME/.config/herdr-app/mods/refactoria-github/main.js|darwin"
+  "herdr/desktop/mods/refactoria-github/mod.json|$HOME/.config/herdr-app/mods/refactoria-github/mod.json|darwin"
+  "herdr/desktop/mods/refactoria-tabs/main.js|$HOME/.config/herdr-app/mods/refactoria-tabs/main.js|darwin"
+  "herdr/desktop/mods/refactoria-tabs/mod.json|$HOME/.config/herdr-app/mods/refactoria-tabs/mod.json|darwin"
   "herdr/desktop/mods/refactoria-chrome/main.js|$HOME/.config/herdr-app/mods/refactoria-chrome/main.js|darwin"
   "herdr/desktop/mods/refactoria-chrome/mod.json|$HOME/.config/herdr-app/mods/refactoria-chrome/mod.json|darwin"
   "ghostty/shaders|$HOME/.config/ghostty/shaders|all"
@@ -578,10 +582,38 @@ seed_file "$DOTFILES/opencode/tui.json" "$HOME/.config/opencode/tui.json"
 # Herdr Desktop rewrites settings.json (theme picker, zoom keys): seed a copy.
 if [[ "$PLATFORM" == "Darwin" ]]; then
     seed_file "$DOTFILES/herdr/desktop/settings.json" "$HOME/.config/herdr-app/settings.json"
+    # A mod's imported modules (feed.js, rows.js, model.js) must live inside its folder
+    # (Herdr refuses an import that resolves outside it): copy each one,
+    # refreshing it when it changed.
+    for feed in "$DOTFILES"/herdr/desktop/mods/*/feed.js "$DOTFILES"/herdr/desktop/mods/*/rows.js \
+        "$DOTFILES"/herdr/desktop/mods/*/model.js; do
+        mod="$(basename "$(dirname "$feed")")"
+        dst="$HOME/.config/herdr-app/mods/$mod/$(basename "$feed")"
+        if cmp -s "$feed" "$dst"; then continue; fi
+        if [[ "$DRY_RUN" == true ]]; then echo "  → Would copy $dst"; continue; fi
+        mkdir -p "$(dirname "$dst")"
+        cp "$feed" "$dst.tmp.$$" && mv -f "$dst.tmp.$$" "$dst"
+        echo "  ✓ $dst copied"
+    done
     # Herdr Desktop does not load mod images through a symlink: copy them.
     for image in logo.png wordmark.png; do
         seed_file "$DOTFILES/herdr/desktop/mods/refactoria-chrome/$image" \
             "$HOME/.config/herdr-app/mods/refactoria-chrome/$image"
+    done
+    for icon in "$DOTFILES"/herdr/desktop/mods/refactoria-tabs/*.svg; do
+        seed_file "$icon" "$HOME/.config/herdr-app/mods/refactoria-tabs/$(basename "$icon")"
+    done
+    # A mod's icons/ folder (refactoria-agents program and machine glyphs): copied,
+    # refreshed when the repo's copy changed.
+    for icon in "$DOTFILES"/herdr/desktop/mods/*/icons/*.svg; do
+        [[ -e "$icon" ]] || continue
+        mod="$(basename "$(dirname "$(dirname "$icon")")")"
+        dst="$HOME/.config/herdr-app/mods/$mod/icons/$(basename "$icon")"
+        if cmp -s "$icon" "$dst"; then continue; fi
+        if [[ "$DRY_RUN" == true ]]; then echo "  → Would copy $dst"; continue; fi
+        mkdir -p "$(dirname "$dst")"
+        cp "$icon" "$dst.tmp.$$" && mv -f "$dst.tmp.$$" "$dst"
+        echo "  ✓ $dst copied"
     done
 fi
 # Pi owns settings.json: merge only the RefactorIA appearance keys into it.

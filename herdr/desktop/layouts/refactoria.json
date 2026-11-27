@@ -32,20 +32,20 @@
                 "mod": "refactoria-spaces"
               },
               "size": {
-                "weight": 1
+                "px": 300
               },
               "min": 90
             },
             {
-              "id": "prs",
+              "id": "agents",
               "type": "block",
               "content": {
-                "mod": "refactoria-prs"
+                "mod": "refactoria-agents"
               },
               "size": {
                 "weight": 1
               },
-              "min": 90
+              "min": 160
             }
           ]
         },
@@ -79,7 +79,7 @@
           "id": "tabs",
           "type": "block",
           "content": {
-            "mod": "tabs"
+            "mod": "refactoria-tabs"
           },
           "size": {
             "px": 42
@@ -139,6 +139,13 @@
                       "type": "block",
                       "content": {
                         "mod": "changes"
+                      }
+                    },
+                    {
+                      "id": "github",
+                      "type": "block",
+                      "content": {
+                        "mod": "refactoria-github"
                       }
                     }
                   ],

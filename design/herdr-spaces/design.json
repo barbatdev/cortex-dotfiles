@@ -1,0 +1,11 @@
+{
+  "title": "Spaces block",
+  "brief": "Redesign the Herdr Desktop Spaces block (top of the 300 px left sidebar, main Cmd+1..9 navigation) so it matches the approved calm language of 04-sessions-v2 and github 02-rich-tabs: machine groups with collapse and online state, repo/worktree nesting, branch, ahead/behind, dirty count, most urgent agent state with its task, shortcut numbers, a clear current space; AA contrast, icon + word states, visible #FFB547 focus, reduced motion.",
+  "feature": "odd/tasks/herdr-desktop-ux.md",
+  "artboards": [
+    { "file": "01-quiet-list.html", "title": "Quiet list", "tradeoff": "Closest to 04: small-caps machine labels, two/three-line rows, outlined state pills and a soft raised selection with accent bar; most readable and harmonious, but tallest (~560 px for 7 visible spaces), so Agents start below the fold sooner", "width": 1440, "height": 900 },
+    { "file": "02-repo-tree.html", "title": "Repo tree", "tradeoff": "Makes repo → worktree structure and git state (branch, ↑/↓, dirty) explicit as quiet chips with agent program + state on the right; best for git-heavy work, but chips add visual texture and the block is about as tall as 01", "width": 1440, "height": 900 },
+    { "file": "03-compact-switcher.html", "title": "Compact switcher", "tradeoff": "Densest (28 px rows led by ⌘ number, per-machine summary, ~360 px total) so Agents stay visible; branch and task appear only on hover/focus and for the current/urgent space, so idle git state is less scannable at a glance", "width": 1440, "height": 900 },
+    { "file": "04-split-roles.html", "title": "Split roles · Spaces vs Agents", "tradeoff": "Ends the Spaces/Agents confusion: Spaces becomes pure navigation (name, ⌘ key, branch, ↑/↓, dirty, one 8 px agent dot) and Agents moves into a darker docked tray with its own live-summary header; clearest separation and shorter Spaces rows, but the task/question is no longer readable from Spaces, so reading why a space is amber needs a glance down at the tray, and the fixed tray height leaves Spaces less room to scroll", "width": 1440, "height": 900 }
+  ]
+}

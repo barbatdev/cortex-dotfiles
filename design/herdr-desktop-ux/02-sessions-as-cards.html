@@ -1,0 +1,228 @@
+<!doctype html>
+<!--
+  Direction 02 — Sessions as cards
+  WCAG contrast (computed, WCAG 2.x relative luminance):
+  On #0B0714 bg:   #FFFFFF 19.91 · #EBEBEB 16.70 · #F2EFFA 17.54 · #A477FF 6.32 · #8F839D 5.60 · #8CC8FF 11.21 · #FFC857 12.94 · #58E6A8 12.61 · #FF6B8A 7.32 · #C7A6FF 9.79
+  On #17102A side: #FFFFFF 18.36 · #EBEBEB 15.40 · #F2EFFA 16.17 · #A477FF 5.82 · #8F839D 5.16 · #8CC8FF 10.33 · #FFC857 11.93 · #58E6A8 11.63 · #FF6B8A 6.75 · #C7A6FF 9.03 · #FFB547 10.45
+  On #2C2144 raised/selected/hover: #FFFFFF 14.91 · #EBEBEB 12.51 · #F2EFFA 13.14 · #A477FF 4.73 · #8CC8FF 8.39 · #FFC857 9.69 · #58E6A8 9.44 · #FF6B8A 5.48 · #C7A6FF 7.33
+     NOTE #8F839D on #2C2144 = 4.19 (FAIL) -> grey text is never placed on raised surfaces; meta on raised uses #C7A6FF.
+  White on #7127FF (solid fill buttons) 6.11 · #0B0714 on #FFC857 (count badge) 12.94
+  Non-text: state rails/icons use status colors (all >= 5.4:1 vs #17102A / #2C2144); focus ring #FFB547 10.45 vs #17102A.
+  #2C2144 vs #17102A borders = 1.23 -> decorative separators only, never the sole boundary of a control.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Herdr Desktop — Sidebar 02 · Sessions as cards</title>
+<style>
+:root{
+  --bg:#0B0714;--surface:#17102A;--raised:#2C2144;--fg:#FFFFFF;--muted:#EBEBEB;--dim:#F2EFFA;
+  --accent:#A477FF;--solid:#7127FF;--spark:#FFB547;--working:#8CC8FF;--blocked:#FFC857;--done:#58E6A8;--error:#FF6B8A;--unknown:#C7A6FF;--grey:#8F839D;
+  --font:"Inter",-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",Arial,sans-serif;
+  --mono:ui-monospace,"SF Mono",Menlo,monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{width:1440px;height:900px;background:var(--bg);color:var(--fg);font:12px/1.4 var(--font);overflow:hidden;-webkit-font-smoothing:antialiased}
+.window{display:grid;grid-template-columns:300px 1fr 44px;grid-template-rows:38px 1fr;height:900px}
+.titlebar{grid-column:1/-1;display:flex;align-items:center;gap:8px;padding:0 14px;background:var(--surface);border-bottom:1px solid var(--raised)}
+.lights{display:flex;gap:8px}.lights i{width:12px;height:12px;border-radius:50%;background:var(--raised)}
+.titlebar .t{margin-left:auto;margin-right:auto;color:var(--grey);font-size:12px}
+aside{background:var(--surface);border-right:1px solid var(--raised);display:flex;flex-direction:column;overflow:hidden}
+.scroll{overflow:auto;flex:1;padding:0 8px 12px}
+.brand{display:flex;align-items:center;gap:10px;padding:14px 14px 12px}
+.brand b{font-size:14px;letter-spacing:.2px}.brand b span{color:var(--accent)}
+.brand small{display:block;color:var(--grey);font-size:10.5px}
+/* summary line */
+.pulse{display:flex;gap:6px;padding:0 14px 12px;flex-wrap:wrap}
+.pulse a{display:inline-flex;align-items:center;gap:4px;font-size:10.5px;color:var(--muted);text-decoration:none;padding:2px 7px;border-radius:999px;border:1px solid var(--raised)}
+.pulse a svg{width:11px;height:11px}
+h2{display:flex;align-items:center;gap:6px;font-size:10.5px;font-weight:600;letter-spacing:.6px;text-transform:uppercase;color:var(--grey);padding:14px 8px 6px}
+h2 .n{color:var(--muted);font-weight:500;letter-spacing:0}
+h2 button{margin-left:auto}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+:focus-visible{outline:2px solid var(--spark);outline-offset:2px;border-radius:6px}
+.ico{width:14px;height:14px;flex:none}
+/* inbox cards */
+.inbox{display:flex;flex-direction:column;gap:6px}
+.need{position:relative;background:var(--raised);border-radius:8px;padding:9px 10px 10px 14px}
+.need::before{content:"";position:absolute;left:0;top:8px;bottom:8px;width:3px;border-radius:3px;background:var(--rail)}
+.need .top{display:flex;align-items:center;gap:6px}
+.need .state{font-size:10.5px;font-weight:600;color:var(--rail)}
+.need .age{margin-left:auto;font-size:10.5px;color:var(--unknown)}
+.need .q{font-size:13px;font-weight:500;margin:5px 0 4px;color:var(--fg)}
+.need .where{font-size:11px;color:var(--unknown)}
+.need .acts{display:flex;gap:6px;margin-top:8px}
+.btn{font-size:11px;padding:4px 10px;border-radius:6px;min-height:24px}
+.btn.primary{background:var(--solid);color:#fff;font-weight:600}
+.btn.ghost{border:1px solid var(--unknown);color:var(--muted)}
+/* rows */
+.row{display:grid;grid-template-columns:16px 1fr auto;column-gap:8px;padding:7px 8px;border-radius:7px;align-items:start}
+.row:hover,.row.sel{background:var(--raised)}
+.row:hover .meta,.row.sel .meta{color:var(--unknown)}
+.row .ico{margin-top:2px}
+.name{font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tag{font-size:10.5px;color:var(--muted);white-space:nowrap;margin-top:2px}
+.line2{grid-column:2/4;font-size:12px;color:var(--dim);margin-top:2px}
+.meta{grid-column:2/4;font-size:10.5px;color:var(--grey);margin-top:3px;font-variant-numeric:tabular-nums}
+.prog{display:flex;align-items:center;gap:8px;grid-column:2/4;margin-top:5px}
+.bar{flex:1;height:4px;border-radius:4px;background:var(--bg);overflow:hidden;box-shadow:inset 0 0 0 1px #2C2144}
+.bar i{display:block;height:100%;background:var(--working);border-radius:4px}
+.prog span{font-size:10.5px;color:var(--muted);font-variant-numeric:tabular-nums}
+.kids{grid-column:2/4;margin-top:6px;border-left:1px solid var(--raised);padding-left:9px;display:flex;flex-direction:column;gap:3px}
+.kid{display:flex;align-items:center;gap:6px;font-size:11.5px;color:var(--dim)}
+.kid .ico{width:12px;height:12px;margin:0}
+.kid em{font-style:normal;margin-left:auto;font-size:10.5px}
+.prgm{display:inline-block;font:600 10px/1 var(--mono);padding:2px 4px;border-radius:4px;border:1px solid currentColor;margin-right:4px;vertical-align:1px}
+.idle{display:flex;align-items:center;gap:8px;width:100%;padding:8px;border-radius:7px;color:var(--muted);text-align:left}
+.idle:hover{background:var(--raised)}
+.idle small{color:var(--grey);margin-left:auto;font-size:10.5px}
+.idle:hover small{color:var(--unknown)}
+/* spaces compact */
+.mach{font-size:10.5px;color:var(--grey);padding:8px 8px 2px;display:flex;align-items:center;gap:6px}
+.space{display:flex;align-items:center;gap:8px;padding:5px 8px;border-radius:7px}
+.space:hover{background:var(--raised)}
+.av{width:20px;height:20px;border-radius:5px;background:var(--raised);display:grid;place-items:center;font-size:11px;font-weight:600;color:var(--accent);flex:none}
+.space .sn{font-size:12.5px}
+.space .st{margin-left:auto;display:flex;align-items:center;gap:4px;font-size:10.5px}
+.legend{border-top:1px solid var(--raised);padding:8px 14px;display:flex;gap:10px;flex-wrap:wrap;font-size:10.5px;color:var(--grey)}
+.legend span{display:inline-flex;gap:4px;align-items:center}
+.legend svg{width:11px;height:11px}
+/* placeholders */
+main{position:relative;background:var(--bg);padding:18px 22px;font:12px/1.7 var(--mono);color:#8F839D} /* placeholder dimmed by color, not opacity: #8F839D is 5.60:1 on #0B0714, 5.16:1 on #17102A */
+main .tabs{display:flex;gap:6px;margin-bottom:14px}main .tabs span{padding:4px 10px;border-radius:6px;background:var(--surface)}
+.gh{background:var(--surface);border-left:1px solid var(--raised);display:flex;flex-direction:column;align-items:center;padding-top:12px;gap:14px;color:var(--muted)}
+.gh span{writing-mode:vertical-rl;font-size:11px;letter-spacing:.5px}
+.note{position:absolute;right:24px;bottom:20px;font:12px var(--font)}
+@media (prefers-reduced-motion:no-preference){.spin{animation:spin 1.6s linear infinite;transform-origin:50% 50%}@keyframes spin{to{transform:rotate(360deg)}}}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+/* 02 overrides: cards */
+.cards{display:flex;flex-direction:column;gap:8px}
+.card{position:relative;background:var(--bg);border:1px solid var(--raised);border-radius:10px;padding:10px 11px 9px}
+.card:hover,.card.sel{background:var(--raised);border-color:var(--rail)}
+.card:hover .meta,.card.sel .meta{color:var(--unknown)}
+.card .hd{display:flex;align-items:center;gap:7px}
+.card .hd .name{flex:1;min-width:0}
+.pill{display:inline-flex;align-items:center;gap:4px;font-size:10.5px;font-weight:600;color:var(--rail);padding:2px 7px 2px 5px;border-radius:999px;border:1px solid var(--rail);white-space:nowrap}
+.pill svg{width:11px;height:11px}
+.card .sub{font-size:11px;color:var(--muted);margin:2px 0 0 21px}
+.card .body{margin:7px 0 0 21px}
+.card .ask{font-size:12.5px;color:var(--fg);border-left:2px solid var(--blocked);padding:2px 0 2px 8px;margin:6px 0 8px 21px}
+.chips{display:flex;flex-wrap:wrap;gap:5px;margin-top:7px}
+.chip{display:inline-flex;align-items:center;gap:5px;font-size:11px;color:var(--dim);padding:3px 8px 3px 6px;border-radius:6px;background:var(--surface);border:1px solid var(--chip,var(--raised))}
+.card:hover .chip,.card.sel .chip{background:var(--bg)}
+.chip svg{width:11px;height:11px}
+.card .meta{margin:7px 0 0 21px;display:flex;gap:6px;flex-wrap:wrap}
+.card .meta b{font-weight:500;color:inherit}
+.card .acts{display:flex;gap:6px;margin:0 0 0 21px}
+.quiet{display:flex;flex-direction:column}
+.q-row{display:grid;grid-template-columns:14px 1fr auto;gap:8px;align-items:center;padding:4px 8px;border-radius:6px;font-size:12px;color:var(--muted)}
+.q-row:hover{background:var(--raised)}
+.q-row small{font-size:10.5px;color:var(--grey)}
+.q-row:hover small{color:var(--unknown)}
+.q-row .ico{width:10px;height:10px;color:var(--grey)}
+.spaces-strip{display:flex;flex-direction:column;gap:2px}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-working" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6" fill="none" stroke="currentColor" stroke-opacity=".3" stroke-width="2"/><path class="spin" d="M8 2a6 6 0 0 1 6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+  <symbol id="i-blocked" viewBox="0 0 16 16"><path d="M3 2.5h10a1.5 1.5 0 0 1 1.5 1.5v6A1.5 1.5 0 0 1 13 11.5H7l-3.5 2.5v-2.5H3A1.5 1.5 0 0 1 1.5 10V4A1.5 1.5 0 0 1 3 2.5z" fill="currentColor"/><path d="M6.6 5.4a1.5 1.5 0 1 1 2 1.4c-.4.2-.6.5-.6.9v.2" stroke="#17102A" stroke-width="1.3" fill="none" stroke-linecap="round"/><circle cx="8" cy="9.6" r=".8" fill="#17102A"/></symbol>
+  <symbol id="i-done" viewBox="0 0 16 16"><circle cx="8" cy="8" r="7" fill="currentColor"/><path d="M4.8 8.2l2.1 2.1 4.3-4.5" stroke="#17102A" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-error" viewBox="0 0 16 16"><path d="M5.1 1.5h5.8l3.6 3.6v5.8l-3.6 3.6H5.1l-3.6-3.6V5.1z" fill="currentColor"/><path d="M5.8 5.8l4.4 4.4M10.2 5.8l-4.4 4.4" stroke="#17102A" stroke-width="1.7" stroke-linecap="round"/></symbol>
+  <symbol id="i-idle" viewBox="0 0 16 16"><circle cx="8" cy="8" r="4.5" fill="none" stroke="currentColor" stroke-width="1.5"/></symbol>
+  <symbol id="i-sub" viewBox="0 0 16 16"><path d="M4 2v6a3 3 0 0 0 3 3h3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><circle cx="12" cy="11" r="2.2" fill="currentColor"/></symbol>
+  <symbol id="i-job" viewBox="0 0 16 16"><rect x="1.5" y="2.5" width="13" height="11" rx="2" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M4.5 6.5l2 1.5-2 1.5M8 10h3.5" stroke="currentColor" stroke-width="1.4" fill="none" stroke-linecap="round"/></symbol>
+  <symbol id="i-consult" viewBox="0 0 16 16"><path d="M2 5h9l-2.5-2.5M14 11H5l2.5 2.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-chev" viewBox="0 0 16 16"><path d="M6 4l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></symbol>
+  <symbol id="i-mac" viewBox="0 0 16 16"><rect x="2" y="3" width="12" height="8" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M5 13.5h6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></symbol>
+</svg>
+
+<div class="window">
+  <div class="titlebar" role="banner"><div class="lights" aria-hidden="true"><i></i><i></i><i></i></div><span class="t">Herdr — cortex</span></div>
+  <aside aria-label="Herdr sidebar">
+    <div class="brand">
+      <svg width="28" height="28" viewBox="0 0 28 28" aria-hidden="true"><rect width="28" height="28" rx="7" fill="#7127FF"/><path d="M7 10c0-2.5 3-4 7-4s7 1.5 7 4v3c0 5-3.5 9-7 9s-7-4-7-9z" fill="#FFFFFF"/><path d="M10 13h8M11 16.5c1 1 2 1.5 3 1.5s2-.5 3-1.5" stroke="#7127FF" stroke-width="1.6" fill="none" stroke-linecap="round"/></svg>
+      <div><b>Refactor<span>IA</span></b><small>5 active · 10 idle · 3 machines</small></div>
+    </div>
+    <div class="scroll">
+      <section aria-labelledby="spaces">
+        <h2 id="spaces">Spaces <span class="n">14</span><button class="btn ghost" style="padding:1px 6px;min-height:20px;font-size:10.5px;text-transform:none;letter-spacing:0" aria-expanded="false">Show all</button></h2>
+        <div class="spaces-strip">
+          <div class="space"><span class="av" aria-hidden="true">C</span><span class="sn">cortex</span><span class="st" style="color:var(--blocked)"><svg class="ico" style="width:12px;height:12px" aria-hidden="true"><use href="#i-blocked"/></svg>te espera</span></div>
+          <div class="space"><span class="av" aria-hidden="true">D</span><span class="sn">cortex-dotfiles</span><span class="st" style="color:var(--working)"><svg class="ico" style="width:12px;height:12px" aria-hidden="true"><use href="#i-working"/></svg>Working</span></div>
+          <div class="space"><span class="av" aria-hidden="true">G</span><span class="sn">gentle-shell-issue-3388</span><span class="st" style="color:var(--error)"><svg class="ico" style="width:12px;height:12px" aria-hidden="true"><use href="#i-error"/></svg>1 failed</span></div>
+        </div>
+      </section>
+
+      <section aria-labelledby="agents">
+        <h2 id="agents">Active agents <span class="n">5 · most urgent first</span></h2>
+        <div class="cards">
+          <article class="card" style="--rail:var(--blocked)" tabindex="0" aria-label="cortex, Gentle Shell, blocked, waiting 4 minutes">
+            <div class="hd"><svg class="ico" style="color:var(--blocked)" aria-hidden="true"><use href="#i-blocked"/></svg><span class="name">cortex</span><span class="pill"><svg aria-hidden="true"><use href="#i-blocked"/></svg>Blocked · 4m</span></div>
+            <p class="sub">Gentle Shell asks you</p>
+            <p class="ask">“¿Sacamos PRs de la sidebar?”</p>
+            <div class="acts"><button class="btn primary">Answer</button><button class="btn ghost">Open pane</button></div>
+            <p class="meta"><span class="prgm">GS</span>This computer · main · opus-5-5 low · ctx 61%</p>
+          </article>
+
+          <article class="card" style="--rail:var(--error)" tabindex="0" aria-label="gentle-shell-issue-3388, Gentle Shell, subagent failed">
+            <div class="hd"><svg class="ico" style="color:var(--working)" aria-hidden="true"><use href="#i-working"/></svg><span class="name">gentle-shell-issue-3388</span><span class="pill"><svg aria-hidden="true"><use href="#i-error"/></svg>1 failed</span></div>
+            <p class="sub">Fix docs link checker · 3/5 todos</p>
+            <div class="body"><div class="prog" aria-label="3 of 5 todos"><div class="bar"><i style="width:60%"></i></div><span>60%</span></div>
+              <div class="chips"><span class="chip" style="--chip:var(--error)"><svg style="color:var(--error)" aria-hidden="true"><use href="#i-error"/></svg>verify docs · timed out 30s ago</span></div></div>
+            <p class="meta"><span class="prgm">GS</span>agent-gentle · issue-3388 · sonnet-5-5 · ctx 28% · $0.41</p>
+          </article>
+
+          <article class="card sel" style="--rail:var(--working)" tabindex="0" aria-current="true" aria-label="cortex-dotfiles, Gentle Shell, working, 5 of 7 todos">
+            <div class="hd"><svg class="ico" style="color:var(--working)" aria-hidden="true"><use href="#i-working"/></svg><span class="name">cortex-dotfiles</span><span class="pill"><svg aria-hidden="true"><use href="#i-working"/></svg>Working</span></div>
+            <p class="sub">T8 Design 2-3 directions</p>
+            <div class="body"><div class="prog" aria-label="5 of 7 todos"><div class="bar"><i style="width:71%"></i></div><span>5/7</span></div>
+              <div class="chips">
+                <span class="chip"><svg style="color:var(--working)" aria-hidden="true"><use href="#i-sub"/></svg>design sidebar directions</span>
+                <span class="chip"><svg style="color:var(--working)" aria-hidden="true"><use href="#i-job"/></svg>monitor CI</span>
+                <span class="chip"><svg style="color:var(--accent)" aria-hidden="true"><use href="#i-consult"/></svg>consulting cortex</span>
+              </div></div>
+            <p class="meta"><span class="prgm">GS</span>This computer · opus-5-5 low · ctx 42% · $1.84</p>
+          </article>
+
+          <article class="card" style="--rail:var(--working)" tabindex="0">
+            <div class="hd"><svg class="ico" style="color:var(--working)" aria-hidden="true"><use href="#i-working"/></svg><span class="name">infra</span><span class="pill"><svg aria-hidden="true"><use href="#i-working"/></svg>Working</span></div>
+            <p class="sub">Rotate Terraform state locks</p>
+            <p class="meta"><span class="prgm">CX</span>agent-dev · Codex · for 12m</p>
+          </article>
+
+          <article class="card" style="--rail:var(--done)" tabindex="0">
+            <div class="hd"><svg class="ico" style="color:var(--done)" aria-hidden="true"><use href="#i-done"/></svg><span class="name">refactoria</span><span class="pill"><svg aria-hidden="true"><use href="#i-done"/></svg>New · done 10m ago</span></div>
+            <p class="sub">Landing hero copy pass</p>
+            <p class="meta"><span class="prgm">CC</span>This computer · Claude Code</p>
+          </article>
+        </div>
+      </section>
+
+      <section aria-labelledby="idle">
+        <h2 id="idle">Idle <span class="n">10</span><button class="btn ghost" style="padding:1px 6px;min-height:20px;font-size:10.5px;text-transform:none;letter-spacing:0" aria-expanded="true" aria-controls="idle-list">Collapse</button></h2>
+        <ul class="quiet" id="idle-list" style="list-style:none">
+          <li class="q-row"><svg class="ico" aria-hidden="true"><use href="#i-idle"/></svg>gestion<small>shell · here · 2h</small></li>
+          <li class="q-row"><svg class="ico" aria-hidden="true"><use href="#i-idle"/></svg>barbatdev-site<small>CC · here · 5h</small></li>
+          <li class="q-row"><svg class="ico" aria-hidden="true"><use href="#i-idle"/></svg>omniwm<small>GS · here · 1d</small></li>
+          <li class="q-row"><svg class="ico" aria-hidden="true"><use href="#i-idle"/></svg>sketchybar<small>shell · here · 1d</small></li>
+          <li class="q-row"><svg class="ico" aria-hidden="true"><use href="#i-idle"/></svg>notes<small>CX · here · 3d</small></li>
+          <li class="q-row"><svg class="ico" aria-hidden="true"><use href="#i-idle"/></svg>dotfiles-legacy<small>GS · here · 27d</small></li>
+          <li class="q-row"><svg class="ico" aria-hidden="true"><use href="#i-idle"/></svg>k8s-manifests<small>CX · dev · 40m</small></li>
+          <li class="q-row"><svg class="ico" aria-hidden="true"><use href="#i-idle"/></svg>backups<small>shell · dev · 6h</small></li>
+          <li class="q-row"><svg class="ico" aria-hidden="true"><use href="#i-idle"/></svg>api-gateway<small>CC · dev · 2d</small></li>
+          <li class="q-row"><svg class="ico" aria-hidden="true"><use href="#i-idle"/></svg>gentle-shell<small>GS · gentle · 1h</small></li>
+        </ul>
+      </section>
+    </div>
+    <footer class="legend" aria-label="Legend"><span>Times = last activity</span><span>GS Gentle · CC Claude · CX Codex</span></footer>
+  </aside>
+  <main aria-label="Terminal area (placeholder)">
+    <div class="tabs"><span>cortex · Gentle Shell</span><span>zsh</span></div>
+    <p>? ¿Sacamos PRs de la sidebar?  [y/N]</p>
+    <span class="note">Terminal area — placeholder</span>
+  </main>
+  <div class="gh" aria-label="GitHub panel, collapsed"><svg width="18" height="18" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.5" fill="none" stroke="currentColor" stroke-width="1.4"/></svg><span>GitHub</span></div>
+</div>
+</body>
+</html>
