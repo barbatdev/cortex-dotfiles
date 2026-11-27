@@ -73,35 +73,6 @@ func gitRun(e *Env, dir string, args ...string) error {
 	return nil
 }
 
-// herdrRename labels the Herdr workspace, tab and pane "<repo> - pr/is #<n>".
-// Best-effort and silent: gs never fails because Herdr is absent.
-func herdrRename(e *Env, label string) {
-	if os.Getenv("HERDR_ENV") != "1" {
-		return
-	}
-	if _, err := exec.LookPath("herdr"); err != nil {
-		return
-	}
-	e.Output("", "herdr", "workspace", "rename", os.Getenv("HERDR_WORKSPACE_ID"), label)
-	e.Output("", "herdr", "tab", "rename", os.Getenv("HERDR_TAB_ID"), label)
-	e.Output("", "herdr", "pane", "rename", os.Getenv("HERDR_PANE_ID"), label)
-}
-
-// herdrTabRepo labels only the tab with the current repo name.
-func herdrTabRepo(e *Env) {
-	if os.Getenv("HERDR_ENV") != "1" {
-		return
-	}
-	if _, err := exec.LookPath("herdr"); err != nil {
-		return
-	}
-	url, err := e.StdoutOf("", "git", "remote", "get-url", "origin")
-	if err != nil {
-		return
-	}
-	e.Output("", "herdr", "tab", "rename", os.Getenv("HERDR_TAB_ID"), strings.TrimSuffix(filepath.Base(url), ".git"))
-}
-
 func cmdNew(e *Env, args []string) error {
 	if len(args) != 2 {
 		return failf("usage: gs new <repo> <name>")
@@ -121,7 +92,6 @@ func cmdNew(e *Env, args []string) error {
 	if err := gitRun(e, clone, "worktree", "add", "-q", "-b", args[1], path, "origin/main"); err != nil {
 		return err
 	}
-	herdrRename(e, repo+" - "+args[1])
 	if err := installDeps(e, path); err != nil {
 		return err
 	}
@@ -159,7 +129,6 @@ func reviewWorktree(e *Env, repo, num string) error {
 	if err := e.Run(path, "gh", "pr", "checkout", num, "-R", Org+"/"+repo, "-b", "pr-"+num); err != nil {
 		return failf("gh pr checkout %s failed", num)
 	}
-	herdrRename(e, repo+" - pr #"+num)
 	return installDeps(e, path)
 }
 
@@ -224,7 +193,6 @@ func cmdPr(e *Env, args []string) error {
 		if err := e.Run(path, "gh", "pr", "checkout", num, "-R", Org+"/"+repo, "-b", "pr-"+num); err != nil {
 			return failf("gh pr checkout %s failed", num)
 		}
-		herdrRename(e, repo+" - pr #"+num)
 		if err := installDeps(e, path); err != nil {
 			return err
 		}
@@ -285,7 +253,6 @@ func cmdIssue(e *Env, args []string) error {
 	path := filepath.Join(e.Trees(), repo+"-issue-"+num)
 	if exists(path) {
 		fmt.Fprintf(e.Stderr, "gs: reusing %s\n", path)
-		herdrRename(e, repo+" - is #"+num)
 		branch, _ := e.StdoutOf(path, "git", "branch", "--show-current")
 		return openOrFinish(e, repo, path, issuePrompt(repo, num, branch))
 	}
@@ -329,7 +296,6 @@ func cmdIssue(e *Env, args []string) error {
 	if err := gitRun(e, filepath.Join(e.Clones(), repo), "worktree", "add", "-q", "-b", branch, path, "origin/main"); err != nil {
 		return err
 	}
-	herdrRename(e, repo+" - is #"+num)
 	if err := installDeps(e, path); err != nil {
 		return err
 	}
@@ -470,20 +436,17 @@ func cmdLaunch(e *Env, args []string) error {
 	ws := isWorkshop(e)
 	if ws {
 		if here, err := e.StdoutOf("", "git", "rev-parse", "--show-toplevel"); err == nil && isShellCheckout(here) {
-			herdrTabRepo(e)
 			return cmdRun(e, args)
 		}
 		root := filepath.Join(e.Clones(), "gentle-shell")
 		if _, err := os.Stat(filepath.Join(root, "bin", "gentle-shell.mjs")); err != nil {
 			return failf("gentle-shell not found at %s (run: gs sync)", root)
 		}
-		herdrTabRepo(e)
 		return execIn(e, "", "node", append([]string{filepath.Join(root, "bin", "gentle-shell.mjs"), "--isolated"}, args...))
 	}
 	if _, err := exec.LookPath("gentle-shell"); err != nil {
 		return failf("gentle-shell not on PATH (install it, then run: gs sync)")
 	}
-	herdrTabRepo(e)
 	return execIn(e, "", "gentle-shell", args)
 }
 

@@ -1,8 +1,10 @@
 import { View, div, svg, image } from "gpui-kit";
 import { h_flex, ScrollHandle } from "gpui-base";
 // RefactorIA copy of Herdr's shipped `tabs` mod (0.1.18), identical apart from the
-// GitHub panel button and its key command (keys.json "refactoria-tabs.github").
-import { spaces, panes, run, openOverlay, theme, window, shared, layout, settings, nextCommand, checking } from "herdr";
+// GitHub panel button and its key command (keys.json "refactoria-tabs.github"), and the
+// tab auto-naming (T20): unnamed tabs get "Program · context" through tab.rename.
+import { tabName, shouldRename } from "./naming.js";
+import { spaces, panes, agents, terminals, machines, run, openOverlay, theme, window, shared, layout, settings, nextCommand, checking } from "herdr";
 
 // Opens the side panel on `id`, or closes it when it already shows `id`.
 function togglePanel(id) {
@@ -44,11 +46,43 @@ export default class Tabs extends View {
         cx.notify();
       }
     });
+    if (!checking()) cx.timer.every(2000, () => this.autoname());
     this.pressed = null;
     this.scroll = ScrollHandle.new();
     try { this.panels = JSON.parse(localStorage.getItem("panels") ?? "{}"); } catch { this.panels = {}; }
     if (!this.panels || typeof this.panels !== "object" || Array.isArray(this.panels)) this.panels = {};
     this.swipe = { acc: 0, steps: 0, at: 0, last: 0 };
+  }
+
+  // Names every tab nobody named after its lead pane (focused agent, else first agent, else
+  // focused pane, else first). Runs from the timer, never during render; at most one rename per
+  // tab per tick (2 s). The last name set per tab id lives in localStorage, shared by every
+  // window running this mod, so a name the person typed is never overwritten.
+  autoname() {
+    let last;
+    try { last = JSON.parse(localStorage.getItem("autonames") ?? "{}"); } catch { last = {}; }
+    if (!last || typeof last !== "object" || Array.isArray(last)) last = {};
+    const all = panes(), ags = agents(), terms = terminals();
+    const agentOf = new Map(ags.map((a) => [a.pane, a]));
+    const termOf = (pane, agent) => terms.find((t) => (agent && t.address === agent.address) || (pane.terminal && (t.address === pane.terminal || t.id === pane.terminal)));
+    let changed = false;
+    const live = new Set();
+    for (const space of spaces()) for (const tab of space.tabs) {
+      live.add(tab.id);
+      const mine = all.filter((p) => p.tab === tab.id && p.terminal);
+      const isAgent = (p) => agentOf.has(p.pane) || p.program?.agent;
+      const lead = mine.find((p) => isAgent(p) && p.focused) ?? mine.find(isAgent) ?? mine.find((p) => p.focused) ?? mine[0];
+      if (!lead) continue;
+      const agent = agentOf.get(lead.pane), term = termOf(lead, agent);
+      const todo = term?.records?.todo ?? null;
+      const computed = tabName({ app: agent?.app ?? lead.app ?? term?.report?.app ?? null, program: lead.program, todo, title: lead.title, cwd: lead.cwd, space: space.name });
+      if (!shouldRename({ tab, computed, last: last[tab.id] ?? null, title: lead.title })) continue;
+      last[tab.id] = computed; changed = true;
+      run("tab.rename", { id: tab.id, name: computed });
+    }
+    // Forget closed tabs only once the machines are loaded, so an offline machine keeps its record.
+    if (machines().every((m) => m.layout === "ready")) for (const id of Object.keys(last)) if (!live.has(id)) { delete last[id]; changed = true; }
+    if (changed) localStorage.setItem("autonames", JSON.stringify(last));
   }
 
   // One tab per wheel notch. A touchpad or smooth-scrolling mouse sends many
