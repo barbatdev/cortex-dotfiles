@@ -581,11 +581,11 @@ seed_file "$DOTFILES/opencode/tui.json" "$HOME/.config/opencode/tui.json"
 # Herdr Desktop rewrites settings.json (theme picker, zoom keys): seed a copy.
 if [[ "$PLATFORM" == "Darwin" ]]; then
     seed_file "$DOTFILES/herdr/desktop/settings.json" "$HOME/.config/herdr-app/settings.json"
-    # A mod's imported modules (feed.js, rows.js, model.js) must live inside its folder
+    # A mod's imported modules (feed.js, rows.js, model.js, naming.js) must live inside its folder
     # (Herdr refuses an import that resolves outside it): copy each one,
     # refreshing it when it changed.
     for feed in "$DOTFILES"/herdr/desktop/mods/*/feed.js "$DOTFILES"/herdr/desktop/mods/*/rows.js \
-        "$DOTFILES"/herdr/desktop/mods/*/model.js; do
+        "$DOTFILES"/herdr/desktop/mods/*/model.js "$DOTFILES"/herdr/desktop/mods/*/naming.js; do
         mod="$(basename "$(dirname "$feed")")"
         dst="$HOME/.config/herdr-app/mods/$mod/$(basename "$feed")"
         if cmp -s "$feed" "$dst"; then continue; fi
