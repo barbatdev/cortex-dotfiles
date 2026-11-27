@@ -419,3 +419,15 @@ test("idle row lines: name, New when unseen, age; dim task and machine", () => {
 test("card keeps the space for the idle row's second line", () => {
   assert.equal(buildCard({ agent: agent({ space_name: "innit-core" }), now: NOW }).space, "innit-core");
 });
+
+test("T13: Herdr hands record titles and messages already decoded; plain text stays as is", () => {
+  // Observed live (hc events, hc 0.1.22): {"bg/job-1":{"state":"error","title":"e2e probe failing job","msg":"exited 3"}}
+  const r = parseRecords({
+    "bg/job-1": { state: "error", title: "e2e probe failing job", msg: "exited 3" },
+    "subagents/a": { state: "working", title: "design" },
+    "bg/job-3": { state: "working", title: "test" },
+    todo: { state: "working", progress: 73, title: "Ledger" },
+  });
+  const titles = JSON.stringify(r);
+  for (const t of ["e2e probe failing job", "exited 3", "design", "test", "Ledger"]) assert.ok(titles.includes(t), t);
+});
