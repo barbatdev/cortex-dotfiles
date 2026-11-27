@@ -11,6 +11,15 @@ Branch `feat/herdr-desktop-ux`, worktree `../cortex-dotfiles-herdr-ux`. Gentle S
 - S4. (see L6: the event system is OSC 7501 records from PR #3348; the desktop file feed is a local-only complement) "Tenemos que incorporar el sistema de eventos de gentle-shell, que es nuevo, para poder usarlo bien con herdr y aprovecharlo como es debido". Sources: gentle-pi docs `desktop-feed.md` (`gentle-shell.desktop-feed/v1`, `~/.gentle-shell/agent/desktop/sessions/*.json`) and `agent-status.md` (`gentle-shell.agent-status/v1`).
 - S5. "no vamos a usar gentle-shell desktop." Keep our own `refactoria` layout and mods.
 
+- S6. UX brief for the sidebar (spaces + agents), from L12: "aprovecha los saltos de linea, iconos y todo. Colores también pero tienen que ser visualmente agradables no rimbombantes. Tiene que pasar accesibilidad, etc no una terrajeada." The screen must answer at a glance, in this order:
+  1. What needs me now? (blocked sessions/subagents, the actual question text, how long it has waited)
+  2. What is running and how far along? (session state, current todo + progress bar, running subagents and jobs by name, consultations)
+  3. What finished that I have not seen? (done, unseen)
+  4. What failed recently? (subagent/job error records, 60 s)
+  5. Where is it? (space, machine: This computer / agent-dev / agent-gentle) and which program (Gentle Shell, Claude Code, Codex, shell)
+  6. Context: model, context %, cost — secondary, never louder than 1-4.
+  Idle agents are quiet: collapsed or summarized, never dominating. Names must be meaningful (session name / task, not "space · tab index"); no stale duplicates; no overlapping text; times labeled. AA contrast on every text, focus visible, state never by color alone (icon + word). Data sources: OSC 7501 records (L13, works for remote machines), desktop feed (local, richer), Herdr agents()/status.
+
 ## Tasks
 
 - T1 (S4) Map the gentle-shell feed/status formats and the current refactoria mods; design shared data layer — explore — done (no commit)
@@ -18,7 +27,9 @@ Branch `feat/herdr-desktop-ux`, worktree `../cortex-dotfiles-herdr-ux`. Gentle S
 - T3 (S2, S4) Agents panel rebuilt on the feed — done (commit f2c5766)
 - T4 (S3) Richer spaces sidebar: name, state, task — done (commit 0883adc)
 - T5 (S1) GitHub side panel — fixed L10 bugs (commits 80492a0, ed220f3); real mouse click on tabs awaits the user
-- T6 (S3) Visual density/hierarchy pass + screenshot check — pending
+- T7 (S6) UX brief — done (S6)
+- T8 (S6, S3) Design 2-3 directions on the gentle-design canvas: design/herdr-desktop-ux/ — pending
+- T6 (S3, S6) Implement the chosen direction + a11y + screenshot check — pending
 
 ## Log
 
