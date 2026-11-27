@@ -35,10 +35,12 @@ export function pendingParts(need, live) {
   return out;
 }
 
-// OSC 7501 sub-records of a terminal (terminals()[i].records), when Herdr surfaces them.
+// OSC 7501 sub-records of a terminal (terminals()[i].records). Herdr stores them as an object
+// keyed by record id ({ todo: { state, progress, title } }, titles base64); an array is accepted too.
 export function recordsWork(records) {
   const out = { working: 0, blocked: 0 };
-  for (const r of Array.isArray(records) ? records : []) {
+  const list = Array.isArray(records) ? records : records && typeof records === "object" ? Object.values(records) : [];
+  for (const r of list) {
     if (r?.state === "working") out.working++;
     else if (r?.state === "blocked") out.blocked++;
   }

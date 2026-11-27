@@ -60,3 +60,13 @@ test("records raise an idle snapshot to working, blocked wins", () => {
   assert.equal(sessionRow(feed(), idle, null, [{ state: "blocked" }]).label, "Needs you");
   assert.equal(sessionRow(feed(), idle, null, undefined).status, "idle");
 });
+
+test("OSC 7501 records as Herdr stores them: an object keyed by record id", () => {
+  // Observed live (hc events, hc 0.1.22): {"todo":{"progress":44,"state":"working","title":"<b64>"}}
+  assert.deepEqual(recordsWork(null), { working: 0, blocked: 0 });
+  assert.deepEqual(recordsWork({}), { working: 0, blocked: 0 });
+  assert.deepEqual(
+    recordsWork({ todo: { progress: 44, state: "working" }, "subagents/a": { state: "blocked", kind: "question" }, "bg/1": { state: "error" } }),
+    { working: 1, blocked: 1 },
+  );
+});
