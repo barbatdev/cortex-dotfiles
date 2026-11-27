@@ -243,7 +243,7 @@ export function buildCard({ agent, feed = null, live = null, need = null, record
   } else meta.push(program.name);
 
   const word = status === "failed" ? `${rec.failed.length} failed` : WORD[status] ?? "Idle";
-  return { address: agent?.address, pane: agent?.pane ?? null, focused: Boolean(agent?.focused), pinned: Boolean(agent?.pinned), tab: tabName, machine, name, program, status, activity, word, time, since: from ?? 0, question, sub, task, chips, meta };
+  return { address: agent?.address, pane: agent?.pane ?? null, space: agent?.space_name ?? "", focused: Boolean(agent?.focused), pinned: Boolean(agent?.pinned), tab: tabName, machine, name, program, status, activity, word, time, since: from ?? 0, question, sub, task, chips, meta };
 }
 
 // Most urgent first; among blocked the longest wait leads, otherwise the latest change.
@@ -274,4 +274,72 @@ export function liveAgents(list, terms) {
     const s = state.get(a.address);
     return s === undefined || s === "live";
   });
+}
+
+// ---- Sessions v2 (design/herdr-desktop-ux/04-sessions-v2.html): calm idle ----
+
+const ICONS = "mods/refactoria-agents/icons";
+const startOfDay = (now) => { const d = new Date(now); d.setHours(0, 0, 0, 0); return d.getTime(); };
+const today = (c, now) => Boolean(c?.since) && c.since >= startOfDay(now) && c.since <= now;
+
+// The cards in the sidebar's order: what needs you (blocked, failed), what runs, and the quiet rest
+// (a finished, unseen turn is quiet: a "New" row in the idle list, not a card).
+export function sections(cards) {
+  const of = (...s) => cards.filter((c) => s.includes(c.status));
+  return { needs: of("blocked", "failed"), running: of("working", "waiting"), quiet: of("done", "idle") };
+}
+
+// Quiet agents by recency: Just now (<15 m), This hour, Earlier today (the first `shown` rows,
+// the rest behind "Show N more" unless open). Unknown age counts as earlier.
+export function recencyGroups(rows, now, open, shown = 2) {
+  const sorted = [...(rows ?? [])].sort((x, y) => (y.since || 0) - (x.since || 0));
+  const age = (c) => (c.since ? now - c.since : Infinity);
+  const groups = [
+    { id: "now", label: "Just now", all: sorted.filter((c) => age(c) < 15 * 60000) },
+    { id: "hour", label: "This hour", all: sorted.filter((c) => age(c) >= 15 * 60000 && age(c) < 3600000) },
+    { id: "earlier", label: "Earlier today", all: sorted.filter((c) => age(c) >= 3600000) },
+  ];
+  return groups.filter((g) => g.all.length).map(({ id, label, all }) => {
+    const rows = id === "earlier" && !open ? all.slice(0, shown) : all;
+    return { id, label, count: all.length, rows, more: all.length - rows.length };
+  });
+}
+
+// Today's activity for the calm block: agents whose state changed today (Herdr's status_ms).
+export function todaySummary(cards, now) {
+  const ran = (cards ?? []).filter((c) => today(c, now));
+  const n = (...s) => ran.filter((c) => s.includes(c.status)).length;
+  const machines = new Set((cards ?? []).map((c) => c.machine ?? "")).size;
+  return { ran: ran.length, finished: n("done", "idle"), failed: n("failed"), needs: n("blocked"), machines };
+}
+
+// The latest agent that finished today, for the calm block's "Last finished".
+export function lastFinished(cards, now) {
+  const c = (cards ?? []).filter((c) => (c.status === "done" || c.status === "idle") && today(c, now)).sort((x, y) => y.since - x.since)[0];
+  return c ? { card: c, label: `Last finished · ${timeAgo(now - c.since)} ago`, where: machineLabel(c.machine) } : null;
+}
+
+const PROGRAM_ICON = { GS: "p-gs", CC: "p-cc", CX: "p-cx" };
+export const programIcon = (program) => `${ICONS}/${PROGRAM_ICON[program?.badge] ?? "p-sh"}.svg`;
+export const machineIcon = (machine) => `${ICONS}/${!machine ? "laptop" : machine === "agent-gentle" ? "cloud" : "server"}.svg`;
+export const machineLabel = (machine) => machine || "This computer";
+
+const PILL = { blocked: "Needs you", failed: "Failed", working: "Working", waiting: "Waiting", done: "New", idle: "Idle" };
+
+// A card's state pill: the word, with how long for the states that wait on you.
+export function pillLabel(c, now) {
+  const word = PILL[c?.status] ?? "Idle";
+  return (c?.status === "blocked" || c?.status === "failed") && c.since ? `${word} · ${timeAgo(now - c.since)}` : word;
+}
+
+// The two lines of a quiet row: name, "New" when the turn was not seen, age; then the last task
+// (or the space when the name is not it) and where it runs.
+export function idleLines(c, now) {
+  const isNew = c.status === "done";
+  const space = c.space && String(c.space).toLowerCase() !== String(c.name).toLowerCase() ? c.space : "";
+  const task = c.sub || c.task?.title || space;
+  const age = c.since ? timeAgo(now - c.since) : "";
+  const where = machineLabel(c.machine);
+  const label = [c.name, isNew ? "finished, not seen yet" : "idle", task, where, age && `${age} ago`].filter(Boolean).join(", ");
+  return { name: c.name, isNew, age, task, where, label };
 }

@@ -1,12 +1,14 @@
-// Agents as session cards (design/herdr-desktop-ux/02-sessions-as-cards.html): one card per
-// active session, most urgent first, and a quiet idle list collapsed to a summary line.
+// Agents as session cards (design/herdr-desktop-ux/04-sessions-v2.html, on 02): Needs you and
+// Running cards, most urgent first; a calm block when nothing runs; idle rows grouped by recency.
 // The card model is pure (./model.js); this file draws it with the theme's tokens.
 
-import { View, div, svg } from "gpui-kit";
+import { View, div, svg, image } from "gpui-kit";
 import { v_flex, h_flex } from "gpui-base";
 import { agents, terminals, spaces, run, theme, shared, setShared, setAgentOrder, window, layout } from "herdr";
 import { FeedSource, isGentle, liveState, needsYou, selectSession } from "./feed.js";
-import { buildCard, sortCards, splitCards, idleView, liveAgents, timeAgo, disambiguate, idleSince, freshIdle, emptyLine } from "./model.js";
+import { buildCard, sortCards, splitCards, liveAgents, timeAgo, disambiguate, idleSince, freshIdle, sections, recencyGroups, todaySummary, lastFinished, programIcon, machineIcon, pillLabel, idleLines } from "./model.js";
+
+const ICON = { sub: "mods/refactoria-agents/icons/sub.svg", chev: "mods/refactoria-agents/icons/chev.svg", archive: "mods/refactoria-agents/icons/archive.svg", calm: "mods/refactoria-agents/icons/calm.svg" };
 
 function find(node, id) {
   if (node?.id === id) return node;
@@ -41,7 +43,6 @@ const palette = (t) => ({
   idle: t.ansi8 ?? "#8F839D",
 });
 
-const short = (machine) => (machine ? machine.replace(/^agent-/, "") : "here");
 const activate = (e) => e?.key === "enter" || e?.key === "space" || e?.keystroke === "enter" || e?.keystroke === "space";
 
 export default class Agents extends View {
@@ -51,7 +52,8 @@ export default class Agents extends View {
     this.feed.start(cx, null, 10000);
     // Each agent's last state and when it changed (ms), kept across restarts.
     this.changed = JSON.parse(localStorage.getItem("changed") ?? "{}");
-    this.idleOpen = localStorage.getItem("idleOpen") === "true";
+    this.earlierOpen = localStorage.getItem("earlierOpen") === "true";
+    this.staleOpen = localStorage.getItem("staleOpen") === "true";
     this.hovered = null;
     cx.timer.every(30000, (cx) => cx.notify());
   }
@@ -92,22 +94,22 @@ export default class Agents extends View {
       .child(div().size(ring).rounded_full().border(1.5).border_color(s === "waiting" ? t.working : t.grey));
   }
 
-  badge(t, text, color) {
-    return div().flex_none().px(4).h(15).rounded(4).border(1).border_color(color).text_color(color)
-      .text_size(10).font_semibold().font_family("FiraCode Nerd Font Mono Beard").flex().items_center().child(text);
+  glyph(path, color, size = 12) {
+    return svg(path).size(size).flex_none().text_color(color);
   }
 
   chip(t, c, lit) {
-    const tone = { subagent: ["↳", t.working], job: ["▸", t.working], consult: ["⇄", t.accent], failed: ["×", t.failed] }[c.kind] ?? ["·", t.dim];
+    const lead = c.kind === "subagent" ? this.glyph(ICON.sub, t.working, 11)
+      : div().flex_none().font_bold().text_color({ job: t.working, consult: t.accent, failed: t.failed }[c.kind] ?? t.dim).child({ job: "▸", consult: "⇄", failed: "×" }[c.kind] ?? "·");
     return h_flex().max_w_full().gap(5).items_center().px(7).h(22).rounded(6)
       .bg(lit ? t.background : t.chrome).border(1).border_color(c.kind === "failed" ? t.failed : t.raised)
       .text_size(11).text_color(t.dim)
-      .child(div().flex_none().text_color(tone[1]).font_bold().child(tone[0]))
+      .child(lead)
       .child(div().min_w(0).truncate().child(c.label));
   }
 
   button(t, id, label, primary, onClick) {
-    return div().id(id).tab_index(0).px(10).h(24).rounded(6).flex().items_center().text_size(11).cursor_pointer()
+    return div().id(id).tab_index(0).px(10).h(26).rounded(6).flex().items_center().text_size(11).cursor_pointer()
       .when(primary, (el) => el.bg(t.solid).text_color(t.solid_foreground).font_semibold())
       .when(!primary, (el) => el.border(1).border_color(t.unknown).text_color(t.muted))
       .focus((el) => el.border(2).border_color(SPARK))
@@ -116,11 +118,15 @@ export default class Agents extends View {
       .child(label);
   }
 
-  card(t, c, open) {
+  // A session card (artboard 04 states b/c): program glyph, name, state pill (icon + word), then
+  // the question and Answer, the error and See error, or the task bar and the work chips.
+  card(t, c, open, now) {
     const rail = t[c.status] ?? t.dim;
     const lit = c.focused || this.hovered === c.address;
-    const time = c.time ? ` · ${c.time}` : "";
     const meta = lit ? t.unknown : t.grey;
+    const failures = c.chips.filter((x) => x.kind === "failed");
+    const work = c.chips.filter((x) => x.kind !== "failed");
+    const ran = c.status === "working" && c.since ? timeAgo(now - c.since) : "";
     return v_flex()
       .id(`ag-${c.address}`)
       .tab_index(0)
@@ -128,69 +134,134 @@ export default class Agents extends View {
       .rounded(10)
       .border(1)
       .border_color(lit ? rail : t.raised)
+      .border_l(3)
       .bg(lit ? t.raised : t.background)
-      .px(11)
+      .pl(10)
+      .pr(11)
       .pt(10)
       .pb(9)
       .cursor_pointer()
       .focus((el) => el.border_color(SPARK))
-      .accessibility_label(`${c.name}, ${c.program.name}, ${c.word}${c.time ? `, ${c.time}` : ""}`)
+      .accessibility_label(`${c.name}, ${c.program.name}, ${c.word}${c.time ? `, ${c.time}` : ""}${c.question ? `, ${c.question}` : ""}`)
       .on_hover(this.hover(c.address))
       .on_click(() => open(c))
       .on_key_down((e) => { if (activate(e)) open(c); })
       .child(h_flex().gap(7).items_center()
-        .child(this.stateIcon(t, c.activity))
+        .child(this.glyph(programIcon(c.program), t.unknown, 14))
         .child(div().flex_1().min_w(0).truncate().text_size(13).font_medium().text_color(t.foreground).child(c.name))
         .child(h_flex().flex_none().gap(4).items_center().h(19).pl(5).pr(7).rounded_full().border(1).border_color(rail)
           .text_size(10.5).font_semibold().text_color(rail)
           .child(this.stateIcon(t, c.status, 11))
-          .child(div().whitespace_nowrap().child(`${c.word}${time}`))))
-      .when(Boolean(c.sub), (el) => el.child(div().ml(21).mt(2).truncate().text_size(11).text_color(t.muted)
-        .child(c.task && c.sub === c.task.title && !c.question ? `${c.sub}${/\//.test(c.task.label) ? ` · ${c.task.label} todos` : ""}` : c.sub)))
+          .child(div().whitespace_nowrap().child(pillLabel(c, now)))))
+      .when(Boolean(c.sub), (el) => el.child(div().ml(21).mt(2).truncate().text_size(11.5).text_color(t.muted).child(c.sub)))
       .when(Boolean(c.question), (el) => el.child(div().ml(21).mt(6).mb(2).pl(8).py(2).border_l(2).border_color(t.blocked)
         .text_size(12.5).text_color(t.foreground).child(`“${c.question}”`))
         .child(h_flex().ml(21).mt(6).gap(6)
           .child(this.button(t, `ans-${c.address}`, "Answer", true, () => open(c)))
           .child(this.button(t, `open-${c.address}`, "Open pane", false, () => open(c)))))
-      .when(Boolean(c.task) && !c.question, (el) => el.child(h_flex().ml(21).mt(7).gap(8).items_center()
+      .when(!c.question && failures.length > 0, (el) => el
+        .child(div().ml(21).mt(6).text_size(11.5).text_color(t.failed).child(failures.map((x) => x.label).join(" · ")))
+        // No safe retry action exists in Herdr for a failed subagent or job: See error only.
+        .child(h_flex().ml(21).mt(8).gap(6).child(this.button(t, `err-${c.address}`, "See error", false, () => open(c)))))
+      .when(Boolean(c.task) && !c.question && failures.length === 0, (el) => el.child(h_flex().ml(21).mt(7).gap(8).items_center()
+        .accessibility_label(`${c.task.label} todos`)
         .child(div().flex_1().h(4).rounded(4).bg(t.background).border(1).border_color(t.raised)
           .child(div().h_full().rounded(4).bg(t.working).w(`${Math.max(0, Math.min(100, c.task.pct))}%`)))
         .child(div().flex_none().text_size(10.5).text_color(t.muted).child(c.task.label))))
-      .when(c.chips.length > 0, (el) => el.child(h_flex().ml(21).mt(7).gap(5).flex_wrap().children(c.chips.map((x) => this.chip(t, x, lit)))))
-      .child(h_flex().ml(21).mt(7).gap(4).items_start().min_w(0).text_size(10.5).text_color(meta)
-        .child(this.badge(t, c.program.badge, meta))
-        .child(div().flex_1().min_w(0).child(c.meta.join(" · "))));
+      .when(work.length > 0 && !c.question, (el) => el.child(h_flex().ml(21).mt(7).gap(5).flex_wrap().children(work.map((x) => this.chip(t, x, lit)))))
+      .child(h_flex().ml(21).mt(7).gap(5).items_center().min_w(0).text_size(10.5).text_color(meta)
+        .child(this.glyph(machineIcon(c.machine), meta, 11))
+        .child(div().flex_1().min_w(0).truncate().child([...c.meta, ran].filter(Boolean).join(" · "))));
   }
 
-  idleRow(t, c, now, open) {
+  // A quiet row, two lines: glyph, name, New, age; then the last task and where it runs.
+  idleRow(t, c, now, open, group) {
     const lit = this.hovered === c.address || c.focused;
+    const l = idleLines(c, now);
+    const fresh = group === "now";
+    const dim = lit ? t.unknown : fresh ? t.dim : t.grey;
     return h_flex()
       .id(`ag-${c.address}`)
       .tab_index(0)
       .flex_none()
-      .h(26)
+      .min_h(44)
       .px(8)
+      .py(6)
       .gap(8)
-      .rounded(6)
-      .items_center()
+      .rounded(8)
+      .items_start()
       .cursor_pointer()
+      .when(fresh && !lit, (el) => el.bg(`${t.raised}99`))
       .when(lit, (el) => el.bg(t.raised))
       .focus((el) => el.border(1).border_color(SPARK))
-      .accessibility_label(`${c.name}, ${c.program.name}, idle`)
+      .accessibility_label(`${c.program.name}, ${l.label}`)
       .on_hover(this.hover(c.address))
       .on_click(() => open(c))
       .on_key_down((e) => { if (activate(e)) open(c); })
-      .child(this.stateIcon(t, "idle", 12))
-      .child(div().flex_1().min_w(0).truncate().text_size(12).text_color(t.muted).child(c.name))
-      .child(div().flex_none().text_size(10.5).text_color(lit ? t.unknown : t.grey)
-        .child([c.program.badge, short(c.machine), c.since ? timeAgo(now - c.since) : ""].filter(Boolean).join(" · ")));
+      .child(div().mt(2).child(this.stateIcon(t, l.isNew ? "done" : "idle", 12)))
+      .child(v_flex().flex_1().min_w(0)
+        .child(h_flex().gap(6).items_center().min_w(0)
+          .child(this.glyph(programIcon(c.program), t.unknown, 12))
+          .child(div().min_w(0).truncate().text_size(12.5)
+            .when(group === "earlier", (el) => el.text_color(t.muted))
+            .when(group !== "earlier", (el) => el.font_medium().text_color(t.foreground))
+            .child(l.name))
+          .when(l.isNew, (el) => el.child(div().flex_none().px(5).rounded(4).bg(t.done).text_color(t.background).text_size(9.5).font_bold().child("New")))
+          .child(div().flex_1())
+          .when(Boolean(l.age), (el) => el.child(div().flex_none().text_size(10.5).text_color(lit ? t.unknown : fresh ? t.done : t.grey).child(l.age))))
+        .child(h_flex().mt(2).gap(8).items_center().min_w(0).text_size(11).text_color(dim)
+          .when(Boolean(l.task), (el) => el.child(div().min_w(0).truncate().text_color(lit ? t.unknown : group === "earlier" ? t.grey : t.dim).child(l.task)))
+          .child(h_flex().flex_none().gap(3).items_center()
+            .child(this.glyph(machineIcon(c.machine), dim, 10))
+            .child(div().whitespace_nowrap().child(l.where)))));
   }
 
   heading(t, label, n, extra) {
     return h_flex().px(8).pt(14).pb(6).gap(6).items_center().flex_none()
-      .child(div().text_size(10.5).font_semibold().text_color(t.grey).child(label))
+      .child(div().text_size(10.5).font_semibold().text_color(t.grey).child(label.toUpperCase()))
       .when(n != null, (el) => el.child(div().text_size(10.5).text_color(t.muted).child(n)))
       .when(Boolean(extra), (el) => el.child(div().flex_1()).child(extra));
+  }
+
+  link(t, id, label, onClick) {
+    return div().id(id).tab_index(0).h(24).flex().items_center().text_size(10.5).text_color(t.accent).underline().cursor_pointer()
+      .focus((el) => el.border(1).border_color(SPARK).rounded(4))
+      .on_click((_e, cx) => { cx.stop_propagation(); onClick(); })
+      .on_key_down((e, cx) => { if (activate(e)) { cx.stop_propagation(); onClick(); } })
+      .child(label);
+  }
+
+  // Nothing runs and nothing needs you (artboard 04 state a): a calm block with today's activity
+  // and the last finished turn.
+  calm(t, cards, now, open) {
+    const d = todaySummary(cards, now);
+    const last = lastFinished(cards, now);
+    const stat = (n, label, icon) => h_flex().w("50%").gap(7).items_baseline()
+      .child(div().min_w(20).text_size(17).font_semibold().text_color(t.foreground).child(String(n)))
+      .child(h_flex().gap(3).items_center().text_size(11).text_color(t.grey).when(Boolean(icon), (el) => el.child(icon)).child(label));
+    return v_flex().id("ag-calm").mx(2).rounded(12).border(1).border_color(t.raised).bg(t.background).px(14).pt(14).pb(13)
+      .accessibility_label(`All quiet. Today: ${d.ran} ran, ${d.finished} finished, ${d.failed} failed, ${d.needs} need you`)
+      .child(h_flex().gap(11).items_start()
+        .child(image(ICON.calm).size(30).flex_none())
+        .child(v_flex()
+          .child(div().text_size(14).font_semibold().text_color(t.foreground).child("All quiet"))
+          .child(div().mt(2).text_size(12).text_color(t.dim).child("Nothing is running and nothing needs you."))))
+      .child(h_flex().flex_wrap().mt(14).mb(4).pt(11).border_t(1).border_color(t.raised).gap_y(10)
+        .child(stat(d.ran, "Ran"))
+        .child(stat(d.finished, "Finished", this.stateIcon(t, "done", 10)))
+        .child(stat(d.failed, "Failed", this.stateIcon(t, "failed", 10)))
+        .child(stat(d.needs, "Needs you", this.stateIcon(t, "blocked", 10))))
+      .child(div().mt(8).mb(12).text_size(10.5).text_color(t.grey).child(`Today · ${d.machines} machine${d.machines === 1 ? "" : "s"} online`))
+      .when(Boolean(last), (el) => el.child(v_flex().pt(11).border_t(1).border_color(t.raised)
+        .child(h_flex().gap(4).items_center().text_size(10.5).text_color(t.done)
+          .child(`${last.label} · `).child(this.glyph(machineIcon(last.card.machine), t.done, 10)).child(last.where))
+        .child(h_flex().mt(5).gap(7).items_center()
+          .child(this.glyph(programIcon(last.card.program), t.unknown, 14))
+          .child(div().min_w(0).truncate().text_size(13).font_medium().text_color(t.foreground).child(last.card.name)))
+        .when(Boolean(idleLines(last.card, now).task), (el) => el.child(div().ml(21).mt(2).truncate().text_size(11.5).text_color(t.dim).child(idleLines(last.card, now).task)))
+        .child(h_flex().ml(21).mt(10).gap(6)
+          .child(this.button(t, "calm-review", "Review result", true, () => open(last.card)))
+          .child(this.button(t, "calm-open", "Open pane", false, () => open(last.card))))));
   }
 
   render(cx) {
@@ -263,30 +334,53 @@ export default class Agents extends View {
           .child(div().id("collapse").text_size(13).text_color(t.muted).hover((s) => s.text_color(t.foreground)).on_click(toggleSidebar).child("»")));
     }
 
-    const iv = idleView(idleSorted, this.idleOpen);
-    const toggleIdle = () => {
-      this.idleOpen = !this.idleOpen;
-      localStorage.setItem("idleOpen", String(this.idleOpen));
+    const toggle = (key) => () => {
+      this[key] = !this[key];
+      localStorage.setItem(key, String(this[key]));
       cx.notify();
     };
-    const toggle = this.button(t, "idle-toggle", this.idleOpen ? "Collapse" : "Show", false, toggleIdle);
-
+    const { needs, running, quiet } = sections(shown);
     const body = [];
-    // The section keeps its header with nothing running: one quiet line instead of the cards.
-    body.push(this.heading(t, "ACTIVE AGENTS", active.length ? `${active.length} · most urgent first` : null));
-    if (active.length) body.push(v_flex().gap(8).children(active.map((c) => this.card(t, c, open))));
-    else body.push(div().id("ag-empty").px(8).h(24).flex().items_center().text_size(11.5).text_color(t.grey).child(emptyLine(idle.length)));
-    if (idle.length) {
-      body.push(this.heading(t, "IDLE", String(idle.length), toggle));
-      if (iv.open) body.push(v_flex().children(iv.rows.map((c) => this.idleRow(t, c, now, open))));
-      else body.push(div().id("idle-summary").px(8).h(24).flex().items_center().rounded(6).cursor_pointer()
-        .text_size(11).text_color(this.hovered === "idle-summary" ? t.unknown : t.grey)
-        .when(this.hovered === "idle-summary", (el) => el.bg(t.raised))
-        .on_hover(this.hover("idle-summary"))
-        .on_click(toggleIdle)
-        .child(iv.summary));
+    if (needs.length) {
+      body.push(this.heading(t, "Needs you", `${needs.length} · most urgent first`));
+      body.push(v_flex().gap(8).children(needs.map((c) => this.card(t, c, open, now))));
     }
-    if (hidden) body.push(div().px(8).h(22).flex().items_center().text_size(10.5).text_color(t.grey).child(`${hidden} untouched for over a day, hidden`));
+    if (running.length) {
+      body.push(this.heading(t, "Running", String(running.length)));
+      body.push(v_flex().gap(8).children(running.map((c) => this.card(t, c, open, now))));
+    }
+    if (!needs.length && !running.length) {
+      body.push(this.heading(t, "Agents"));
+      body.push(this.calm(t, cards, now, open));
+    }
+    // The quiet list (unseen finished turns lead as "New"), grouped by recency.
+    const staleRows = this.staleOpen ? split.idle.filter((c) => !fresh.includes(c)) : [];
+    const quietRows = [...quiet, ...staleRows];
+    if (quietRows.length) {
+      body.push(this.heading(t, "Idle", String(quietRows.length)));
+      for (const g of recencyGroups(quietRows, now, this.earlierOpen)) {
+        body.push(h_flex().px(8).pt(10).pb(3).gap(6).items_center().text_size(10.5).font_semibold()
+          .text_color(g.id === "now" ? t.accent : g.id === "hour" ? t.muted : t.grey)
+          .child(g.label).child(div().font_medium().text_color(g.id === "now" ? t.accent : t.grey).child(String(g.count))));
+        body.push(v_flex().gap(1).children(g.rows.map((c) => this.idleRow(t, c, now, open, g.id))));
+        if (g.more || (g.id === "earlier" && this.earlierOpen && g.count > 2)) {
+          const label = g.more ? `Show ${g.more} more from earlier today` : "Show less";
+          body.push(h_flex().id("idle-more").tab_index(0).pl(30).pr(8).h(28).gap(4).items_center().rounded(7).cursor_pointer()
+            .text_size(11).text_color(t.accent)
+            .when(this.hovered === "idle-more", (el) => el.bg(t.raised))
+            .focus((el) => el.border(1).border_color(SPARK))
+            .accessibility_label(label)
+            .on_hover(this.hover("idle-more"))
+            .on_click(toggle("earlierOpen"))
+            .on_key_down((e) => { if (activate(e)) toggle("earlierOpen")(); })
+            .child(label).child(this.glyph(ICON.chev, t.accent, 11)));
+        }
+      }
+    }
+    if (hidden) body.push(h_flex().px(8).pt(10).gap(6).items_center().text_size(10.5).text_color(t.grey)
+      .child(this.glyph(ICON.archive, t.grey, 12))
+      .child(this.staleOpen ? `${hidden} untouched for over a day, shown ·` : `${hidden} untouched for over a day are tucked away ·`)
+      .child(this.link(t, "stale-toggle", this.staleOpen ? "Hide" : "Show", toggle("staleOpen"))));
 
     return v_flex()
       .size_full()

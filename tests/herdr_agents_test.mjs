@@ -319,3 +319,103 @@ test("T10: a working Gentle Shell session never reads as idle mid-turn", () => {
   assert.equal(card("idle", term("done", {}, 28, "28")).status, "idle");
   assert.equal(card("idle", term("done", null, 28, "28")).status, "idle");
 });
+
+// ---- T11: design/herdr-desktop-ux/04-sessions-v2.html (calm idle) ----
+import { recencyGroups, todaySummary, lastFinished, programIcon, machineIcon, machineLabel, pillLabel, sections, idleLines } from "../herdr/desktop/mods/refactoria-agents/model.js";
+
+const NOON = new Date(2026, 10, 27, 12, 0).getTime();
+const M = 60000;
+
+test("idle grouped by recency: Just now <15m, This hour, Earlier today behind Show N more", () => {
+  const rows = [
+    { address: "a", since: NOON - 9 * M }, { address: "b", since: NOON - 31 * M }, { address: "c", since: NOON - 56 * M },
+    { address: "d", since: NOON - 2 * 60 * M }, { address: "e", since: NOON - 3 * 60 * M }, { address: "f", since: NOON - 4 * 60 * M },
+    { address: "g", since: 0 }, { address: "h", since: NOON - 15 * M },
+  ];
+  const g = recencyGroups(rows, NOON, false);
+  assert.deepEqual(g.map((grp) => [grp.id, grp.label, grp.count, grp.rows.map((r) => r.address), grp.more]), [
+    ["now", "Just now", 1, ["a"], 0],
+    ["hour", "This hour", 3, ["h", "b", "c"], 0],
+    ["earlier", "Earlier today", 4, ["d", "e"], 2],
+  ]);
+  assert.equal(recencyGroups(rows, NOON, true)[2].rows.length, 4);
+  assert.equal(recencyGroups(rows, NOON, true)[2].more, 0);
+  assert.deepEqual(recencyGroups([{ address: "x", since: NOON - M }], NOON, false).map((grp) => grp.id), ["now"]);
+  assert.deepEqual(recencyGroups([], NOON, false), []);
+});
+
+test("sections: needs you (blocked, failed), running (working, waiting), quiet (done unseen and idle)", () => {
+  const cs = [{ address: "b", status: "blocked" }, { address: "f", status: "failed" }, { address: "w", status: "working" }, { address: "wt", status: "waiting" }, { address: "d", status: "done" }, { address: "i", status: "idle" }];
+  const s = sections(cs);
+  assert.deepEqual(s.needs.map((c) => c.address), ["b", "f"]);
+  assert.deepEqual(s.running.map((c) => c.address), ["w", "wt"]);
+  assert.deepEqual(s.quiet.map((c) => c.address), ["d", "i"]);
+});
+
+test("today: ran, finished, failed and needs you among agents touched today; machines online", () => {
+  const cs = [
+    { status: "idle", since: NOON - 2 * 60 * M, machine: null }, { status: "done", since: NOON - 9 * M, machine: "agent-dev" },
+    { status: "failed", since: NOON - 2 * M, machine: "agent-gentle" }, { status: "blocked", since: NOON - 4 * M, machine: null },
+    { status: "working", since: NOON - M, machine: null }, { status: "idle", since: NOON - 13 * 60 * M, machine: "agent-dev" },
+    { status: "idle", since: 0, machine: null },
+  ];
+  assert.deepEqual(todaySummary(cs, NOON), { ran: 5, finished: 2, failed: 1, needs: 1, machines: 3 });
+  assert.deepEqual(todaySummary([], NOON), { ran: 0, finished: 0, failed: 0, needs: 0, machines: 0 });
+});
+
+test("last finished: the most recent quiet agent today, with a labeled time and where", () => {
+  const cs = [
+    { address: "old", status: "idle", since: NOON - 3 * 60 * M, machine: null },
+    { address: "new", status: "done", since: NOON - 9 * M, machine: "agent-dev" },
+    { address: "w", status: "working", since: NOON - M },
+    { address: "y", status: "idle", since: NOON - 13 * 60 * M },
+  ];
+  const l = lastFinished(cs, NOON);
+  assert.equal(l.card.address, "new");
+  assert.equal(l.label, "Last finished · 9m ago");
+  assert.equal(l.where, "agent-dev");
+  assert.equal(lastFinished([{ status: "idle", since: NOON - 13 * 60 * M }], NOON), null);
+  assert.equal(lastFinished([], NOON), null);
+});
+
+test("glyphs: program and machine icons, generic server for other machines", () => {
+  const p = (n) => `mods/refactoria-agents/icons/${n}.svg`;
+  assert.equal(programIcon({ badge: "GS" }), p("p-gs"));
+  assert.equal(programIcon({ badge: "CC" }), p("p-cc"));
+  assert.equal(programIcon({ badge: "CX" }), p("p-cx"));
+  assert.equal(programIcon({ badge: "shell" }), p("p-sh"));
+  assert.equal(programIcon(null), p("p-sh"));
+  assert.equal(machineIcon(null), p("laptop"));
+  assert.equal(machineIcon("agent-dev"), p("server"));
+  assert.equal(machineIcon("agent-gentle"), p("cloud"));
+  assert.equal(machineIcon("build-box"), p("server"));
+  assert.equal(machineLabel(null), "This computer");
+  assert.equal(machineLabel("agent-dev"), "agent-dev");
+});
+
+test("pill: state word with a short time", () => {
+  assert.equal(pillLabel({ status: "blocked", since: NOON - 4 * M }, NOON), "Needs you · 4m");
+  assert.equal(pillLabel({ status: "failed", since: NOON - 2 * M }, NOON), "Failed · 2m");
+  assert.equal(pillLabel({ status: "working", since: NOON - 12 * M }, NOON), "Working");
+  assert.equal(pillLabel({ status: "waiting", since: 0 }, NOON), "Waiting");
+  assert.equal(pillLabel({ status: "blocked", since: 0 }, NOON), "Needs you");
+});
+
+test("idle row lines: name, New when unseen, age; dim task and machine", () => {
+  const l = idleLines({ name: "innit-pay", status: "done", sub: "Refactor payment webhooks", machine: "agent-dev", since: NOON - 9 * M }, NOON);
+  assert.deepEqual(l, { name: "innit-pay", isNew: true, age: "9m", task: "Refactor payment webhooks", where: "agent-dev",
+    label: "innit-pay, finished, not seen yet, Refactor payment webhooks, agent-dev, 9m ago" });
+  const q = idleLines({ name: "refactoria", status: "idle", sub: "", task: { title: "Landing hero" }, machine: null, since: NOON - 2 * 60 * M }, NOON);
+  assert.equal(q.isNew, false);
+  assert.equal(q.task, "Landing hero");
+  assert.equal(q.where, "This computer");
+  assert.equal(q.label, "refactoria, idle, Landing hero, This computer, 2h ago");
+  const bare = idleLines({ name: "infra", status: "idle", sub: "", machine: null, since: 0, space: "infra" }, NOON);
+  assert.equal(bare.task, "");
+  assert.equal(bare.age, "");
+  assert.equal(idleLines({ name: "api", status: "idle", sub: "", machine: null, since: 0, space: "innit-core" }, NOON).task, "innit-core");
+});
+
+test("card keeps the space for the idle row's second line", () => {
+  assert.equal(buildCard({ agent: agent({ space_name: "innit-core" }), now: NOW }).space, "innit-core");
+});

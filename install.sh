@@ -603,6 +603,18 @@ if [[ "$PLATFORM" == "Darwin" ]]; then
     for icon in "$DOTFILES"/herdr/desktop/mods/refactoria-tabs/*.svg; do
         seed_file "$icon" "$HOME/.config/herdr-app/mods/refactoria-tabs/$(basename "$icon")"
     done
+    # A mod's icons/ folder (refactoria-agents program and machine glyphs): copied,
+    # refreshed when the repo's copy changed.
+    for icon in "$DOTFILES"/herdr/desktop/mods/*/icons/*.svg; do
+        [[ -e "$icon" ]] || continue
+        mod="$(basename "$(dirname "$(dirname "$icon")")")"
+        dst="$HOME/.config/herdr-app/mods/$mod/icons/$(basename "$icon")"
+        if cmp -s "$icon" "$dst"; then continue; fi
+        if [[ "$DRY_RUN" == true ]]; then echo "  → Would copy $dst"; continue; fi
+        mkdir -p "$(dirname "$dst")"
+        cp "$icon" "$dst.tmp.$$" && mv -f "$dst.tmp.$$" "$dst"
+        echo "  ✓ $dst copied"
+    done
 fi
 # Pi owns settings.json: merge only the RefactorIA appearance keys into it.
 if command -v python3 &>/dev/null; then
