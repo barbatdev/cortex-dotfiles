@@ -7,7 +7,7 @@
 import { View, div } from "gpui-kit";
 import { v_flex, h_flex } from "gpui-base";
 import { spaces, panes, exec, theme, layout, window, checking } from "herdr";
-import { slug, prRow, issueGroups, runRow, inbox, counts } from "./model.js";
+import { slug, prRow, issueGroups, runRow, inbox, counts, nextFetch } from "./model.js";
 
 const EVERY = 90000; // GitHub's rate limit is generous; space switches ask again anyway.
 const TIMEOUT = 20000;
@@ -67,14 +67,18 @@ export default class GitHub extends View {
       const visible = shown();
       const appeared = visible && !this.seen;
       this.seen = visible;
-      if (key !== this.key) this.refresh(key, cx);
-      else if (visible && (appeared || Date.now() - this.at > EVERY)) this.refresh(key, cx);
+      const what = nextFetch({ key, last: this.key, visible, appeared, at: this.at, now: Date.now(), loading: this.loading, every: EVERY });
+      if (what) this.refresh(key, cx);
     });
   }
 
+  // Loads every list for `key`. A newer call (a space switch) supersedes a running
+  // one: the old one's results are dropped by the key check and its end no longer
+  // clears `loading` for the new load.
   refresh(key, cx) {
-    if (this.loading) return;
     const switched = key !== this.key;
+    const run = (this.run ?? 0) + 1;
+    this.run = run;
     this.key = key;
     this.at = Date.now();
     if (switched) {
@@ -84,7 +88,7 @@ export default class GitHub extends View {
       this.errors = {};
       cx.notify();
     }
-    if (!key) return;
+    if (!key) { this.loading = false; return; }
     this.loading = true;
     const [on, cwd] = JSON.parse(key);
     cx.spawn(async (cx) => {
@@ -124,7 +128,7 @@ export default class GitHub extends View {
           cx.notify();
         }));
       } finally {
-        this.loading = false;
+        if (run === this.run) this.loading = false;
         cx.notify();
       }
     });
@@ -157,7 +161,9 @@ export default class GitHub extends View {
         return h_flex().id(`tab-${id}`).flex_1().h(24).gap(4).justify_center().items_center().rounded(6).cursor_pointer()
           .bg(active ? t.hover : t.chrome).text_color(active ? t.foreground : t.dim)
           .hover((s) => s.text_color(t.foreground))
-          .on_click(() => { this.tab = id; cx.notify(); })
+          .on_mouse_down("left", (_e, cx) => cx.stop_propagation())
+          // The click's own cx: one kept from render is stale and redraws nothing.
+          .on_click((_e, cx) => { this.tab = id; cx.notify(); })
           .child(label)
           .when(n !== null, (el) => el.child(div().text_size(10.5).text_color(hot ? t.ansi1 : t.dim).child(String(n))));
       }));
@@ -169,7 +175,7 @@ export default class GitHub extends View {
     const row = h_flex().id(`pr-${pr.number}`).min_h(44).flex_none().px(8).gap(8).items_center().rounded(8).cursor_pointer()
       .when(open, (el) => el.bg(t.hover))
       .hover((s) => s.bg(t.hover))
-      .on_click(() => { this.open = open ? null : pr.number; cx.notify(); })
+      .on_click((_e, cx) => { this.open = open ? null : pr.number; cx.notify(); })
       .child(this.dot(t, pr.checks.state))
       .child(v_flex().flex_1().min_w(0)
         .child(div().truncate().text_color(pr.draft ? t.dim : t.foreground).child(pr.title))

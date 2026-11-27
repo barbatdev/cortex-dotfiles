@@ -106,3 +106,22 @@ test("counts per tab, null when not loaded", () => {
   const c = counts({ prs: [1, 2], issues: { assigned: [1], recent: [2, 3] }, runs: [{ state: "fail" }, { state: "pass" }], inbox: [1] });
   assert.deepEqual(c, { prs: 2, issues: 3, ci: 1, inbox: 1 });
 });
+
+test("nextFetch: a space switch always reloads, even while a load is running", async () => {
+  const { nextFetch } = await import("../herdr/desktop/mods/refactoria-github/model.js");
+  const base = { key: "b", last: "a", visible: false, appeared: false, at: 0, now: 1000, loading: true, every: 90000 };
+  assert.equal(nextFetch(base), "switch");
+  assert.equal(nextFetch({ ...base, loading: false, visible: true }), "switch");
+  assert.equal(nextFetch({ ...base, key: null }), "switch");
+});
+
+test("nextFetch: same space refreshes only when shown, on appearing or when stale, and never twice", async () => {
+  const { nextFetch } = await import("../herdr/desktop/mods/refactoria-github/model.js");
+  const base = { key: "a", last: "a", visible: true, appeared: false, at: 0, now: 1000, loading: false, every: 90000 };
+  assert.equal(nextFetch(base), null);
+  assert.equal(nextFetch({ ...base, appeared: true }), "refresh");
+  assert.equal(nextFetch({ ...base, now: 90001 }), "refresh");
+  assert.equal(nextFetch({ ...base, appeared: true, loading: true }), null);
+  assert.equal(nextFetch({ ...base, visible: false, now: 999999 }), null);
+  assert.equal(nextFetch({ ...base, key: null, last: null, appeared: true }), null);
+});

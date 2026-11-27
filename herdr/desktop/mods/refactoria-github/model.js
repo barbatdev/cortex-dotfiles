@@ -138,3 +138,12 @@ export function counts({ prs, issues, runs, inbox: notes }) {
     inbox: notes ? notes.length : null,
   };
 }
+
+// What the panel's timer should load now: "switch" when the active space's place
+// changed (always, even over a running load, which then goes stale), "refresh"
+// for the same place while shown, on appearing or once `every` ms passed, else null.
+export function nextFetch({ key, last, visible, appeared, at, now, loading, every }) {
+  if (key !== last) return "switch";
+  if (!key || !visible || loading) return null;
+  return appeared || now - at > every ? "refresh" : null;
+}

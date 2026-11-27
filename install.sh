@@ -38,6 +38,8 @@ MANAGED_LINKS=(
   "herdr/desktop/mods/refactoria-prs/mod.json|$HOME/.config/herdr-app/mods/refactoria-prs/mod.json|darwin"
   "herdr/desktop/mods/refactoria-github/main.js|$HOME/.config/herdr-app/mods/refactoria-github/main.js|darwin"
   "herdr/desktop/mods/refactoria-github/mod.json|$HOME/.config/herdr-app/mods/refactoria-github/mod.json|darwin"
+  "herdr/desktop/mods/refactoria-tabs/main.js|$HOME/.config/herdr-app/mods/refactoria-tabs/main.js|darwin"
+  "herdr/desktop/mods/refactoria-tabs/mod.json|$HOME/.config/herdr-app/mods/refactoria-tabs/mod.json|darwin"
   "herdr/desktop/mods/refactoria-chrome/main.js|$HOME/.config/herdr-app/mods/refactoria-chrome/main.js|darwin"
   "herdr/desktop/mods/refactoria-chrome/mod.json|$HOME/.config/herdr-app/mods/refactoria-chrome/mod.json|darwin"
   "ghostty/shaders|$HOME/.config/ghostty/shaders|all"
@@ -597,6 +599,9 @@ if [[ "$PLATFORM" == "Darwin" ]]; then
     for image in logo.png wordmark.png; do
         seed_file "$DOTFILES/herdr/desktop/mods/refactoria-chrome/$image" \
             "$HOME/.config/herdr-app/mods/refactoria-chrome/$image"
+    done
+    for icon in "$DOTFILES"/herdr/desktop/mods/refactoria-tabs/*.svg; do
+        seed_file "$icon" "$HOME/.config/herdr-app/mods/refactoria-tabs/$(basename "$icon")"
     done
 fi
 # Pi owns settings.json: merge only the RefactorIA appearance keys into it.
