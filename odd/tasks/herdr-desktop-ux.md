@@ -17,7 +17,7 @@ Branch `feat/herdr-desktop-ux`, worktree `../cortex-dotfiles-herdr-ux`. Gentle S
 - T2 (S4, S3) Shared feed reader used by mods (names, state, task) — inline — done (commit: see log)
 - T3 (S2, S4) Agents panel rebuilt on the feed — done (commit f2c5766)
 - T4 (S3) Richer spaces sidebar: name, state, task — done (commit 0883adc)
-- T5 (S1) GitHub sidebar panel (PRs detail, issues, actions, notifications) — implemented (commit 80492a0); Issues/CI/Inbox tabs, PR expansion and Copy branch await a manual click check
+- T5 (S1) GitHub sidebar panel — reopened by L10 (tab clicks, refresh on space switch, panel lost on switch with no way back)
 - T6 (S3) Visual density/hierarchy pass + screenshot check — pending
 
 ## Log
@@ -35,3 +35,7 @@ Tenemos que incorporar el sistema de eventos de gentle-shell, que es nuevo, para
 - L7: probe: `hc get t8 --json` (this gentle-shell session) shows `status: {app, state}` only; no records surfaced there, and Herdr 0.1.18 `AgentInfo` has no records field. Where a mod can read sub-records is still unknown.
 - L8: T2b result. herdr-app#628 (OPEN) says "`records` is already in `terminals()`" (terminals() = untyped `hc ls --json` entries). Observed on hc 0.1.22: no terminal in `hc ls --json` or `hc get t8 --json` carries `records`; t8 (this gentle-shell session, todo in progress) shows only `status: {app, state}`. The publisher (gentle-pi extensions/gentle-herdr-desktop-status.ts:77) requires PI_PROGRAM_STATUS_APP=gentle-shell (set by the launcher, runtime/gentle-shell-launcher.mjs:1250); the agent's tool shell does not show it, so whether this session publishes is unproven. Decision: T3/T4 read the local desktop feed (feed.js) now, and read `terminals()[i].records` opportunistically when present (no-op today); remote sessions keep Herdr's own status until records are observed.
 - L9: T3 result. refactoria-agents follows the feed (FeedSource follower, byte-identical feed.js) plus a pure rows.js (tests/herdr_agents_test.mjs, `node --test`). Gentle Shell agents matched to a snapshot show session name, live state (or the open question when blocked), current todo with done/total, and pending counts as tooltip; feed sessions outside this window get their own row (click → selectSession). Other agents keep Herdr status. `terminals()[i].records` raise state only (no-op today). rows.js is imported, so install.sh copies it like feed.js. Layout: agents block back between spaces and prs, weight 1 each.
+- L10 (user, T5 manual check, verbatim): "issues - si clickeo no se abre, queda todo en prs
+la info no se refresca con el cambio de proyecto/space
+si cambio de proyecto desaparece ese pane y no tengo como agregarlo"
+- L11 (user): "Sacar PRs de la sidebar" → refactoria-prs block removed from the layout (commit c609035).
