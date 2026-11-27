@@ -28,8 +28,8 @@ Branch `feat/herdr-desktop-ux`, worktree `../cortex-dotfiles-herdr-ux`. Gentle S
 - T4 (S3) Richer spaces sidebar: name, state, task — done (commit 0883adc)
 - T5 (S1) GitHub side panel — fixed L10 bugs (commits 80492a0, ed220f3); real mouse click on tabs awaits the user
 - T7 (S6) UX brief — done (S6)
-- T8 (S6, S3) Design 2-3 directions on the gentle-design canvas: design/herdr-desktop-ux/ — pending
-- T6 (S3, S6) Implement the chosen direction + a11y + screenshot check — pending
+- T8 (S6, S3) Design 2-3 directions on the gentle-design canvas: design/herdr-desktop-ux/ — done (commit 002d3ab)
+- T6 (S3, S6) Implement design/herdr-desktop-ux/02-sessions-as-cards.html in refactoria-agents (+ spaces where the artboard changes them) + a11y + screenshot check — in progress
 
 ## Log
 
@@ -53,3 +53,4 @@ si cambio de proyecto desaparece ese pane y no tengo como agregarlo"
 - L12 (user, verbatim): "gentle-shell los publica si. Eso esta en uso por los demas users de gentle-shell que son mas de 30k. Sobre la UI aprovecha los saltos de linea, iconos y todo. Colores también pero tienen que ser visualmente agradables no rimbombantes. Tiene que pasar accesibilidad, etc no una terrajeada. Tu propuesta es correcta avanza" (proposal: 1 unblock events, 2 define the questions the screen answers, 3 design 2-3 directions on the canvas, then implement).
 - L13: records root cause found. Herdr keeps OSC 7501 sub-records per terminal as an OBJECT keyed by id, delivered on the `hc events` stream and in a mod's terminals() (herdr-app src/hc.rs:183 `set(&["status","records","reported"])`); `hc ls --json` and `hc get` omit them. Live (t3y, this session): `"records":{"todo":{"progress":44,"state":"working","title":"<base64>"}}` appears only while a todo is in progress, `null` otherwise. Our rows.js assumed an array, so it was a no-op; fixed with a RED/GREEN test. Records also cover remote-machine terminals.
 - L14: T8 design directions in design/herdr-desktop-ux/ (canvas served from the main checkout's design/, mirrored here): 01-inbox-first.html (pinned "Needs you" stack, Running with nested work, idle summarized), 02-sessions-as-cards.html (one card per active session), 03-unified-spaces.html (agents inside the spaces tree, summary strip). Contrast tables in each file header; #8F839D is never used on #2C2144 (4.19).
+- L15 (user handoff): "Implement the design artboard design/herdr-desktop-ux/02-sessions-as-cards.html" — chosen artboard 02 Sessions as cards; 01-inbox-first and 03-unified-spaces are alternatives.
