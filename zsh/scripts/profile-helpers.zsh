@@ -122,17 +122,30 @@ herdr-screens() {
     fi
 
     local desktop="$_DOTFILES_DIR/herdr/desktop"
-    local -a shared=(themes/refactoria.json layouts/refactoria.json
-        mods/refactoria-spaces/main.js mods/refactoria-spaces/mod.json
-        mods/refactoria-agents/main.js mods/refactoria-agents/mod.json
-        mods/refactoria-prs/main.js mods/refactoria-prs/mod.json)
+    # Every refactoria mod: main.js and mod.json are linked; imported modules
+    # (feed.js, model.js, rows.js) and icons are copied, because Herdr refuses
+    # imports and images that resolve outside the mod folder (as in install.sh).
+    local -a shared=(themes/refactoria.json layouts/refactoria.json keys.json)
+    local mod
+    for mod in "$desktop"/mods/refactoria-*(N/); do
+        for f in main.js mod.json; do
+            [[ -e "$mod/$f" ]] && shared+=("mods/${mod:t}/$f")
+        done
+    done
 
-    local n home f attempt
+    local n home f attempt asset
     for n in $(seq 2 "$count"); do
         home="$HOME/.config/herdr-app-$n"
         for f in "${shared[@]}"; do
             mkdir -p "$(dirname "$home/$f")"
             ln -sfn "$desktop/$f" "$home/$f"
+        done
+        for asset in "$desktop"/mods/refactoria-*/*.js(N.) "$desktop"/mods/refactoria-*/icons/*.svg(N.); do
+            [[ "${asset:t}" == main.js ]] && continue
+            f="${asset#$desktop/}"
+            [[ -L "$home/$f" ]] && rm -f "$home/$f"
+            mkdir -p "$(dirname "$home/$f")"
+            cmp -s "$asset" "$home/$f" || cp "$asset" "$home/$f"
         done
         [[ -e "$home/settings.json" ]] || cp "$desktop/settings.json" "$home/settings.json"
 
