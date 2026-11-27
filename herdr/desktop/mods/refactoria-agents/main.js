@@ -226,7 +226,7 @@ export default class Agents extends View {
     };
     const cards = list.filter((a) => !listed.has(parentOf.get(a.address))).map((a) => {
       const s = isGentle(a.app) ? byTerm.get(a.address) : null;
-      const c = buildCard({ agent: a, feed: s?.feed ?? null, live: s ? liveState(s.feed) : null, need: s ? needsYou(s.feed) : null, records: records.get(a.address), since: sinceOf(a), now, kids: kidsOf.get(a.address) ?? [] });
+      const c = buildCard({ agent: a, feed: s?.feed ?? null, live: s ? liveState(s.feed) : null, need: s ? needsYou(s.feed) : null, records: records.get(a.address), term: termOf.get(a.address), since: sinceOf(a), now, kids: kidsOf.get(a.address) ?? [] });
       return { ...c, session: s ?? null };
     });
     // Sessions running outside this window (another terminal on this computer): a card while they

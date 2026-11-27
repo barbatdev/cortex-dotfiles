@@ -180,7 +180,8 @@ const uniq = (xs) => [...new Set(xs.filter(Boolean))];
 // One card: the agent (agents() entry), its feed snapshot with feed.js liveState / needsYou when it
 // is a local Gentle Shell session, its OSC 7501 records, since when it is in its state (ms), and its
 // sub-agent terminals ({ name, status }: they show as chips, a blocked or failed one raises the card).
-export function buildCard({ agent, feed = null, live = null, need = null, records = null, since = null, now = Date.now(), kids = [] }) {
+// `term` is the agent's terminals() entry: its reported status, turn and herdr.seen label.
+export function buildCard({ agent, feed = null, live = null, need = null, records = null, term = null, since = null, now = Date.now(), kids = [] }) {
   const rec = parseRecords(records);
   for (const k of kids) {
     const state = k.status === "blocked" ? "blocked" : k.status === "error" ? "error" : k.status === "working" ? "working" : "idle";
@@ -190,8 +191,14 @@ export function buildCard({ agent, feed = null, live = null, need = null, record
   }
   const program = programBadge(agent);
   const machine = machineOf(agent?.address);
-  let activity = live?.status ?? (agent?.status === "blocked" || agent?.status === "working" || agent?.status === "done" ? agent.status : "idle");
-  if (activity === "idle" && agent?.status === "done") activity = "done";
+  // The most urgent of every source (T10): the feed snapshot is polled and may lag, Herdr's
+  // agents() turns a seen "done" into idle, and Gentle Shell reports "done" between wakeups.
+  const known = (s) => (s === "blocked" || s === "working" || s === "waiting" || s === "done" ? s : "idle");
+  const reported = term?.status?.state;
+  const turn = Number(term?.turn), seen = Number(term?.labels?.["herdr.seen"]);
+  const unseen = reported === "done" && Number.isFinite(turn) && Number.isFinite(seen) && turn > seen;
+  let activity = [live?.status, agent?.status, reported === "working" || reported === "blocked" ? reported : null, unseen ? "done" : null]
+    .map(known).reduce((a, b) => ((URGENCY[b] ?? 0) > (URGENCY[a] ?? 0) ? b : a), "idle");
   if (rec.blocked.length) activity = "blocked";
   else if ((activity === "idle" || activity === "done") && (rec.todo?.state === "working" || rec.jobs.some((j) => j.state === "working") || rec.subagents.some((s) => s.state === "working"))) activity = "working";
   const status = activity !== "blocked" && rec.failed.length ? "failed" : activity;

@@ -294,3 +294,28 @@ test("card name comes from agentName and keeps the tab for disambiguation", () =
   assert.equal(c.tab, "ops");
   assert.equal(c.sub, "");
 });
+
+// T10 / L18: the observed t3y sequence on `hc events` (seq 8383-8387): status done -> working ->
+// working (todo record gone) -> done, then turn 28 done with herdr.seen 26; the feed snapshot read
+// "idle" meanwhile. The card must stay active the whole way.
+test("T10: a working Gentle Shell session never reads as idle mid-turn", () => {
+  const idleFeed = feed();
+  const live = { status: "idle", label: "Idle", agents: 0, jobs: 0 };
+  const term = (state, records, turn = 27, seen = "26") => ({ address: "t3y", status: { app: "gentle-shell", state }, records, turn, labels: { "herdr.seen": seen } });
+  const card = (herdr, t) => buildCard({ agent: agent({ address: "t3y", app: "gentle-shell", status: herdr }), feed: idleFeed, live, records: t.records, term: t, now: NOW, since: NOW - 5000 });
+  const sub = { "subagents/a": { state: "working", title: b64("fix") } };
+  // Herdr says working, the feed snapshot says idle: Herdr's live state wins.
+  assert.equal(card("working", term("working", { ...sub, todo: { state: "working", progress: 73 } })).status, "working");
+  assert.equal(card("working", term("working", {})).status, "working");
+  // Between wakeups Herdr reports done (seen, so agents() says idle) while a subagent still runs.
+  assert.equal(card("idle", term("done", sub)).status, "working");
+  // Turn finished, not seen yet (turn 28 > seen 26): a visible New card, not idle.
+  const unseen = card("idle", term("done", {}, 28, "26"));
+  assert.equal(unseen.status, "done");
+  assert.equal(splitCards([unseen]).active.length, 1);
+  // Reported working through the terminal while agents() lags at idle.
+  assert.equal(card("idle", term("working", null)).status, "working");
+  // Finished and seen, nothing running: idle.
+  assert.equal(card("idle", term("done", {}, 28, "28")).status, "idle");
+  assert.equal(card("idle", term("done", null, 28, "28")).status, "idle");
+});
