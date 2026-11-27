@@ -151,6 +151,13 @@
                       "content": {
                         "mod": "changes"
                       }
+                    },
+                    {
+                      "id": "github",
+                      "type": "block",
+                      "content": {
+                        "mod": "refactoria-github"
+                      }
                     }
                   ],
                   "active": "files"

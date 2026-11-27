@@ -1,0 +1,8 @@
+{
+  "place": "none",
+  "title": "GitHub",
+  "palette": [
+    { "title": "GitHub: show panel", "command": "layout.select", "args": { "stack": "panel-body", "child": "github" }, "words": "pull requests issues actions ci notifications" },
+    { "title": "GitHub: toggle side panel", "command": "layout.toggle", "args": { "id": "panel" }, "words": "github files changes" }
+  ]
+}

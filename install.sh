@@ -36,6 +36,8 @@ MANAGED_LINKS=(
   "herdr/desktop/mods/refactoria-agents/mod.json|$HOME/.config/herdr-app/mods/refactoria-agents/mod.json|darwin"
   "herdr/desktop/mods/refactoria-prs/main.js|$HOME/.config/herdr-app/mods/refactoria-prs/main.js|darwin"
   "herdr/desktop/mods/refactoria-prs/mod.json|$HOME/.config/herdr-app/mods/refactoria-prs/mod.json|darwin"
+  "herdr/desktop/mods/refactoria-github/main.js|$HOME/.config/herdr-app/mods/refactoria-github/main.js|darwin"
+  "herdr/desktop/mods/refactoria-github/mod.json|$HOME/.config/herdr-app/mods/refactoria-github/mod.json|darwin"
   "herdr/desktop/mods/refactoria-chrome/main.js|$HOME/.config/herdr-app/mods/refactoria-chrome/main.js|darwin"
   "herdr/desktop/mods/refactoria-chrome/mod.json|$HOME/.config/herdr-app/mods/refactoria-chrome/mod.json|darwin"
   "ghostty/shaders|$HOME/.config/ghostty/shaders|all"
@@ -578,10 +580,11 @@ seed_file "$DOTFILES/opencode/tui.json" "$HOME/.config/opencode/tui.json"
 # Herdr Desktop rewrites settings.json (theme picker, zoom keys): seed a copy.
 if [[ "$PLATFORM" == "Darwin" ]]; then
     seed_file "$DOTFILES/herdr/desktop/settings.json" "$HOME/.config/herdr-app/settings.json"
-    # A mod's imported modules (feed.js, rows.js) must live inside its folder
+    # A mod's imported modules (feed.js, rows.js, model.js) must live inside its folder
     # (Herdr refuses an import that resolves outside it): copy each one,
     # refreshing it when it changed.
-    for feed in "$DOTFILES"/herdr/desktop/mods/*/feed.js "$DOTFILES"/herdr/desktop/mods/*/rows.js; do
+    for feed in "$DOTFILES"/herdr/desktop/mods/*/feed.js "$DOTFILES"/herdr/desktop/mods/*/rows.js \
+        "$DOTFILES"/herdr/desktop/mods/*/model.js; do
         mod="$(basename "$(dirname "$feed")")"
         dst="$HOME/.config/herdr-app/mods/$mod/$(basename "$feed")"
         if cmp -s "$feed" "$dst"; then continue; fi
