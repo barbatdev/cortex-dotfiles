@@ -29,7 +29,7 @@ Branch `feat/herdr-desktop-ux`, worktree `../cortex-dotfiles-herdr-ux`. Gentle S
 - T5 (S1) GitHub side panel — fixed L10 bugs (commits 80492a0, ed220f3); real mouse click on tabs awaits the user
 - T7 (S6) UX brief — done (S6)
 - T8 (S6, S3) Design 2-3 directions on the gentle-design canvas: design/herdr-desktop-ux/ — done (commit 002d3ab)
-- T6 (S3, S6) Implement 02-sessions-as-cards in refactoria-agents — reopened by L17 (commit c2cb41d)
+- T6 (S3, S6) Implement 02-sessions-as-cards in refactoria-agents — done (commits c2cb41d, 6a396b3); empty state seen only in tests
 
 ## Log
 
