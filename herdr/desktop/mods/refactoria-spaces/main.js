@@ -5,7 +5,8 @@
 
 import { View, div, svg } from "gpui-kit";
 import { v_flex, h_flex } from "gpui-base";
-import { FeedSource } from "./feed.js";
+import { FeedSource, allSessions, projectOf, liveState } from "./feed.js";
+import { pickSession, spaceLines, spaceOfSession } from "./rows.js";
 import { spaces, agents, machines, panes, run, openOverlay, exec, hc, theme, shared, setShared, watchFolder, window, layout, home, readTextFile, nextCommand } from "herdr";
 
 function find(node, id) {
@@ -389,13 +390,44 @@ export default class Spaces extends View {
       .when(g.behind > 0, (el) => el.child(div().flex_none().text_color(on ? t.solid_foreground : t.ansi1).child(`\u2193${g.behind}`)));
   }
 
+  // Space id -> the Gentle Shell session its row shows (rows.js pickSession). Only local
+  // snapshots: spaceFor() never matches a space on another machine, so those rows stay as they are.
+  sessionsBySpace() {
+    const by = {};
+    const sp = spaces(), ps = panes();
+    // A terminal's space: through its agent, else its pane's tab.
+    const tabSpace = {};
+    for (const s of sp) for (const c of s.tabs ?? []) tabSpace[c.id] = s.id;
+    const byTerminal = {};
+    for (const p of ps) if (p.terminal && tabSpace[p.tab]) byTerminal[p.terminal] = tabSpace[p.tab];
+    for (const a of agents()) if (a.address && a.space) byTerminal[a.address] = a.space;
+    // Spaces by their live folder (place()), not the folder they were made in.
+    const places = sp.map((s) => ({ id: s.id, place: place(s, ps), repo: Boolean(this.git[where(s, ps)]), machine: s.machine }));
+    const ctx = { home: home(), byTerminal, places };
+    for (const s of allSessions(this.feed.feeds)) {
+      if (!s.feed) continue;
+      const id = spaceOfSession({ terminal: s.terminal?.address ?? null, project: projectOf(s.feed) }, ctx);
+      if (id) (by[id] ??= []).push({ feed: s.feed, live: liveState(s.feed) });
+    }
+    return Object.fromEntries(Object.entries(by).map(([id, list]) => [id, pickSession(list)]));
+  }
+
+  // A small state pill after the name: working / waiting in their own color.
+  stateBadge(t, state, on) {
+    return div().flex_none().px(5).h(16).rounded(8).border(1).border_color(on ? t.solid_foreground : tone(t, state.status))
+      .text_color(on ? t.solid_foreground : tone(t, state.status)).text_size(10.5).flex().items_center()
+      .child(`\u25cf ${state.status}`);
+  }
+
   row({ w, i, g, tree }, t) {
     const on = w.active;
+    const lines = spaceLines({ space: w.name, git: g ? this.gitWhere(g, tree, w.name) : "", session: this.bySpace?.[w.id] ?? null });
+    const task = Boolean(lines.tooltip) || Boolean(lines.second && lines.second !== (g ? this.gitWhere(g, tree, w.name) : ""));
     const colors = shared("space.colors") ?? {};
     const color = colors[w.id] ?? "ansi6";
     const fill = color.startsWith("#") ? color : (MARK[color] ?? t[color]);
-    const twoLines = this.hasGitTail(g, tree, w.name);
-    const waiting = spaceWaits(w, this.seen, agents());
+    const twoLines = task || this.hasGitTail(g, tree, w.name);
+    const waiting = spaceWaits(w, this.seen, agents()) || lines.state?.status === "blocked";
     return v_flex()
       .relative()
       .id(`space-${w.id}`)
@@ -431,8 +463,13 @@ export default class Spaces extends View {
           .child(v_flex().flex_1().min_w(0).gap(1)
             .child(h_flex().min_w(0).gap(6).items_center()
               .child(div().min_w(0).truncate().text_color(on ? t.solid_foreground : t.foreground).when(on, el => el.font_semibold()).child(w.name))
+              .when(Boolean(lines.other), el => el.child(div().min_w(0).truncate().text_size(12).text_color(on ? t.solid_foreground : t.dim).child(lines.other)))
+              .when(Boolean(lines.state) && !waiting, el => el.child(this.stateBadge(t, lines.state, on)))
               .when(waiting, el => el.child(this.waitBadge(t, "\u25cf te espera"))))
-            .when(twoLines, el => el.child(this.gitTail(g, tree, w.name, t, on)))),
+            // The session's task takes the git line's place; the branch moves to its tooltip.
+            .when(task, el => el.child(div().id(`space-task-${w.id}`).min_w(0).truncate().text_size(12).text_color(on ? t.solid_foreground : t.dim)
+              .when(Boolean(lines.tooltip), el => el.tooltip(lines.tooltip)).child(lines.second)))
+            .when(twoLines && !task, el => el.child(this.gitTail(g, tree, w.name, t, on)))),
       );
   }
 
@@ -465,6 +502,7 @@ export default class Spaces extends View {
       changed = true;
     }
     if (changed) setShared("space.colors", kept);
+    this.bySpace = this.sessionsBySpace();
     return v_flex().size_full().min_h(0).bg(t.chrome).text_size(13)
       .child(h_flex().h(31).pl(16).pr(10).items_center().justify_between().text_size(12).text_color(t.dim)
         .when(!collapsed, el => el.child("Spaces"))
