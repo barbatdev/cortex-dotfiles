@@ -4,6 +4,8 @@
 import { View, div, image, svg } from "gpui-kit";
 import { v_flex, h_flex } from "gpui-base";
 import { agents, terminals, panes, focused, spaces, run, theme, shared, setShared, setAgentOrder, openOverlay, closeOverlay, props, window, layout } from "herdr";
+import { FeedSource, isGentle, liveState, needsYou, selectSession, projectOf, projectName } from "./feed.js";
+import { sessionRow } from "./rows.js";
 
 function find(node, id) {
   if (node?.id === id) return node;
@@ -39,7 +41,8 @@ function title(tab, l) {
   const telling = live && live !== prog && !/^[~/]|^[A-Za-z]:\\/.test(live) && !live.includes("@") && live.toLowerCase() !== l?.program?.key;
   return tab.name === prog && telling ? live : tab.name;
 }
-const RANK = { blocked: 4, done: 3, working: 2, idle: 1 };
+// waiting: a Gentle Shell turn ended while its subagents or jobs still run.
+const RANK = { blocked: 4, done: 3, working: 2, waiting: 2, idle: 1 };
 // A sub-agent without a pane isn't in agents(): its raw word, error counting as
 // blocked. It's never done: it reports to its parent, and the parent's done is the news.
 const kidStatus = (k, listed) => {
@@ -71,6 +74,9 @@ function icon(p, size, color) {
 export default class Agents extends View {
   init(_props, cx) {
     if (props()?.sortMenu) return;
+    // Gentle Shell sessions (./feed.js), following refactoria-spaces, the one reader.
+    this.feed = new FeedSource();
+    this.feed.start(cx, null, 10000);
     this.folded = new Set();
     // Each agent's last state and when it changed (ms), kept across restarts.
     this.changed = JSON.parse(localStorage.getItem("changed") ?? "{}");
@@ -204,6 +210,7 @@ export default class Agents extends View {
     if (a.status === "blocked") return div().flex_none().px(6).h(18).rounded(5).bg(t.blocked + "26").text_size(10.5).font_semibold().text_color(t.blocked).flex().items_center().child("Needs you");
     // Idle: a ring; done: a dot.
     if (a.status === "idle") return div().size(7).mx(3).flex_none().rounded(4).border(1.5).border_color(t.idle ?? t.dim);
+    if (a.status === "waiting") return div().size(7).mx(3).flex_none().rounded(4).border(1.5).border_color(t.working);
     return div().size(7).mx(3).flex_none().rounded(4).bg(a.status === "done" ? color : t.dim + "00");
   }
 
@@ -212,9 +219,24 @@ export default class Agents extends View {
     if (props()?.sortMenu) return this.sortMenu(t);
     const collapsed = narrow();
     const sort = sortOf();
-    let list = agents();
-    this.listed = new Map(list.map((a) => [a.address, a.status]));
     const all = terminals();
+    // Gentle Shell agents take their session's name, state, task and pending work from the feed
+    // (and OSC 7501 records when a terminal carries them); the rest keep Herdr's status.
+    const sessions = this.feed.sessions();
+    const byTerm = new Map(sessions.filter((s) => s.terminal && s.feed).map((s) => [s.terminal.address, s]));
+    const records = new Map(all.map((x) => [x.address, x.records]));
+    this.gentle = new Map();
+    const enrich = (a, s) => {
+      const m = sessionRow(s.feed, liveState(s.feed), needsYou(s.feed), records.get(a.address));
+      this.gentle.set(a.address, { s, m });
+      return m.status === "idle" ? a : { ...a, status: m.status };
+    };
+    let list = agents().map((a) => (isGentle(a.app) && byTerm.has(a.address) ? enrich(a, byTerm.get(a.address)) : a));
+    // Sessions running outside this window (another terminal): a row that picks them.
+    for (const s of sessions.filter((s) => s.feed && !s.terminal)) {
+      list.push(enrich({ address: `feed|${s.key}`, pane: null, space: `feed-${s.key}`, space_name: projectName(projectOf(s.feed)), tab: null, status: "idle", app: "gentle-shell", program: null, title: "", seq: 0, focused: false }, s));
+    }
+    this.listed = new Map(list.map((a) => [a.address, a.status]));
     const shown = focused()?.agent;
     const now = Date.now();
     this.track(list, now);
@@ -227,7 +249,12 @@ export default class Agents extends View {
     const pinned = this.pins.map((p) => list.find((a) => a.address === p)).filter(Boolean);
     const rest = list.filter((a) => !this.pins.includes(a.address));
     list = [...pinned, ...rest];
-    setAgentOrder(list.map((a) => a.address));
+    setAgentOrder(list.filter((a) => a.pane).map((a) => a.address));
+    const open = (a) => {
+      const g = this.gentle.get(a.address);
+      if (g) selectSession(g.s);
+      else run("pane.focus", { pane: a.pane });
+    };
 
     const withKids = (a, i) => {
       const subs = collapsed ? [] : this.tree(all, a.address);
@@ -291,7 +318,7 @@ export default class Agents extends View {
           .items_center()
           .gap(4)
           .hover((s) => s.bg(t.hover))
-          .on_click(() => run("pane.focus", { pane: a.pane }))
+          .on_click(() => open(a))
           .child(div().flex_1().min_w(0).whitespace_nowrap().text_right().text_color(t.muted).child(String(i + 1)))
           .child(h_flex().w(14).flex_none().items_center().justify_center().child(this.status(t, a, true)));
       }
@@ -318,11 +345,16 @@ export default class Agents extends View {
       // Under a space header the space goes without saying; an automatic tab number says nothing.
       // Without a space header above (priority, pinned) the row names its space.
       const full = byPriority || isPinned;
-      const name = full ? a.space_name || label(a) : more ?? (/^\d+$/.test(label(a)) ? a.program?.name || label(a) : label(a));
+      const g = this.gentle.get(a.address)?.m;
+      const name = g?.name || (full ? a.space_name || label(a) : more ?? (/^\d+$/.test(label(a)) ? a.program?.name || label(a) : label(a)));
+      // A Gentle Shell row: its state (or what it asks), then its task with progress.
+      const state = g ? (g.status === "blocked" && g.pending[0]) || g.label : null;
+      const task = g?.task ? `${g.task.title}${g.task.total ? ` · ${g.task.done}/${g.task.total}` : ""}` : null;
+      const lines = g ? (task ? 3 : 2) : 1;
       return h_flex()
         .id(`ag-${a.address}`)
         .px(8)
-        .h(30)
+        .h(lines === 3 ? 58 : lines === 2 ? 44 : 30)
         .flex_none()
         .rounded(8)
         .items_center()
@@ -335,16 +367,21 @@ export default class Agents extends View {
           else if (this.hovered === a.address) this.hovered = null;
           cx.notify();
         })
-        .on_click(() => run("pane.focus", { pane: a.pane }))
+        .when(Boolean(g?.pending.length), (el) => el.tooltip(g.pending.join(" · ")))
+        .on_click(() => open(a))
         .when(Boolean(pic), el => el.child(div().id(`agent-fold-${a.address}`)
           .when(subs.length > 0, el => el.on_click((_e, cx) => {
             cx.stop_propagation();
             this.folded.has(a.address) ? this.folded.delete(a.address) : this.folded.add(a.address);
             cx.notify();
           })).child(pic)))
-        .child(h_flex().flex_1().min_w(0).gap(5).items_center()
+        .when(!g, (el) => el.child(h_flex().flex_1().min_w(0).gap(5).items_center()
           .child(div().flex_none().max_w(full && more ? 120 : 200).truncate().text_color(idle ? t.muted : t.foreground).child(name))
-          .when(full && Boolean(more), el => el.child(div().flex_1().min_w(0).truncate().text_color(t.dim).child(`\u00b7 ${more}`))))
+          .when(full && Boolean(more), el => el.child(div().flex_1().min_w(0).truncate().text_color(t.dim).child(`\u00b7 ${more}`)))))
+        .when(Boolean(g), (el) => el.child(v_flex().flex_1().min_w(0).gap(1)
+          .child(div().truncate().text_color(g.status === "idle" && !a.focused ? t.muted : t.foreground).child(name))
+          .child(div().truncate().text_size(12).text_color(t[g.status] ?? t.dim).child(state))
+          .when(Boolean(task), (el) => el.child(div().truncate().text_size(12).text_color(t.dim).child(task)))))
         .when(Boolean(machine), el => el.child(div().text_size(12).text_color(t.dim).child(machine)))
         .when(subs.length > 0, el => el.child(fold(a, subs)))
         .when(this.hovered === a.address, el => el.child(pin))
