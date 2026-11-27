@@ -61,3 +61,4 @@ si cambio de proyecto desaparece ese pane y no tengo como agregarlo"
 - T10 (S2, S6) Bug: active card disappears while the Gentle Shell session is working — pending
 - T11 (S6) Implement design/herdr-desktop-ux/04-sessions-v2.html in refactoria-agents — pending (after T10, same files)
 - L19 (user handoff): "Implement the design artboard design/herdr-desktop-ux/04-sessions-v2.html" — chosen artboard 04 Sessions v2 · calm idle; 02 is the previous implementation, 01/03 alternatives.
+- T10 (S2, S6) Bug: active card vanishes mid-turn — done (commit 96107f8). Root cause: buildCard used the polled feed state only; Gentle Shell reports done between wakes while subagents run and the todo record drops between transitions (hc events seq 8383-8387 on t3y).
