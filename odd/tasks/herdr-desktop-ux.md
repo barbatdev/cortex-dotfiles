@@ -17,7 +17,7 @@ Branch `feat/herdr-desktop-ux`, worktree `../cortex-dotfiles-herdr-ux`. Gentle S
 - T2 (S4, S3) Shared feed reader used by mods (names, state, task) — inline — done (commit: see log)
 - T3 (S2, S4) Agents panel rebuilt on the feed — done (commit f2c5766)
 - T4 (S3) Richer spaces sidebar: name, state, task — done (commit 0883adc)
-- T5 (S1) GitHub sidebar panel — reopened by L10 (tab clicks, refresh on space switch, panel lost on switch with no way back)
+- T5 (S1) GitHub side panel — fixed L10 bugs (commits 80492a0, ed220f3); real mouse click on tabs awaits the user
 - T6 (S3) Visual density/hierarchy pass + screenshot check — pending
 
 ## Log
