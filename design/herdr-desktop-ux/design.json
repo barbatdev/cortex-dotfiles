@@ -1,0 +1,10 @@
+{
+  "title": "Herdr Desktop sidebar — agents UX",
+  "brief": "Redesign the Herdr Desktop left sidebar (Spaces + Agents) so it answers, in order: what needs me, what runs and how far, what finished unseen, what failed, where/which program, then model/context/cost; idle agents quiet; RefactorIA palette, AA contrast.",
+  "feature": "odd/tasks/herdr-desktop-ux.md",
+  "artboards": [
+    { "file": "01-inbox-first.html", "title": "Inbox first", "tradeoff": "Fastest path to what needs you (pinned question + failures with actions); Spaces become a secondary compact list and the same session can appear twice (inbox + spaces)", "width": 1440, "height": 900 },
+    { "file": "02-sessions-as-cards.html", "title": "Sessions as cards", "tradeoff": "Richest per-session detail (task, progress, subagent/job chips, meta) sorted by urgency; cards cost height so only ~5 active sessions fit before scrolling", "width": 1440, "height": 900 },
+    { "file": "03-unified-spaces.html", "title": "Unified spaces tree", "tradeoff": "One list, no duplication: location is the structure and badges roll attention up; urgent items are not adjacent when they live on different machines, so the top strip must carry the jump", "width": 1440, "height": 900 }
+  ]
+}
