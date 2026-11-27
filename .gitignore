@@ -11,3 +11,7 @@ local/env.zsh
 # Local Pi runtime state
 .atl/
 .codegraph/
+
+# Claude themes written by `gentle-ai sync` (~/.claude/themes links here)
+claude/themes/gentleman.json
+claude/themes/gentleman-cute.json
