@@ -39,6 +39,9 @@ MANAGED_LINKS=(
   "herdr/desktop/mods/refactoria-tabs/mod.json|$HOME/.config/herdr-app/mods/refactoria-tabs/mod.json|darwin"
   "herdr/desktop/mods/refactoria-chrome/main.js|$HOME/.config/herdr-app/mods/refactoria-chrome/main.js|darwin"
   "herdr/desktop/mods/refactoria-chrome/mod.json|$HOME/.config/herdr-app/mods/refactoria-chrome/mod.json|darwin"
+  "herdr/desktop/mods/refactoria-toast/main.js|$HOME/.config/herdr-app/mods/refactoria-toast/main.js|darwin"
+  "herdr/desktop/mods/refactoria-toast/mod.json|$HOME/.config/herdr-app/mods/refactoria-toast/mod.json|darwin"
+  "herdr/desktop/mods/refactoria-links/mod.json|$HOME/.config/herdr-app/mods/refactoria-links/mod.json|darwin"
   "ghostty/shaders|$HOME/.config/ghostty/shaders|all"
   "ghostty/profiles/barbatdev.conf|$HOME/.config/ghostty/profiles/barbatdev.conf|darwin"
   "ghostty/profiles/refactoria.conf|$HOME/.config/ghostty/profiles/refactoria.conf|darwin"
@@ -579,11 +582,12 @@ seed_file "$DOTFILES/opencode/tui.json" "$HOME/.config/opencode/tui.json"
 # Herdr Desktop rewrites settings.json (theme picker, zoom keys): seed a copy.
 if [[ "$PLATFORM" == "Darwin" ]]; then
     seed_file "$DOTFILES/herdr/desktop/settings.json" "$HOME/.config/herdr-app/settings.json"
-    # A mod's imported modules (feed.js, rows.js, model.js, naming.js) must live inside its folder
+    # A mod's imported modules (feed.js, rows.js, model.js, naming.js, alerts.js, look.js) must live inside its folder
     # (Herdr refuses an import that resolves outside it): copy each one,
     # refreshing it when it changed.
     for feed in "$DOTFILES"/herdr/desktop/mods/*/feed.js "$DOTFILES"/herdr/desktop/mods/*/rows.js \
-        "$DOTFILES"/herdr/desktop/mods/*/model.js "$DOTFILES"/herdr/desktop/mods/*/naming.js; do
+        "$DOTFILES"/herdr/desktop/mods/*/model.js "$DOTFILES"/herdr/desktop/mods/*/naming.js \
+        "$DOTFILES"/herdr/desktop/mods/*/alerts.js "$DOTFILES"/herdr/desktop/mods/*/look.js "$DOTFILES"/herdr/desktop/mods/*/link.js; do
         mod="$(basename "$(dirname "$feed")")"
         dst="$HOME/.config/herdr-app/mods/$mod/$(basename "$feed")"
         if cmp -s "$feed" "$dst"; then continue; fi

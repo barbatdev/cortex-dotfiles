@@ -309,3 +309,53 @@ test("syncedLabel is short so the repo name keeps its room", () => {
   assert.equal(M.syncedLabel(NOW - 20000, NOW), "now");
   assert.equal(M.syncedLabel(NOW - 2 * MIN, NOW), "2m");
 });
+
+// ---- T27: Start work, Mark read, today's usage ----
+import { startWork, markReadArgs, markAllArgs, withoutNote } from "../herdr/desktop/mods/refactoria-github/model.js";
+import { todayUsage, formatTokens } from "../herdr/desktop/mods/refactoria-chrome/model.js";
+
+test("Start work runs gs issue <repo> <n> in a new space at the repo's folder, only for gs's org", () => {
+  const w = startWork("Gentleman-Programming/gentle-shell", 42, "/Users/me/dev/gentle/gentle-shell", "agent-dev");
+  assert.deepEqual(w, {
+    name: "gentle-shell #42",
+    folder: "/Users/me/dev/gentle/gentle-shell",
+    machine: "agent-dev",
+    argv: ["sh", "-c", 'exec "${SHELL:-sh}" -lic "$0"', 'gs issue gentle-shell 42; exec "${SHELL:-sh}" -l'],
+    command: "gs issue gentle-shell 42",
+  });
+  assert.equal(startWork("Gentleman-Programming/gentle-shell", 42, "/x", null).machine, null);
+  assert.equal(startWork("acme/app", 42, "/x", null), null);
+  assert.equal(startWork("Gentleman-Programming/x;rm", 42, "/x", null), null);
+  assert.equal(startWork("Gentleman-Programming/gentle-shell", "4 2", "/x", null), null);
+});
+
+test("Mark read: PATCH one thread, PUT all; a read row leaves the inbox", () => {
+  assert.deepEqual(markReadArgs("123"), ["api", "-X", "PATCH", "notifications/threads/123", "--silent"]);
+  assert.equal(markReadArgs("1/2"), null);
+  assert.deepEqual(markAllArgs(), ["api", "-X", "PUT", "notifications", "--silent"]);
+  assert.deepEqual(withoutNote([{ id: "1" }, { id: "2" }], "1"), [{ id: "2" }]);
+  assert.deepEqual(withoutNote(null, "1"), null);
+});
+
+test("today's usage sums local sessions updated today, with a per-session breakdown", () => {
+  const now = new Date(2026, 10, 28, 15, 0).getTime();
+  const today = new Date(2026, 10, 28, 9, 0).toISOString();
+  const feed = (name, stats, updatedAt = today, cost) => ({ identity: { sessionName: name, sessionId: name }, updatedAt, stats, cost });
+  const u = todayUsage([
+    feed("T27 links", { input: 1000, output: 500, cacheRead: 8000, cacheWrite: 500, cost: 1.25 }),
+    feed("review", { input: 200, output: 100, cacheRead: 0, cacheWrite: 0, cost: 0.25 }),
+    feed("old", { input: 9, output: 9, cost: 9 }, new Date(2026, 10, 27, 23, 0).toISOString()),
+    feed("no stats", null, today, { total: 0.5 }),
+  ], now);
+  assert.equal(u.tokens, 10300);
+  assert.equal(u.cost, 2);
+  assert.deepEqual(u.sessions.map((s) => [s.name, s.tokens, s.cost]), [["T27 links", 10000, 1.25], ["no stats", 0, 0.5], ["review", 300, 0.25]]);
+  assert.equal(todayUsage([], now), null);
+  assert.equal(todayUsage(null, now), null);
+});
+
+test("token counts read short", () => {
+  assert.equal(formatTokens(950), "950");
+  assert.equal(formatTokens(10300), "10.3k");
+  assert.equal(formatTokens(1250000), "1.25M");
+});

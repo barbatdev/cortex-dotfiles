@@ -4,14 +4,15 @@
 // with toned label pills, CI runs with the failed step, and the participating inbox.
 // The repo is read from git where the space lives (any machine); `gh` asks GitHub from here.
 // Pure logic lives in ./model.js. Nothing here mutates GitHub unless a button is clicked, and
-// Re-run asks once more inline first.
+// Re-run, Start work and Mark all read ask once more inline first.
 
 import { View, div, svg } from "gpui-kit";
 import { v_flex, h_flex } from "gpui-base";
-import { spaces, panes, exec, theme, layout, window, checking, openOverlay, nextCommand } from "herdr";
+import { spaces, panes, exec, theme, layout, window, checking, openOverlay, nextCommand, run } from "herdr";
 import {
   slug, issueGroups, inbox, counts, nextFetch, prCard, prGroups, blocker, prDetail, rerunTargets,
   runCard, failedStep, attention, relTime, syncedLabel, initials, avatarTone, mix,
+  startWork, markReadArgs, markAllArgs, withoutNote,
 } from "./model.js";
 
 const EVERY = 90000; // GitHub's rate limit is generous; space switches ask again anyway.
@@ -254,6 +255,43 @@ export default class GitHub extends View {
     });
   }
 
+  // A new space at the repo's folder on the space's machine running `gs issue <repo> <n>`
+  // (gs makes the worktree and opens the agent, as on the CLI); only reached from the confirm step.
+  startWork(id, w) {
+    this.confirm = null;
+    const args = { name: w.name, folder: w.folder, argv: w.argv };
+    if (w.machine) args.machine = w.machine;
+    try {
+      run("space.new", args);
+      this.notes[id] = `Started ${w.command} in space ${w.name}`;
+    } catch (e) {
+      this.notes[id] = `Could not start: ${String(e?.message ?? e)}`;
+    }
+  }
+
+  // Marks one notification read (`id`) or all of them (null); the rows leave the inbox on success.
+  markRead(id, cx) {
+    const args = id === null ? markAllArgs() : markReadArgs(id);
+    const note = id === null ? "inbox" : `n-${id}`;
+    this.confirm = null;
+    if (!args) return;
+    this.notes[note] = id === null ? "Marking all read…" : "Marking read…";
+    cx.spawn(async (cx) => {
+      try {
+        const r = await exec("gh", args, { timeout: TIMEOUT });
+        if (r.code !== 0) this.notes[note] = `Mark read failed: ${why(r)}`;
+        else {
+          this.data.inbox = id === null ? [] : withoutNote(this.data.inbox, id);
+          this.notes[note] = id === null ? "All notifications marked read" : undefined;
+          if (!this.notes[note]) delete this.notes[note];
+        }
+      } catch (e) {
+        this.notes[note] = `Mark read failed: ${String(e?.message ?? e)}`;
+      }
+      cx.notify();
+    });
+  }
+
   hover(id) {
     return (on, cx) => {
       if (on) this.hovered = id;
@@ -332,8 +370,8 @@ export default class GitHub extends View {
   link(t, id, label, onClick) {
     return div().id(id).tab_index(0).flex_none().text_size(11).font_medium().text_color(t.accent).underline().cursor_pointer()
       .focus((el) => el.border(1).border_color(SPARK))
-      .on_click((_e, cx) => { cx.stop_propagation(); onClick(); })
-      .on_key_down((e, cx) => { if (activate(e)) { cx.stop_propagation(); onClick(); } })
+      .on_click((_e, cx) => { cx.stop_propagation(); onClick(cx); cx.notify(); })
+      .on_key_down((e, cx) => { if (activate(e)) { cx.stop_propagation(); onClick(cx); cx.notify(); } })
       .child(label);
   }
 
@@ -546,11 +584,11 @@ export default class GitHub extends View {
     return v_flex().w_full().children(parts);
   }
 
-  confirmEl(t, id, question, go) {
+  confirmEl(t, id, question, go, yes = "Re-run", glyph = "rerun") {
     return h_flex().w_full().mt(8).p(8).gap(6).flex_wrap().items_center().rounded(8).border(1).border_color(t.blocked)
       .child(div().flex_1().min_w(0).text_size(11.5).text_color(t.foreground).child(question))
-      .child(this.button(t, `${id}-rerun-yes`, "Re-run", "rerun", true, go))
-      .child(this.button(t, `${id}-rerun-no`, "Cancel", null, false, () => { this.confirm = null; }));
+      .child(this.button(t, `${id}-yes`, yes, glyph, true, go))
+      .child(this.button(t, `${id}-no`, "Cancel", null, false, () => { this.confirm = null; }));
   }
 
   // ---- Issues / CI / Inbox ----
@@ -558,13 +596,22 @@ export default class GitHub extends View {
   issueEl(t, i) {
     const id = `is-${i.number}`;
     const lit = this.hovered === id;
-    return this.row(t, id, `Issue ${i.number}, ${i.title}, by ${i.author}${i.age ? `, ${i.age} old` : ""}`, () => exec("open", [i.url]))
+    const [on, cwd] = this.key ? JSON.parse(this.key) : [null, null];
+    const work = cwd ? startWork(this.repo, i.number, cwd, on) : null;
+    const el = this.row(t, id, `Issue ${i.number}, ${i.title}, by ${i.author}${i.age ? `, ${i.age} old` : ""}`, () => exec("open", [i.url]))
       .child(this.titleLine(t, this.glyph("issue", t.done, 14), i.number, i.title, i.age, { lit }))
       .child(this.meta(t, lit, [
         h_flex().flex_none().gap(4).items_center().child(this.avatar(t, i.author, 16)).child(i.author),
         ...(i.comments ? [h_flex().flex_none().gap(4).items_center().child(this.glyph("comment", lit ? t.unknown : t.grey, 11)).child(String(i.comments))] : []),
         ...i.pills.slice(0, 4).map((p) => this.pill(t, lit ? { ...p, bg: mix(p.text, t.raised, 0.14) } : p)),
       ]));
+    if (!work) return el;
+    el.child(h_flex().w_full().pl(25).pt(8).gap(6).flex_wrap()
+      .child(this.button(t, `${id}-start`, "Start work", "branch", false, () => { this.confirm = `${id}-start`; })));
+    if (this.confirm === `${id}-start`) el.child(div().w_full().pl(25).child(this.confirmEl(t, `${id}-start`,
+      `Run ${work.command} in a new space${work.machine ? ` on ${work.machine}` : ""}?`, () => this.startWork(id, work), "Start work", "branch")));
+    if (this.notes[id]) el.child(div().pl(25).pt(6).text_size(11).text_color(t.muted).child(this.notes[id]));
+    return el;
   }
 
   runEl(t, r) {
@@ -607,7 +654,10 @@ export default class GitHub extends View {
         div().flex_none().font_medium().text_color(n.reason === "review" ? t.blocked : n.reason === "mention" ? t.working : lit ? t.unknown : t.grey).child(word),
         div().min_w(0).truncate().child(`${n.repo}${num ? `#${num}` : ""}`),
         ...(n.unread ? [h_flex().flex_none().gap(4).items_center().text_color(t.foreground).child(div().size(6).rounded_full().bg(t.accent)).child("Unread")] : []),
-      ]));
+        div().flex_1(),
+        this.link(t, `${id}-read`, "Mark read", (cx) => this.markRead(n.id, cx)),
+      ]))
+      .when(Boolean(this.notes[id]), (el) => el.child(div().pl(25).pt(6).text_size(11).text_color(t.muted).child(this.notes[id] ?? "")));
   }
 
   body(t) {
@@ -645,6 +695,14 @@ export default class GitHub extends View {
         }
       } else {
         if (!value.length) out.push(this.note(t, "No participating notifications"));
+        else {
+          out.push(h_flex().w_full().px(8).pt(10).gap(6).flex_wrap().items_center()
+            .child(div().flex_1())
+            .child(this.button(t, "inbox-all", "Mark all read", "check", false, () => { this.confirm = "inbox-all"; })));
+          if (this.confirm === "inbox-all") out.push(div().px(8).child(this.confirmEl(t, "inbox-all",
+            "Mark every GitHub notification read (not only these)?", (cx) => this.markRead(null, cx), "Mark all read", "check")));
+        }
+        if (this.notes.inbox) out.push(this.note(t, this.notes.inbox, t.muted));
         const groups = [["Review requested", value.filter((n) => n.reason === "review")], ["Mentions", value.filter((n) => n.reason === "mention")],
           ["Other", value.filter((n) => n.reason !== "review" && n.reason !== "mention")]];
         for (const [label, list] of groups) {

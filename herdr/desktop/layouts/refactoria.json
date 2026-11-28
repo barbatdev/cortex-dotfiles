@@ -59,7 +59,7 @@
             }
           },
           "size": {
-            "px": 69
+            "px": 92
           }
         }
       ],
@@ -115,7 +115,8 @@
                   },
                   "radius": 10,
                   "gap": 8,
-                  "lone": true
+                  "lone": true,
+                  "veil": 0.35
                 }
               }
             },
@@ -190,5 +191,9 @@
   "traffic_lights": [
     12,
     16
-  ]
+  ],
+  "link_handlers": [
+    "refactoria-links"
+  ],
+  "toast": "refactoria-toast"
 }

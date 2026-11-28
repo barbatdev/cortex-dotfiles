@@ -1,9 +1,13 @@
 // Clone of the shipped workspace-chrome mod: same header and footer, with the
 // Refactoria beard and wordmark in place of the Herdr logo and name. On the
 // macOS rail the header grows so the beard alone fits under the traffic lights.
+// The footer adds a quiet line with today's tokens and cost of the local Gentle Shell sessions
+// (desktop feed, ./feed.js follower; totals in ./model.js), per session in its tooltip.
 import { View, div, image, svg } from "gpui-kit";
 import { h_flex, v_flex } from "gpui-base";
-import { theme, run, props, window, shared, setShared, updates, layout } from "herdr";
+import { theme, run, props, window, shared, setShared, updates, layout, checking } from "herdr";
+import { FeedSource } from "./feed.js";
+import { todayUsage, formatTokens } from "./model.js";
 
 function find(node, id) {
   if (node?.id === id) return node;
@@ -41,7 +45,31 @@ function syncBrandHeight(want) {
   run("layout.resize", { id: "brand", px: want });
 }
 
+const money = (n) => `$${n.toFixed(2)}`;
+
 export default class RefactoriaChrome extends View {
+  // Not gated on init's props: the footer line never showed with that gate, the props render
+  // reads say footer. Only the footer reads this.feed; the header copy just follows the leader.
+  init(_props, cx) {
+    if (checking()) return;
+    this.feed = new FeedSource();
+    this.feed.start(cx, null, 10000);
+    cx.timer.every(60000, (cx) => cx.notify()); // a new day starts at zero
+  }
+
+  // "Today · 1.2M tokens · $3.40"; the tooltip lists each session.
+  usage(t) {
+    const u = todayUsage(this.feed?.feeds, Date.now());
+    if (!u) return null;
+    const line = `${formatTokens(u.tokens)} tokens · ${money(u.cost)}`;
+    const tip = u.sessions.map((s) => `${s.name}: ${formatTokens(s.tokens)} tokens · ${money(s.cost)}`).join("\n");
+    // Grey (#8F839D, 5.16:1 on chrome) and never on a raised background: secondary, still AA.
+    return h_flex().id("usage").h(20).px(8).gap(6).items_center().text_size(11).text_color(t.ansi8 ?? t.muted)
+      .accessibility_label(`Today, local Gentle Shell sessions: ${line}`).tooltip(`Today · local Gentle Shell sessions\n${tip}`)
+      .child(div().flex_none().font_medium().child("Today"))
+      .child(div().min_w(0).truncate().child(line));
+  }
+
   button(id, label, action) {
     const t = theme();
     return div().id(id).size(26).flex_none().flex().items_center().justify_center().rounded(6).text_color(t.muted).hover(s => s.bg(t.hover).text_color(t.foreground))
@@ -55,7 +83,9 @@ export default class RefactoriaChrome extends View {
         .text_color(dim ? t.dim : t.muted).hover(s => s.bg(t.hover).text_color(t.foreground)).cursor_pointer()
         .on_click(action).child(svg(`mods/workspace-chrome/${icon}.svg`).size(14))
         .when(!collapsed, el => el.child(label));
+      const usage = collapsed ? null : this.usage(t);
       return v_flex().size_full().bg(t.chrome).border_t(1).border_color(t.border).px(8).pt(4).pb(8).text_size(13)
+        .when(Boolean(usage), el => el.child(usage))
         .child(row("settings", "settings", "Settings", false, () => run("app.settings"))
           .when(Boolean(updates().app.ready), el => el.child(div().size(6).rounded_full().bg(t.accent))))
         .child(row("machine", "plus", "Add machine", true, () => run("mod.open", { name: "machine-add" })));

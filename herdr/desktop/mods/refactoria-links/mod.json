@@ -1,0 +1,9 @@
+{
+  "place": "none",
+  "title": "Links",
+  "link_handlers": [
+    { "kind": "file", "pattern": "." },
+    { "kind": "url", "pattern": "(?i)^https?://(localhost|127\\.0\\.0\\.1):\\d+" },
+    { "kind": "url", "pattern": "^#\\d+$" }
+  ]
+}

@@ -6,7 +6,7 @@
   "telemetry": false,
   "minimum_contrast": 1.0,
   "sounds": {
-    "enabled": true
+    "enabled": false
   },
   "zoom": 1.0
 }
