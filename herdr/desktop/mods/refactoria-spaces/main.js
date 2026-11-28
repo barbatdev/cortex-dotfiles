@@ -464,7 +464,7 @@ export default class Spaces extends View {
       // Selected: a soft raised row with an accent bar, not a solid block.
       .when(on, (el) => el.child(div().absolute().left(0).top(9).bottom(9).w(3).rounded(3).bg(t.accent)))
       // A worktree hangs off its repo: a decorative connector (#4A3D66), plus its own glyph.
-      .when(Boolean(tree), (el) => el.child(div().absolute().left(-7).top(-4).h(22).w(7).border_l(1).border_b(1).rounded_bl(5).border_color(CONNECTOR)))
+      .when(Boolean(tree), (el) => el.child(div().absolute().left(-7).top(-4).h(20).w(7).border_l(1).border_b(1).rounded_bl(5).border_color(CONNECTOR)))
       .child(h_flex().gap(9).items_start()
         .child(div().mt(2).child(this.glyph(tree ? "wt" : g ? "repo" : "folder", meta, 14)))
         .child(v_flex().flex_1().min_w(0)

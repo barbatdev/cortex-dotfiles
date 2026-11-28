@@ -33,8 +33,6 @@ MANAGED_LINKS=(
   "herdr/desktop/mods/refactoria-spaces/mod.json|$HOME/.config/herdr-app/mods/refactoria-spaces/mod.json|darwin"
   "herdr/desktop/mods/refactoria-agents/main.js|$HOME/.config/herdr-app/mods/refactoria-agents/main.js|darwin"
   "herdr/desktop/mods/refactoria-agents/mod.json|$HOME/.config/herdr-app/mods/refactoria-agents/mod.json|darwin"
-  "herdr/desktop/mods/refactoria-prs/main.js|$HOME/.config/herdr-app/mods/refactoria-prs/main.js|darwin"
-  "herdr/desktop/mods/refactoria-prs/mod.json|$HOME/.config/herdr-app/mods/refactoria-prs/mod.json|darwin"
   "herdr/desktop/mods/refactoria-github/main.js|$HOME/.config/herdr-app/mods/refactoria-github/main.js|darwin"
   "herdr/desktop/mods/refactoria-github/mod.json|$HOME/.config/herdr-app/mods/refactoria-github/mod.json|darwin"
   "herdr/desktop/mods/refactoria-tabs/main.js|$HOME/.config/herdr-app/mods/refactoria-tabs/main.js|darwin"
