@@ -140,7 +140,14 @@ export function disambiguate(cards) {
   const key = (s) => String(s ?? "").toLowerCase();
   const count = (xs, f) => xs.reduce((m, x) => m.set(f(x), (m.get(f(x)) ?? 0) + 1), new Map());
   const byName = count(cards, (c) => key(c.name));
-  const step = cards.map((c) => (byName.get(key(c.name)) > 1 && c.tab && key(c.tab) !== key(c.name) ? { ...c, name: `${c.name} · ${c.tab}` } : c));
+  // An auto-named tab ("Pi · cortex-dotfiles · 2", refactoria-tabs) only adds what follows its
+  // "Program · " prefix; when that repeats the card's name, only the rest is added.
+  const extra = (c) => {
+    const ctx = String(c.tab ?? "").replace(/^(Pi|Claude|Codex|Terminal|[a-z][\w-]*) · /, "");
+    if (!ctx || key(ctx) === key(c.name)) return "";
+    return key(ctx).startsWith(key(c.name)) ? ctx.slice(c.name.length) : ` · ${ctx}`;
+  };
+  const step = cards.map((c) => (byName.get(key(c.name)) > 1 && extra(c) ? { ...c, name: `${c.name}${extra(c)}` } : c));
   const left = count(step, (c) => key(c.name));
   const seen = new Map();
   return step.map((c) => {

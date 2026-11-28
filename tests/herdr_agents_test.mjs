@@ -523,3 +523,13 @@ test("question: nothing carries it, so an honest line, never invented text; not 
   const w = buildCard({ agent: blockedGs({ status: "working" }), term: { report: { state: "working", msg: "Running tests" } }, now: NOW });
   assert.equal(w.question, "");
 });
+
+test("T24: duplicate card names use the context of an auto-named tab, not its 'Program · ' prefix", () => {
+  const cards = [
+    { name: "cortex-dotfiles", tab: "Pi · cortex-dotfiles" },
+    { name: "cortex-dotfiles", tab: "Pi · cortex-dotfiles · 2" },
+    { name: "innit-core", tab: "Pi · innit-core #1" },
+    { name: "innit-core", tab: "fix login" },
+  ];
+  assert.deepEqual(disambiguate(cards).map((c) => c.name), ["cortex-dotfiles", "cortex-dotfiles · 2", "innit-core #1", "innit-core · fix login"]);
+});
