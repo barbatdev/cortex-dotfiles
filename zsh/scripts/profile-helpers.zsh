@@ -148,7 +148,7 @@ _herdr_home_sync() {
 herdr-sync() {
     local home fresh
     for home in "$HOME"/.config/herdr-app(N/) "$HOME"/.config/herdr-app-<->(N/); do
-        fresh="$(_herdr_home_sync "$home")"
+        fresh="$(_herdr_home_sync "$home")" || return 1
         if [[ -n "$fresh" ]] && env HERDR_APP_HOME="$home" herdr-app status >/dev/null 2>&1; then
             printf 'herdr-sync: %s synced; restart it to load new mods: %s\n' "${home:t}" "${fresh//$'\n'/, }"
         else
