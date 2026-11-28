@@ -106,6 +106,7 @@ export function planRenames({ spaces, panes, agents, terminals, stored, machines
   const isAgent = (p) => agentOf.has(p.pane) || p.program?.agent;
   const renames = [];
   const live = new Set();
+  const named = []; // tabs this mod names this tick: { tab, space, lead, computed, title }
   let changed = false;
   for (const space of spaces ?? []) for (const tab of space.tabs ?? []) {
     live.add(tab.id);
@@ -116,22 +117,56 @@ export function planRenames({ spaces, panes, agents, terminals, stored, machines
       const agent = agentOf.get(lead.pane), term = termOf(lead, agent);
       const title = lead.title;
       const computed = tabName({ app: agent?.app ?? lead.app ?? term?.report?.app ?? null, program: lead.program, todo: term?.records?.todo ?? null, title, cwd: lead.cwd, space: space.name });
-      if (!shouldRename({ tab, computed, last: last[tab.id] ?? null, title })) continue;
-      last[tab.id] = computed; changed = true;
-      renames.push({ id: tab.id, name: computed });
+      if (!computed || !autoNamed({ tab, last: last[tab.id] ?? null, title })) continue;
+      named.push({ tab, space, lead, computed, title });
     } catch {
       // this tab's data is unusable this tick; the others go on
     }
+  }
+  for (const { tab, name } of distinctNames(named)) {
+    if (tab.name === name) continue;
+    last[tab.id] = name; changed = true;
+    renames.push({ id: tab.id, name });
   }
   if (machinesReady) for (const id of Object.keys(last)) if (!live.has(id)) { delete last[id]; changed = true; }
   return { renames, stored: JSON.stringify(last), changed };
 }
 
-// Rename only names Herdr gave (unnamed, its number, the terminal title) or the one this mod set
-// last; a name the person chose stays until they clear it.
-export function shouldRename({ tab, computed, last, title }) {
-  if (!tab || !computed || tab.name === computed) return false;
+// Tabs of one space that would read the same get the most telling difference: the pane names,
+// else the lead panes' git branches (when every one is set and they all differ), else " · 2",
+// " · 3" in tab order with the first keeping the plain name. The suffix always stays visible.
+function distinctNames(named) {
+  const groups = new Map();
+  for (const n of named) {
+    const key = `${n.space.id ?? n.space.name}\u0000${n.computed}`;
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(n);
+  }
+  const out = [];
+  for (const group of groups.values()) {
+    if (group.length === 1) { out.push({ tab: group[0].tab, name: group[0].computed }); continue; }
+    const by = [(n) => plain(n.lead.name), (n) => plain(n.lead.branch)]
+      .map((f) => group.map(f))
+      .find((vals) => vals.every(Boolean) && new Set(vals).size === vals.length);
+    group.forEach((n, i) => {
+      const extra = by ? truncate(by[i], 24) : i ? String(i + 1) : "";
+      const suffix = extra ? ` · ${extra}` : "";
+      out.push({ tab: n.tab, name: suffix ? truncate(n.computed, 48 - [...suffix].length) + suffix : n.computed });
+    });
+  }
+  return out;
+}
+
+// A tab this mod may name: unnamed, Herdr's number, the terminal title, or the name this mod set
+// last. A name the person chose stays until they clear it.
+function autoNamed({ tab, last, title }) {
   const ours = last != null && tab.name === last;
   const herdrs = !tab.named || tab.name === "" || tab.name === String(tab.index) || (title != null && (tab.name === title || tab.name === plain(title)));
   return ours || herdrs;
+}
+
+// Rename only names Herdr gave or the one this mod set last, and only when the name changes.
+export function shouldRename({ tab, computed, last, title }) {
+  if (!tab || !computed || tab.name === computed) return false;
+  return autoNamed({ tab, last, title });
 }

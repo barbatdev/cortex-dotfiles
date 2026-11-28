@@ -483,3 +483,43 @@ test("T19 agentCards: one card per live top-level agent, with its space id; sub-
   // The Spaces dot of sp-a is the reduction of exactly those cards.
   assert.equal(spaceDot(cards.filter((c) => c.spaceId === "sp-a")).label, "Codex needs you");
 });
+
+// ---- T22: the question text in Needs you cards, from the best source that carries it ----
+const blockedGs = (over = {}) => agent({ address: "agent-dev/t4k", app: "gentle-shell", status: "blocked", title: "π - Orquestador roadmap #827", ...over });
+
+test("question: the feed's pending question wins and is quoted", () => {
+  const f = feed({ pendingQuestion: { kind: "questionnaire", question: "Which DB?" }, activity: { state: "blocked", blockedLabel: "Questionnaire awaiting input" } });
+  const c = buildCard({ agent: blockedGs({ address: "t1" }), feed: f, records: { "ask/x": { state: "blocked", msg: "question from x" } }, term: { report: { state: "blocked", msg: "Questionnaire awaiting input" } }, now: NOW });
+  assert.equal(c.question, "Which DB?");
+  assert.equal(c.quoted, true);
+});
+
+test("question: else a blocked record's msg with its title", () => {
+  const records = { "subagents/t2": { state: "blocked", title: "verify docs", msg: "question for parent" } };
+  const c = buildCard({ agent: blockedGs(), records, term: { report: { state: "blocked", msg: "Questionnaire awaiting input" } }, now: NOW });
+  assert.equal(c.question, "verify docs · question for parent");
+  assert.equal(c.quoted, true);
+  const ask = buildCard({ agent: blockedGs(), records: { "ask/gentle": { state: "blocked", msg: "question from gentle" } }, now: NOW });
+  assert.equal(ask.question, "question from gentle");
+});
+
+test("question: else Herdr's status msg (remote session), unless it is just the session title", () => {
+  const c = buildCard({ agent: blockedGs(), term: { status: "blocked", report: { app: "gentle-shell", kind: "question", state: "blocked", msg: "Questionnaire awaiting input" } }, now: NOW });
+  assert.equal(c.question, "Questionnaire awaiting input");
+  assert.equal(c.quoted, true);
+  const evStream = buildCard({ agent: blockedGs(), term: { status: { state: "blocked", msg: "Approve deploy?" } }, now: NOW });
+  assert.equal(evStream.question, "Approve deploy?");
+  const echo = buildCard({ agent: blockedGs(), term: { report: { state: "blocked", msg: "Orquestador roadmap #827" } }, now: NOW });
+  assert.equal(echo.question, "The question is in its terminal · Open the pane to answer");
+  assert.equal(echo.quoted, false);
+});
+
+test("question: nothing carries it, so an honest line, never invented text; not blocked, none", () => {
+  const c = buildCard({ agent: blockedGs(), now: NOW });
+  assert.equal(c.status, "blocked");
+  assert.equal(c.question, "The question is in its terminal · Open the pane to answer");
+  assert.equal(c.quoted, false);
+  assert.equal(c.sub, "Gentle Shell asks you");
+  const w = buildCard({ agent: blockedGs({ status: "working" }), term: { report: { state: "working", msg: "Running tests" } }, now: NOW });
+  assert.equal(w.question, "");
+});
