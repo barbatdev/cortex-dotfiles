@@ -25,6 +25,8 @@ func consumerHost(t *testing.T) *sandbox {
   "api repos/Gentleman-Programming/gentle-ai/commits/main --jq .sha") echo `+aiSHA+` ;;
   "api repos/Gentleman-Programming/engram/commits/main --jq .sha") echo `+engramSHA+` ;;
   "api repos/Gentleman-Programming/gentle-pi/commits/main --jq .sha") echo `+shellSHA+` ;;
+  "api -H Accept: application/vnd.github.raw repos/Gentleman-Programming/gentle-ai/contents/go.mod?ref=`+aiSHA+`") printf 'module github.com/gentleman-programming/gentle-ai/%s\n\ngo 1.24\n' "${AI_MAJOR:-v5}" ;;
+  "api -H Accept: application/vnd.github.raw repos/Gentleman-Programming/engram/contents/go.mod?ref=`+engramSHA+`") printf '// x\nmodule github.com/Gentleman-Programming/engram/v3\n' ;;
   *) echo "gh $*" >> "$CALLS" ;;
 esac`)
 	s.stub("go", `[ "$1 $2" = "env GOBIN" ] && { echo "${GOBIN:-}"; exit 0; }
@@ -227,4 +229,13 @@ func TestSyncRebuildsItselfFromTheDotfilesCloneOnMain(t *testing.T) {
 	if exists(s.env.Target("gs")) {
 		t.Fatal("gs must not be rebuilt from a branch other than main")
 	}
+}
+
+func TestSyncBuildsFromTheModulePathInThePinnedGoMod(t *testing.T) {
+	s := consumerHost(t)
+	t.Setenv("AI_MAJOR", "v6")
+	if err := runSync(s); err != nil {
+		t.Fatalf("sync failed: %v\n%s", err, s.out.String())
+	}
+	contains(t, s.readCalls(), "go install github.com/gentleman-programming/gentle-ai/v6/cmd/gentle-ai@"+aiSHA)
 }
