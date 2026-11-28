@@ -381,3 +381,36 @@ export function attention({ prs, runs, inbox: notes, me }) {
     inbox: (notes ?? []).some((n) => n.unread),
   };
 }
+
+// ---- Start work / Mark read ----
+
+// gs (gs/env.go) works on this org's repos only; `gs issue <repo> <n>` makes the worktree
+// (~/dev/worktrees/<repo>-issue-<n>, branch <prefix>/<n>-<slug>) and opens the agent itself.
+export const GS_ORG = "Gentleman-Programming";
+
+// A new space at the repo's folder, on the space's machine, running `gs issue` in a login shell
+// that stays open afterwards (gs prints the kickoff for repos it does not open an agent on).
+export function startWork(repo, number, folder, machine) {
+  const [owner, name] = String(repo ?? "").split("/");
+  const n = String(number);
+  if (owner !== GS_ORG || !/^[A-Za-z0-9._-]+$/.test(name ?? "") || !/^\d+$/.test(n)) return null;
+  const command = `gs issue ${name} ${n}`;
+  return {
+    name: `${name} #${n}`,
+    folder,
+    machine: machine ?? null,
+    argv: ["sh", "-c", 'exec "${SHELL:-sh}" -lic "$0"', `${command}; exec "\${SHELL:-sh}" -l`],
+    command,
+  };
+}
+
+// `gh` arguments that mark one notification thread read, or all of them.
+export function markReadArgs(id) {
+  return /^\d+$/.test(String(id)) ? ["api", "-X", "PATCH", `notifications/threads/${id}`, "--silent"] : null;
+}
+export const markAllArgs = () => ["api", "-X", "PUT", "notifications", "--silent"];
+
+// The inbox without a row that was just marked read.
+export function withoutNote(list, id) {
+  return list ? list.filter((n) => n.id !== id) : list;
+}
