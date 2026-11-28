@@ -163,8 +163,9 @@ func preflight(e *Env, ws bool) (string, error) {
 
 // source is where a managed binary is built from.
 type source struct {
-	sha   string // pinned commit
-	clone string // workshop: local clone dir (built with go build); empty = go install @sha
+	sha    string // pinned commit
+	module string // module path read from go.mod at sha; empty = Binary.Module
+	clone  string // workshop: local clone dir (built with go build); empty = go install @sha
 }
 
 func (s *syncRun) resolveMain() map[string]source {
@@ -175,9 +176,25 @@ func (s *syncRun) resolveMain() map[string]source {
 			s.step(b.Name+" main commit", fmt.Errorf("gh api did not return %s main", b.Repo), sha)
 			continue
 		}
-		out[b.Name] = source{sha: sha}
+		out[b.Name] = source{sha: sha, module: s.pinnedModule(b, sha)}
 	}
 	return out
+}
+
+// pinnedModule reads the module path from go.mod at sha, so a major-version
+// bump upstream (v4 -> v5) needs no gs change. Falls back to Binary.Module.
+func (s *syncRun) pinnedModule(b Binary, sha string) string {
+	gomod, err := s.e.StdoutOf("", "gh", "api", "-H", "Accept: application/vnd.github.raw",
+		"repos/"+Org+"/"+b.Repo+"/contents/go.mod?ref="+sha)
+	if err != nil {
+		return ""
+	}
+	for _, line := range strings.Split(gomod, "\n") {
+		if f := strings.Fields(line); len(f) == 2 && f[0] == "module" {
+			return f[1]
+		}
+	}
+	return ""
 }
 
 // buildAndInstall builds b into a staging dir, verifies it, then atomically
@@ -199,7 +216,11 @@ func (s *syncRun) buildAndInstall(b Binary, src source) (bool, error) {
 		out, err = s.e.Output(src.clone, "go", "build", "-trimpath", "-o", built, "./"+b.Pkg)
 	} else {
 		s.e.ChildEnv = append(s.e.ChildEnv, "GOBIN="+stage)
-		out, err = s.e.Output("", "go", "install", b.ImportPath()+"@"+src.sha)
+		module := b.Module
+		if src.module != "" {
+			module = src.module
+		}
+		out, err = s.e.Output("", "go", "install", module+"/"+b.Pkg+"@"+src.sha)
 		s.e.ChildEnv = append(s.e.ChildEnv, "GOBIN="+s.e.Quarantine())
 	}
 	if err == nil {
