@@ -16,7 +16,7 @@ const Org = "Gentleman-Programming"
 // Managed binaries: gs is their only installer and places them as regular
 // files in BinDir. Nothing else may replace them (see quarantine in sync.go).
 var Managed = []Binary{
-	{Name: "gentle-ai", Repo: "gentle-ai", Module: "github.com/gentleman-programming/gentle-ai/v4", Pkg: "cmd/gentle-ai"},
+	{Name: "gentle-ai", Repo: "gentle-ai", Module: "github.com/gentleman-programming/gentle-ai/v5", Pkg: "cmd/gentle-ai"},
 	{Name: "engram", Repo: "engram", Module: "github.com/Gentleman-Programming/engram/v3", Pkg: "cmd/engram"},
 }
 
