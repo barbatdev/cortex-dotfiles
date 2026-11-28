@@ -113,6 +113,11 @@ grefactoria() { _ghostty_with_profile grefactoria refactoria "$@"; }
 _herdr_home_sync() {
     local home="$1" desktop="$_DOTFILES_DIR/herdr/desktop" f asset mod
     local -a fresh=()
+    # Never prune against a missing repo: an unset _DOTFILES_DIR would remove every mod.
+    if [[ ! -d "$desktop/mods/refactoria-agents" ]]; then
+        printf 'herdr-sync: %s has no refactoria mods; nothing installed\n' "$desktop" >&2
+        return 1
+    fi
     for f in themes/refactoria.json layouts/refactoria.json keys.json; do
         mkdir -p "$(dirname "$home/$f")"
         ln -sfn "$desktop/$f" "$home/$f"
