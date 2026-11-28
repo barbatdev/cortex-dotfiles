@@ -21,3 +21,5 @@ _cortex_dotfiles_source_optional "official Gentle PATH" "$HOME/.config/cortex-do
 
 unset _CORTEX_DOTFILES_SHELL_PATH _CORTEX_SHELL_PATH
 unfunction _cortex_dotfiles_source_optional
+
+export PATH="$HOME/.local/bin:$PATH"
