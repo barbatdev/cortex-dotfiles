@@ -70,7 +70,7 @@ func TestSyncBuildsPinnedMainCommitsAsRegularFiles(t *testing.T) {
 		t.Fatalf("sync failed: %v\n%s", err, s.out.String())
 	}
 	calls := s.readCalls()
-	contains(t, calls, "go install github.com/gentleman-programming/gentle-ai/v4/cmd/gentle-ai@"+aiSHA)
+	contains(t, calls, "go install github.com/gentleman-programming/gentle-ai/v5/cmd/gentle-ai@"+aiSHA)
 	contains(t, calls, "go install github.com/Gentleman-Programming/engram/v3/cmd/engram@"+engramSHA)
 	for _, n := range []string{"engram", "gentle-ai"} {
 		fi, err := os.Lstat(s.env.Target(n))
