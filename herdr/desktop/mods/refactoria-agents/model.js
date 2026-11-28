@@ -59,13 +59,13 @@ export function parseRecords(records) {
       const item = { id: key, name: title || key, state: r.state, msg };
       (kind === "bg" ? out.jobs : out.subagents).push(item);
       if (r.state === "error") out.failed.push({ kind: kind === "bg" ? "job" : "subagent", name: item.name, msg });
-      if (r.state === "blocked") out.blocked.push({ kind: "subagent", name: item.name, msg: msg || "waiting for user" });
+      if (r.state === "blocked") out.blocked.push({ kind: "subagent", name: item.name, title, msg: msg || "waiting for user" });
     } else if (kind === "wait") out.consults.push(key);
     else if (kind === "sent") out.sent.push(key);
     else if (kind === "ask") {
       const m = msg || `question from ${key}`;
       out.asks.push({ peer: key, msg: m });
-      out.blocked.push({ kind: "ask", name: key, msg: m });
+      out.blocked.push({ kind: "ask", name: key, title, msg: m });
     }
   }
   // Failures sort jobs before subagents, as they are listed above.
@@ -210,7 +210,8 @@ export function buildCard({ agent, feed = null, live = null, need = null, record
   const tabName = meaningfulTab(agent);
   const name = agentName(agent, feed);
 
-  const question = activity === "blocked" ? (need?.reason || rec.blocked[0]?.msg || "") : "";
+  const ask = activity === "blocked" ? questionText({ agent, feed, rec, term, name }) : null;
+  const question = ask?.text ?? "";
   const ft = currentTask(feed);
   let task = null;
   if (ft) {
@@ -243,7 +244,27 @@ export function buildCard({ agent, feed = null, live = null, need = null, record
   } else meta.push(program.name);
 
   const word = status === "failed" ? `${rec.failed.length} failed` : WORD[status] ?? "Idle";
-  return { address: agent?.address, pane: agent?.pane ?? null, spaceId: agent?.space ?? null, space: agent?.space_name ?? "", focused: Boolean(agent?.focused), pinned: Boolean(agent?.pinned), tab: tabName, machine, name, program, status, activity, word, time, since: from ?? 0, question, sub, task, chips, meta };
+  return { address: agent?.address, pane: agent?.pane ?? null, spaceId: agent?.space ?? null, space: agent?.space_name ?? "", focused: Boolean(agent?.focused), pinned: Boolean(agent?.pinned), tab: tabName, machine, name, program, status, activity, word, time, since: from ?? 0, question, quoted: Boolean(ask?.quoted), sub, task, chips, meta };
+}
+
+// The line a blocked card shows (T22), from the best source that carries real text: the feed's
+// pending question (local sessions), its blocked label, a blocked OSC 7501 record's msg with its
+// title, Herdr's status msg (remote sessions too) when it is not just the session title; else an
+// honest line saying where the question is. Never invented text. `quoted`: it is the agent's words.
+export const QUESTION_ELSEWHERE = "The question is in its terminal · Open the pane to answer";
+const oneLine = (s) => (typeof s === "string" ? s.replace(/\s+/g, " ").trim() : "");
+function questionText({ agent, feed, rec, term, name }) {
+  const fromFeed = oneLine(feed?.pendingQuestion?.question) || oneLine(feed?.activity?.blockedLabel);
+  if (fromFeed) return { text: fromFeed, quoted: true };
+  const b = rec.blocked.find((x) => oneLine(x.msg));
+  if (b) {
+    const title = oneLine(b.title);
+    return { text: title && title !== oneLine(b.msg) ? `${title} · ${oneLine(b.msg)}` : oneLine(b.msg), quoted: true };
+  }
+  const msg = oneLine(decodeB64(term?.report?.msg ?? (typeof term?.status === "object" ? term?.status?.msg : "")));
+  const own = [agent?.title, telling(agent?.title), name, feed?.identity?.sessionName].map((x) => oneLine(x).toLowerCase());
+  if (msg && !own.includes(msg.toLowerCase())) return { text: msg, quoted: true };
+  return { text: QUESTION_ELSEWHERE, quoted: false };
 }
 
 // Most urgent first; among blocked the longest wait leads, otherwise the latest change.

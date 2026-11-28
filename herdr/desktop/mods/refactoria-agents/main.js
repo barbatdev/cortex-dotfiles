@@ -160,7 +160,7 @@ export default class Agents extends View {
           .child(div().whitespace_nowrap().child(pillLabel(c, now)))))
       .when(Boolean(c.sub), (el) => el.child(div().ml(21).mt(2).truncate().text_size(11.5).text_color(t.muted).child(c.sub)))
       .when(Boolean(c.question), (el) => el.child(div().ml(21).mt(6).mb(2).pl(8).py(2).border_l(2).border_color(t.blocked)
-        .text_size(12.5).text_color(t.foreground).child(`“${c.question}”`))
+        .text_size(12.5).text_color(c.quoted ? t.foreground : t.muted).child(c.quoted ? `“${c.question}”` : c.question))
         .child(h_flex().ml(21).mt(6).gap(6)
           .child(this.button(t, `ans-${c.address}`, "Answer", true, () => open(c)))
           .child(this.button(t, `open-${c.address}`, "Open pane", false, () => open(c)))))
@@ -222,9 +222,10 @@ export default class Agents extends View {
   }
 
   heading(t, label, n, extra) {
-    return h_flex().px(8).pt(14).pb(6).gap(6).items_center().flex_none()
-      .child(div().text_size(10.5).font_semibold().text_color(t.grey).child(label.toUpperCase()))
-      .when(n != null, (el) => el.child(div().text_size(10.5).text_color(t.muted).child(n)))
+    // Artboard .h3: sentence case, 11 px semibold in muted; the count lighter, in grey (5.60 on the tray).
+    return h_flex().px(4).pt(9).pb(5).gap(6).items_center().flex_none()
+      .child(div().text_size(11).font_semibold().text_color(t.muted).child(label))
+      .when(n != null, (el) => el.child(div().text_size(11).font_medium().text_color(t.grey).child(n)))
       .when(Boolean(extra), (el) => el.child(div().flex_1()).child(extra));
   }
 

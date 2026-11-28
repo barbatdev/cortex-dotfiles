@@ -110,3 +110,45 @@ test("planRenames prefers the focused agent pane and reads its terminal's todo r
   const plan = planRenames({ spaces: space([{ id: "t1", index: 1, named: false, name: "" }]), panes, agents, terminals, stored: "{}", machinesReady: true });
   assert.deepEqual(plan.renames, [{ id: "t1", name: "Pi · T21 Harden tab names" }]);
 });
+
+// ---- T21: distinct names when two tabs would read the same ----
+const tabsOf = (n) => Array.from({ length: n }, (_, i) => ({ id: `t${i + 1}`, index: i + 1, named: false, name: "" }));
+const planFor = (tabs, panes, stored = "{}") => planRenames({ spaces: space(tabs), panes, agents: [], terminals: [], stored, machinesReady: true });
+
+test("duplicate names take the pane name when the panes are named differently", () => {
+  const plan = planFor(tabsOf(2), [pane("t1", { name: "api" }), pane("t2", { name: "web" })]);
+  assert.deepEqual(plan.renames, [{ id: "t1", name: "Pi · cortex-dotfiles · api" }, { id: "t2", name: "Pi · cortex-dotfiles · web" }]);
+});
+
+test("duplicate names take the lead pane's branch when the branches differ", () => {
+  const plan = planFor(tabsOf(2), [pane("t1", { branch: "main" }), pane("t2", { branch: "feat/herdr-polish" })]);
+  assert.deepEqual(plan.renames, [{ id: "t1", name: "Pi · cortex-dotfiles · main" }, { id: "t2", name: "Pi · cortex-dotfiles · feat/herdr-polish" }]);
+});
+
+test("duplicate names fall back to a number in tab order, the first keeps the plain name", () => {
+  const plan = planFor(tabsOf(3), [pane("t1", { branch: "main" }), pane("t2", { branch: "main" }), pane("t3")]);
+  assert.deepEqual(plan.renames.map((r) => r.name), ["Pi · cortex-dotfiles", "Pi · cortex-dotfiles · 2", "Pi · cortex-dotfiles · 3"]);
+  const same = planFor(tabsOf(2), [pane("t1", { name: "x" }), pane("t2", { name: "x" })]);
+  assert.deepEqual(same.renames.map((r) => r.name), ["Pi · cortex-dotfiles", "Pi · cortex-dotfiles · 2"]);
+});
+
+test("a distinct name is stored, so the next tick keeps it and renames nothing", () => {
+  const first = planFor(tabsOf(2), [pane("t1"), pane("t2")]);
+  const tabs = first.renames.map((r, i) => ({ id: r.id, index: i + 1, named: true, name: r.name }));
+  const next = planFor(tabs, [pane("t1"), pane("t2")], first.stored);
+  assert.deepEqual(next.renames, []);
+  assert.equal(JSON.parse(first.stored).t2, "Pi · cortex-dotfiles · 2");
+});
+
+test("a tab the person named is left alone and does not count as a duplicate", () => {
+  const tabs = [{ id: "t1", index: 1, named: true, name: "my scratch" }, { id: "t2", index: 2, named: false, name: "" }];
+  const plan = planFor(tabs, [pane("t1"), pane("t2")]);
+  assert.deepEqual(plan.renames, [{ id: "t2", name: "Pi · cortex-dotfiles" }]);
+});
+
+test("a long duplicate name keeps its suffix visible", () => {
+  const long = (t) => pane(t, { cwd: null, title: "π - " + "a".repeat(30) });
+  const plan = planFor(tabsOf(2), [long("t1"), long("t2")]);
+  assert.ok(plan.renames[1].name.endsWith(" · 2"), plan.renames[1].name);
+  assert.ok([...plan.renames[1].name].length <= 48);
+});
