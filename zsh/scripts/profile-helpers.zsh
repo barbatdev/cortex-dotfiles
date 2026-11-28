@@ -104,6 +104,54 @@ grefactoria() { _ghostty_with_profile grefactoria refactoria "$@"; }
 #endregion
 
 #region Herdr Desktop screens
+# Installs the repo's Herdr Desktop files into one home (~/.config/herdr-app or
+# ~/.config/herdr-app-N): theme, layout, keys and each refactoria mod's main.js
+# and mod.json are linked; imported modules (*.js) and icons are copied, because
+# Herdr refuses imports and images that resolve outside the mod folder. Removes
+# installed refactoria-* mods the repo no longer has. Prints the mods that are
+# new to this home: a running window needs a restart to load them.
+_herdr_home_sync() {
+    local home="$1" desktop="$_DOTFILES_DIR/herdr/desktop" f asset mod
+    local -a fresh=()
+    for f in themes/refactoria.json layouts/refactoria.json keys.json; do
+        mkdir -p "$(dirname "$home/$f")"
+        ln -sfn "$desktop/$f" "$home/$f"
+    done
+    for mod in "$desktop"/mods/refactoria-*(N/); do
+        [[ -d "$home/mods/${mod:t}" ]] || fresh+=("${mod:t}")
+        mkdir -p "$home/mods/${mod:t}"
+        for f in main.js mod.json; do
+            [[ -e "$mod/$f" ]] && ln -sfn "$mod/$f" "$home/mods/${mod:t}/$f"
+        done
+    done
+    for asset in "$desktop"/mods/refactoria-*/*.js(N.) "$desktop"/mods/refactoria-*/icons/*.svg(N.); do
+        [[ "${asset:t}" == main.js ]] && continue
+        f="${asset#$desktop/}"
+        [[ -L "$home/$f" ]] && rm -f "$home/$f"
+        mkdir -p "$(dirname "$home/$f")"
+        cmp -s "$asset" "$home/$f" || cp "$asset" "$home/$f"
+    done
+    for mod in "$home"/mods/refactoria-*(N/); do
+        [[ -d "$desktop/mods/${mod:t}" ]] || rm -rf "$mod"
+    done
+    (( ${#fresh} )) && printf '%s\n' "${fresh[@]}"
+    return 0
+}
+
+# Refresh every Herdr Desktop home on this machine from the repo, running or
+# not. Usage: herdr-sync. Tells which running windows must restart for new mods.
+herdr-sync() {
+    local home fresh
+    for home in "$HOME"/.config/herdr-app(N/) "$HOME"/.config/herdr-app-<->(N/); do
+        fresh="$(_herdr_home_sync "$home")"
+        if [[ -n "$fresh" ]] && env HERDR_APP_HOME="$home" herdr-app status >/dev/null 2>&1; then
+            printf 'herdr-sync: %s synced; restart it to load new mods: %s\n' "${home:t}" "${fresh//$'\n'/, }"
+        else
+            printf 'herdr-sync: %s synced\n' "${home:t}"
+        fi
+    done
+}
+
 # Open the extra Herdr Desktop screens (one per monitor). Usage: herdr-screens [count]
 # Screen 1 is the default home (~/.config/herdr-app); screens 2..count use
 # ~/.config/herdr-app-N. Every screen shares the same herdr-core terminals.
@@ -121,32 +169,10 @@ herdr-screens() {
         return 127
     fi
 
-    local desktop="$_DOTFILES_DIR/herdr/desktop"
-    # Every refactoria mod: main.js and mod.json are linked; imported modules
-    # (feed.js, model.js, rows.js) and icons are copied, because Herdr refuses
-    # imports and images that resolve outside the mod folder (as in install.sh).
-    local -a shared=(themes/refactoria.json layouts/refactoria.json keys.json)
-    local mod
-    for mod in "$desktop"/mods/refactoria-*(N/); do
-        for f in main.js mod.json; do
-            [[ -e "$mod/$f" ]] && shared+=("mods/${mod:t}/$f")
-        done
-    done
-
-    local n home f attempt asset
+    local desktop="$_DOTFILES_DIR/herdr/desktop" n home attempt
     for n in $(seq 2 "$count"); do
         home="$HOME/.config/herdr-app-$n"
-        for f in "${shared[@]}"; do
-            mkdir -p "$(dirname "$home/$f")"
-            ln -sfn "$desktop/$f" "$home/$f"
-        done
-        for asset in "$desktop"/mods/refactoria-*/*.js(N.) "$desktop"/mods/refactoria-*/icons/*.svg(N.); do
-            [[ "${asset:t}" == main.js ]] && continue
-            f="${asset#$desktop/}"
-            [[ -L "$home/$f" ]] && rm -f "$home/$f"
-            mkdir -p "$(dirname "$home/$f")"
-            cmp -s "$asset" "$home/$f" || cp "$asset" "$home/$f"
-        done
+        _herdr_home_sync "$home"
         [[ -e "$home/settings.json" ]] || cp "$desktop/settings.json" "$home/settings.json"
 
         if env HERDR_APP_HOME="$home" herdr-app status >/dev/null 2>&1; then
