@@ -6,9 +6,10 @@
 
 import { View, div, svg, image } from "gpui-kit";
 import { v_flex, h_flex } from "gpui-base";
-import { agents, terminals, spaces, run, theme, shared, setShared, setAgentOrder, window, layout } from "herdr";
+import { agents, terminals, spaces, run, theme, shared, setShared, setAgentOrder, window, layout, setBadge, notify, home, exec, readTextFile, writeTextFile, checking } from "herdr";
 import { FeedSource, isGentle, liveState, needsYou, selectSession } from "./feed.js";
 import { agentCards, traySummary, buildCard, sortCards, splitCards, liveAgents, timeAgo, disambiguate, idleSince, freshIdle, sections, recencyGroups, todaySummary, lastFinished, programIcon, machineIcon, pillLabel, idleLines } from "./model.js";
+import { badgeText, transitions, claimAlerts, awaySummary, AWAY_MS, CLAIM_MS, popsUp } from "./alerts.js";
 
 const ICON = { sub: "mods/refactoria-agents/icons/sub.svg", chev: "mods/refactoria-agents/icons/chev.svg", archive: "mods/refactoria-agents/icons/archive.svg", calm: "mods/refactoria-agents/icons/calm.svg" };
 
@@ -60,7 +61,49 @@ export default class Agents extends View {
     this.earlierOpen = localStorage.getItem("earlierOpen") === "true";
     this.staleOpen = localStorage.getItem("staleOpen") === "true";
     this.hovered = null;
+    // Alerts (./alerts.js): the badge last set, the alert keys last seen (null: not looked yet),
+    // this window's recent transitions and since when it is away (unfocused or hidden).
+    this.badge = undefined;
+    this.seen = null;
+    this.log = [];
+    this.awayAt = null;
+    this.claims = Promise.resolve();
     cx.timer.every(30000, (cx) => cx.notify());
+  }
+
+  // The Dock badge (per app: each Herdr window is its own app), one notification per transition
+  // (whichever window claims it first), and the "While you were away" toast on coming back.
+  alerts(cards, now) {
+    if (checking()) return;
+    const badge = badgeText(cards);
+    if (badge !== this.badge) { this.badge = badge; setBadge(badge); }
+    const r = transitions(this.seen, cards);
+    this.seen = r.seen;
+    this.log = [...this.log.filter((e) => now - e.at < CLAIM_MS), ...r.events.map((e) => ({ state: e.state, at: now, address: e.address }))];
+    if (r.events.length) this.claims = this.claims.then(() => this.claim(r.events)).catch((e) => console.log(`refactoria-agents: alert claim failed: ${e}`));
+    const w = window();
+    if (w && (!w.active || !w.visible)) this.awayAt ??= now;
+    else if (w && this.awayAt != null) {
+      const from = this.awayAt;
+      this.awayAt = null;
+      const body = now - from >= AWAY_MS ? awaySummary(this.log, from) : null;
+      if (body) notify({ title: "While you were away", body, level: "info" });
+    }
+  }
+
+  // Every window sees the same agents: the claims file (written only if unchanged since read)
+  // lets just one of them notify each key.
+  async claim(events) {
+    const dir = `${home()}/.cache/refactoria-herdr`;
+    const path = `${dir}/alerts.json`;
+    await exec("mkdir", ["-p", dir]);
+    for (let attempt = 0; attempt < 5; attempt++) {
+      const text = await readTextFile(path);
+      const r = claimAlerts(text, events.map((e) => e.key), Date.now());
+      try { await writeTextFile(path, r.text, text); } catch { continue; }
+      for (const e of events) if (popsUp(e) && r.won.includes(e.key)) notify(e.alert);
+      return;
+    }
   }
 
   // Stamps agents whose state changed. Done and idle count as one: looking at a finished
@@ -314,6 +357,7 @@ export default class Agents extends View {
     const idleSorted = [...idle].sort((x, y) => (y.since ?? 0) - (x.since ?? 0));
     const shown = [...active, ...idleSorted];
     setAgentOrder(shown.filter((c) => c.pane).map((c) => c.address));
+    this.alerts(shown, now);
     const open = (c) => {
       if (c.session) selectSession(c.session);
       else if (c.pane) run("pane.focus", { pane: c.pane });
